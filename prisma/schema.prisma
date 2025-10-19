@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(100)
+  slug String @unique @db.VarChar(100)
+  Umkm Umkm[]
+
+  @@index([slug], map: "idx_category_slug")
+}
+
+model Umkm {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(255)
+  slug          String   @unique @db.VarChar(255)
+  description   String?
+  address       String
+  phone         String?  @db.VarChar(20)
+  openingHours  String?  @db.VarChar(100)
+  photos        String[]
+  latitude      Float?
+  longitude     Float?
+  rating        Decimal? @default(4.0) @db.Decimal(2, 1)
+  hasPromo      Boolean? @default(false)
+  isRecommended Boolean? @default(false)
+  categoryId    Int
+  Review        Review[]
+  Category      Category @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([name], map: "idx_umkm_name")
+  @@index([slug], map: "idx_umkm_slug")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String
+  author    String   @default("Pengunjung") @db.VarChar(100)
+  createdAt DateTime @default(now())
+  umkmId    Int
+  Umkm      Umkm     @relation(fields: [umkmId], references: [id])
+
+  @@index([umkmId])
+}
