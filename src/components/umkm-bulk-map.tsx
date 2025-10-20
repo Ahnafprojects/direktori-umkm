@@ -1,18 +1,22 @@
 // src/components/umkm-bulk-map.tsx
-'use client';
+"use client";
 
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import Link from 'next/link';
-import { Button } from './ui/button';
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import Link from "next/link";
+import { Button } from "./ui/button";
 
 // --- Perbaikan Ikon Leaflet (sama seperti sebelumnya) ---
-import iconUrl from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+// import iconUrl from "leaflet/dist/images/marker-icon.png";
+// import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
-L.Icon.Default.mergeOptions({
-  iconUrl: iconUrl.src,
-  shadowUrl: iconShadow.src,
+const customIcon = new L.Icon({
+  iconUrl: "/images/icon/loc_icon.png",
+  // shadowUrl: "/marker-shadow.png",
+  iconSize: [40, 40],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32],
+  shadowSize: [41, 41],
 });
 // --- Akhir Perbaikan Ikon ---
 
@@ -49,15 +53,18 @@ export default function UmkmBulkMap({ pins, center }: Props) {
 
         {/* Loop dan render semua pin */}
         {pins.map((pin) => (
-          <Marker 
-            key={pin.id} 
+          <Marker
+            key={pin.id}
             position={[pin.latitude, pin.longitude]}
             keyboard={true} // <-- TAMBAHKAN INI
+            icon={customIcon}
           >
             <Popup>
               <div className="space-y-2">
                 <h3 className="font-bold">{pin.name}</h3>
-                <p className="text-sm text-muted-foreground">{pin.category.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {pin.category.name}
+                </p>
                 <Button asChild size="sm" className="w-full">
                   <Link href={`/umkm/${pin.slug}`}>Lihat Detail</Link>
                 </Button>
@@ -77,7 +84,7 @@ export default function UmkmBulkMap({ pins, center }: Props) {
           border-radius: 2px !important;
           pointer-events: auto !important;
         }
-        
+
         .leaflet-control-attribution:hover {
           opacity: 0.8 !important;
           background: rgba(255, 255, 255, 0.9) !important;
@@ -85,3 +92,4 @@ export default function UmkmBulkMap({ pins, center }: Props) {
       `}</style>
     </>
   );
+}
