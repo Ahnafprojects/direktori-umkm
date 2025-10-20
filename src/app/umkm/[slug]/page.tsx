@@ -1,25 +1,25 @@
 // src/app/umkm/[slug]/page.tsx
-import { getUmkmBySlug } from '@/lib/actions';
-import { notFound } from 'next/navigation';
-import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
-import { Clock, MapPin, Phone, Star, Navigation, Share2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import MapWrapper from '@/components/map-wrapper';
+import { getUmkmBySlug } from "@/lib/actions";
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
+import { Clock, MapPin, Phone, Star, Navigation, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import MapWrapper from "@/components/map-wrapper";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from '@/components/ui/carousel';
-import { Prisma } from '@prisma/client'; // <-- 1. IMPORT PRISMA
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'; // <-- 2. IMPORT AVATAR
-import { Separator } from '@/components/ui/separator'; // <-- 3. IMPORT SEPARATOR
-import ShareButton from '@/components/share-button';
-import FavoriteToggleButton from '@/components/favorite-toggle-button'; // <-- 1. IMPORT
-import ClientHydrator from '@/components/client-hydrator'; // <-- 2. IMPORT
+} from "@/components/ui/carousel";
+// import { Prisma } from "@prisma/client"; // <-- 1. IMPORT PRISMA (ga kanggo)
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"; // <-- 2. IMPORT AVATAR
+import { Separator } from "@/components/ui/separator"; // <-- 3. IMPORT SEPARATOR
+import ShareButton from "@/components/share-button";
+import FavoriteToggleButton from "@/components/favorite-toggle-button"; // <-- 1. IMPORT
+import ClientHydrator from "@/components/client-hydrator"; // <-- 2. IMPORT
 type DetailPageProps = {
   params: Promise<{
     slug: string;
@@ -66,7 +66,7 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
               <CarouselItem>
                 <div className="w-full h-64 md:h-96 relative bg-secondary">
                   <Image
-                    src={'/images/placeholder-umkm.jpg'} // Sediakan placeholder
+                    src={"/images/placeholder-umkm.jpg"} // Sediakan placeholder
                     alt="Placeholder"
                     fill
                     className="object-cover"
@@ -76,15 +76,15 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
             )}
           </CarouselContent>
           {/* Tombol Navigasi Carousel */}
-          <CarouselPrevious 
-            className="absolute left-4" 
+          <CarouselPrevious
+            className="absolute left-4"
             aria-label="Geser ke foto sebelumnya" // <-- TAMBAHKAN INI
           />
-          <CarouselNext 
-            className="absolute right-4" 
+          <CarouselNext
+            className="absolute right-4"
             aria-label="Geser ke foto selanjutnya" // <-- TAMBAHKAN INI
           />
-          
+
           {/* Badge Promo tetap di sini */}
           {umkm.hasPromo && (
             <Badge className="absolute top-4 left-4 z-10 text-base">
@@ -105,16 +105,18 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
               <div className="flex items-center gap-2 text-yellow-500 mt-2">
                 <Star className="h-5 w-5" />
                 <span className="text-xl font-bold text-black dark:text-white">
-                  {umkm.rating ? Number(umkm.rating).toFixed(1) : '4.0'}
+                  {umkm.rating ? Number(umkm.rating).toFixed(1) : "4.0"}
                 </span>
               </div>
             </div>
             {/* 2. GABUNGKAN TOMBOL SHARE & FAVORITE */}
             <div className="flex items-center gap-2">
-              <ClientHydrator> {/* 3. BUNGKUS DENGAN HYDRATOR */}
+              <ClientHydrator>
+                {" "}
+                {/* 3. BUNGKUS DENGAN HYDRATOR */}
                 <FavoriteToggleButton umkmId={umkm.id} umkmName={umkm.name} />
               </ClientHydrator>
-              
+
               {/* PASTIKAN BARIS INI ADA: */}
               <ShareButton
                 title={umkm.name}
@@ -143,11 +145,14 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
                     <div className="flex justify-between items-center">
                       <p className="font-semibold">{review.author}</p>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(review.createdAt).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
+                        {new Date(review.createdAt).toLocaleDateString(
+                          "id-ID",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          }
+                        )}
                       </span>
                     </div>
                     {/* Tampilkan Rating Bintang */}
@@ -157,13 +162,15 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
                           key={i}
                           className={`h-4 w-4 ${
                             i < review.rating
-                              ? 'text-yellow-500 fill-yellow-500'
-                              : 'text-gray-400 dark:text-gray-500' // <-- UBAH INI
+                              ? "text-yellow-500 fill-yellow-500"
+                              : "text-gray-400 dark:text-gray-500" // <-- UBAH INI
                           }`}
                         />
                       ))}
                     </div>
-                    <p className="text-muted-foreground mt-2">{review.comment}</p>
+                    <p className="text-muted-foreground mt-2">
+                      {review.comment}
+                    </p>
                   </div>
                 </div>
               ))
@@ -184,13 +191,13 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
           </div>
           <div className="flex items-center gap-3">
             <Clock className="h-5 w-5 text-muted-foreground" />
-            <span>{umkm.openingHours || 'Jam buka tidak tersedia'}</span>
+            <span>{umkm.openingHours || "Jam buka tidak tersedia"}</span>
           </div>
           <div className="flex items-center gap-3">
             <Phone className="h-5 w-5 text-muted-foreground" />
-            <span>{umkm.phone || 'Telepon tidak tersedia'}</span>
+            <span>{umkm.phone || "Telepon tidak tersedia"}</span>
           </div>
-          
+
           {/* Peta Interaktif dengan Dynamic Loading */}
           {/* PENTING: Hanya render peta jika ada data latitude & longitude.
             Jangan lupa isi data lat/long di database (pgAdmin) saat kamu riset!

@@ -119,44 +119,44 @@
   body {
     @apply bg-background text-foreground;
   }
-  
+
   /* Improvements untuk dark mode */
   .dark {
     /* Smooth scrolling dan anti-aliasing */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    
+
     /* Custom scrollbar untuk dark mode */
     scrollbar-width: thin;
     scrollbar-color: oklch(0.45 0.02 240) oklch(0.25 0.02 240);
   }
-  
+
   .dark ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
-  
+
   .dark ::-webkit-scrollbar-track {
     background: oklch(0.25 0.02 240);
     border-radius: 4px;
   }
-  
+
   .dark ::-webkit-scrollbar-thumb {
     background: oklch(0.45 0.02 240);
     border-radius: 4px;
   }
-  
+
   .dark ::-webkit-scrollbar-thumb:hover {
     background: oklch(0.55 0.02 240);
   }
-  
+
   /* Improved selection colors */
   .dark ::selection {
     background: oklch(0.4 0.08 210);
     color: oklch(0.95 0.01 60);
   }
-  
+
   /* Better focus states */
   .dark *:focus-visible {
     outline: 2px solid oklch(0.65 0.08 210);

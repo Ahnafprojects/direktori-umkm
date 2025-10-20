@@ -1,8 +1,8 @@
 // src/app/page-transition-wrapper.tsx
-'use client';
+"use client";
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
 
 export default function PageTransitionWrapper({
   children,
@@ -19,7 +19,7 @@ export default function PageTransitionWrapper({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 15 }} // Animasi saat halaman keluar
         transition={{
-          type: 'spring',
+          type: "spring",
           stiffness: 100,
           damping: 20,
         }}
