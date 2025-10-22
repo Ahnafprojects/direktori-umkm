@@ -1,4 +1,5 @@
-// src/app/layout.tsx
+// File: src/app/layout.tsx
+
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -7,6 +8,7 @@ import Header from './_components/header';
 import Footer from './_components/footer';
 import { cn } from '@/lib/utils';
 import PageTransitionWrapper from './page-transition-wrapper';
+import AuthProvider from './auth-provider'; 
 import { ThemeProvider } from './theme-provider'; // <-- 1. IMPORT
 import FloatingCartButton from './_components/floating-cart-button';
 
@@ -33,6 +35,22 @@ export default function RootLayout({
           inter.className
         )}
       >
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="relative flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">
+                <PageTransitionWrapper>{children}</PageTransitionWrapper>
+              </main>
+              <Footer />
+            </div>
+          </ThemeProvider>
+        </AuthProvider>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

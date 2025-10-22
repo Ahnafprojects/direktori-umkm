@@ -1,7 +1,60 @@
-// prisma/seed.ts
+// File: prisma/seed.ts
+
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
+async function main() {
+  // =================================================================
+  // BAGIAN BARU: Membuat satu pengguna dummy untuk semua ulasan
+  // =================================================================
+  console.log('Membuat user dummy...');
+  const dummyUser = await prisma.user.upsert({
+    where: { email: 'dummy@user.com' },
+    update: {},
+    create: {
+      name: 'Pengunjung LokalKeren',
+      email: 'dummy@user.com',
+      password: 'password123', // Tidak perlu di-hash untuk seeding
+      role: 'PELANGGAN',
+    },
+  });
+  console.log('User dummy dibuat...');
+
+  // Bagian Kategori (Tidak ada perubahan, sudah benar)
+  const catMakanan = await prisma.category.upsert({
+    where: { slug: 'makanan' },
+    update: {},
+    create: { name: 'Makanan', slug: 'makanan' },
+  });
+
+  const catMinuman = await prisma.category.upsert({
+    where: { slug: 'minuman' },
+    update: {},
+    create: { name: 'Minuman', slug: 'minuman' },
+  });
+
+  const catJasa = await prisma.category.upsert({
+    where: { slug: 'jasa' },
+    update: {},
+    create: { name: 'Jasa', slug: 'jasa' },
+  });
+
+  console.log('Kategori dibuat...');
+
+  // Bagian UMKM (Tidak ada perubahan, sudah benar)
+  await prisma.umkm.upsert({
+    where: { slug: 'bakso-cak-man' },
+    update: {},
+    create: {
+      name: 'Bakso Cak Man PENS',
+      slug: 'bakso-cak-man',
+      description: 'Bakso legendaris di depan gerbang PENS yang jadi penyelamat mahasiswa.',
+      address: 'Jl. Raya ITS, Keputih, Sukolilo, Surabaya',
+      phone: '08123456789',
+      openingHours: '10:00 - 21:00',
+      photos: ['/images/placeholder-umkm.jpg', '/images/placeholder-umkm.jpg'],
+      latitude: -7.275,
+      longitude: 112.795,
 // =================================================================
 // 1. DATA KATEGORI UMKM (Level 1)
 // =================================================================
@@ -468,22 +521,38 @@ async function main() {
   await prisma.umkm.deleteMany({});
   await prisma.category.deleteMany({});
 
-  console.log('Memasukkan data Kategori UMKM...');
-  for (const cat of umkmCategoryData) {
-    await prisma.category.upsert({
-      where: { slug: cat.slug.toLowerCase() },
-      update: { name: cat.name, slug: cat.slug.toLowerCase() },
-      create: { name: cat.name, slug: cat.slug.toLowerCase() },
-    });
-  }
+  const allUmkms = await prisma.umkm.findMany();
 
-  const categories = await prisma.category.findMany();
-  const categoryMap = new Map(categories.map((cat) => [cat.slug, cat.id]));
+  console.log('Membuat ulasan dummy...');
 
-  console.log('Memasukkan data UMKM, Kategori Produk, Produk, dan Review...');
-  for (const data of umkmData) {
-    const umkmInfo = data.umkm;
-    const categoryId = categoryMap.get(umkmInfo.categorySlug.toLowerCase());
+  for (const umkm of allUmkms) {
+    const reviewsData = [];
+
+    // =============================================================
+    // BAGIAN YANG DIPERBAIKI: Mengganti `author` dengan `userId`
+    // =============================================================
+    if (umkm.slug === 'bakso-cak-man') {
+      reviewsData.push(
+        { umkmId: umkm.id, userId: dummyUser.id, rating: 5, comment: 'Baksonya 10/10! Kuahnya gurih banget, porsinya pas. Penyelamat banget pas lagi nugas.' },
+        { umkmId: umkm.id, userId: dummyUser.id, rating: 4, comment: 'Rasa masih otentik dari dulu. Cuma tempatnya agak panas aja kalo siang.' }
+      );
+    } else if (umkm.slug === 'kopi-kenangan-its') {
+      reviewsData.push({ umkmId: umkm.id, userId: dummyUser.id, rating: 5, comment: 'Kopi Susu Gula Aren-nya emang paling pas buat nemenin nugas di perpus. Tempatnya juga bersih.' });
+    } else if (umkm.slug === 'warung-bu-tini') {
+      reviewsData.push(
+        { umkmId: umkm.id, userId: dummyUser.id, rating: 5, comment: 'Gudegnya authentic banget! Rasanya persis kaya di Jogja, harga juga ramah di kantong mahasiswa.' },
+        { umkmId: umkm.id, userId: dummyUser.id, rating: 4, comment: 'Enak dan murah, cocok buat makan sehari-hari. Buka 24 jam juga jadi bisa makan kapan aja.' }
+      );
+    } else if (umkm.slug === 'sate-ayam-pak-joko') {
+      reviewsData.push({ umkmId: umkm.id, userId: dummyUser.id, rating: 5, comment: 'Sate ayamnya juicy, bumbu kacangnya pas banget. Recommended buat makan malam!' });
+    } else if (umkm.slug === 'ayam-geprek-bensu') {
+      reviewsData.push(
+        { umkmId: umkm.id, userId: dummyUser.id, rating: 4, comment: 'Level pedasnya bisa disesuaikan, enak banget! Ayamnya crispy dan bumbu gepreknya mantap.' },
+        { umkmId: umkm.id, userId: dummyUser.id, rating: 5, comment: 'Porsinya banyak, harganya terjangkau. Jadi langganan nih!' }
+      );
+    } else if (umkm.slug === 'laundry-express') {
+      reviewsData.push({ umkmId: umkm.id, userId: dummyUser.id, rating: 4, comment: 'Pelayanannya cepat dan bersih. Harga per kilo juga reasonable untuk mahasiswa.' });
+    }
 
     if (!categoryId) {
       console.warn(`Kategori UMKM "${umkmInfo.categorySlug}" tidak ditemukan. UMKM "${umkmInfo.name}" dilewati.`);

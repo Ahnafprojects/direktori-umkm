@@ -1,12 +1,18 @@
-// src/lib/actions.ts
-"use server"; // Wajib ada untuk Server Actions
+// File: src/lib/actions.ts
+'use server'; // Wajib ada untuk Server Actions
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { db } from "./prisma";
-import { isUmkmOpen } from "./time-helper"; // <-- 1. IMPORT HELPER
+import { db } from './prisma';
+import { isUmkmOpen } from './time-helper';
+// =================================================================
+// PERUBAHAN #1: Mengimpor fungsi `noStore` dari Next.js
+// =================================================================
+import { unstable_noStore as noStore } from 'next/cache';
 
-// 1. Mengambil SEMUA kategori untuk filter
+// Mengambil SEMUA kategori untuk filter
 export async function getCategories() {
+  // Selalu ambil data kategori terbaru dari database
+  noStore();
   try {
     const categories = await db.category.findMany();
     return categories;
@@ -16,20 +22,24 @@ export async function getCategories() {
   }
 }
 
-// 2. MODIFIKASI FUNGSI getUmkms
+// Mengambil daftar UMKM (untuk halaman utama)
 export async function getUmkms(params: {
   search?: string;
   category?: string;
-  lat?: string; // <-- Tambah parameter lat
-  long?: string; // <-- Tambah parameter long
-  openNow?: string; // <-- 2. TAMBAH PARAMETER BARU
+  lat?: string;
+  long?: string;
+  openNow?: string;
 }) {
+  // =================================================================
+  // PERUBAHAN #2: Memaksa fungsi ini untuk tidak menggunakan cache
+  // =================================================================
+  noStore(); // Ini memastikan data UMKM selalu diambil langsung dari database
+
   const { search, category, lat, long, openNow } = params;
   let filteredUmkms: any[] = [];
 
   try {
     // --- SKENARIO 1: PENCARIAN BIASA (TANPA LOKASI) ---
-    // Jika tidak ada lat/long, jalankan query standar seperti sebelumnya
     if (!lat || !long) {
       console.log('Mode: Pencarian Standar');
       
@@ -165,7 +175,6 @@ export async function getUmkms(params: {
       return filteredUmkms.filter((umkm) => isUmkmOpen(umkm.openingHours));
     }
 
-    // Jika tidak, kembalikan hasil seperti biasa
     return filteredUmkms;
   } catch (error) {
     console.error("Gagal mengambil UMKM:", error);
@@ -173,8 +182,9 @@ export async function getUmkms(params: {
   }
 }
 
-// 3. Mengambil SATU UMKM untuk halaman detail
+// Mengambil SATU UMKM untuk halaman detail
 export async function getUmkmBySlug(slug: string) {
+  noStore();
   try {
     const umkm = await db.umkm.findUnique({
       where: {
@@ -205,10 +215,10 @@ export async function getUmkmBySlug(slug: string) {
 }
 // FUNGSI BARU: HANYA UNTUK MENGAMBIL SARAN PENCARIAN
 export async function getUmkmSuggestions(query: string) {
+  noStore();
   if (!query) {
     return [];
   }
-
   try {
     const suggestions = await db.umkm.findMany({
       where: {
@@ -219,10 +229,10 @@ export async function getUmkmSuggestions(query: string) {
       },
       select: {
         id: true,
-        name: true, // Hanya ambil nama
-        slug: true, // Hanya ambil slug (untuk link)
+        name: true,
+        slug: true,
       },
-      take: 5, // Batasi hanya 5 hasil teratas
+      take: 5,
     });
     return suggestions;
   } catch (error) {
@@ -231,12 +241,12 @@ export async function getUmkmSuggestions(query: string) {
   }
 }
 
-// FUNGSI BARU: UNTUK MENGAMBIL SEMUA PIN PETA
+// Mengambil SEMUA PIN PETA
 export async function getUmkmForMap() {
+  noStore();
   try {
     const umkms = await db.umkm.findMany({
       where: {
-        // Pastikan hanya ambil yg punya koordinat
         latitude: { not: null },
         longitude: { not: null },
       },
@@ -251,7 +261,6 @@ export async function getUmkmForMap() {
         },
       },
     });
-    // Kita perlu membersihkan tipe data null sebelum mengirim ke klien
     const cleanedUmkms = umkms.filter(
       (umkm: any) => umkm.latitude !== null && umkm.longitude !== null
     );
@@ -263,7 +272,7 @@ export async function getUmkmForMap() {
       slug: umkm.slug,
       latitude: umkm.latitude,
       longitude: umkm.longitude,
-      category: { name: umkm.Category.name }, // Transform Category to category
+      category: { name: umkm.Category.name },
     }));
   } catch (error) {
     console.error("Gagal mengambil data peta:", error);
@@ -271,8 +280,9 @@ export async function getUmkmForMap() {
   }
 }
 
-// FUNGSI BARU: MENGAMBIL UMKM BERDASARKAN ARRAY ID
+// Mengambil UMKM BERDASARKAN ARRAY ID
 export async function getUmkmsByIds(ids: number[]) {
+  noStore();
   if (ids.length === 0) {
     return [];
   }
@@ -286,11 +296,9 @@ export async function getUmkmsByIds(ids: number[]) {
       },
     });
 
-    // Mengurutkan hasil sesuai urutan array 'ids'
     const umkmsMap = new Map(umkms.map((u: any) => [u.id, u]));
     const sortedUmkms = ids.map((id) => umkmsMap.get(id)).filter(Boolean);
 
-    // Serialize Decimal fields to numbers
     return sortedUmkms.map((umkm: any) => ({
       ...umkm,
       rating: umkm.rating ? Number(umkm.rating) : null,
