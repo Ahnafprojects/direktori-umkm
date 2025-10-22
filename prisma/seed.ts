@@ -1,9 +1,26 @@
-// prisma/seed.ts
+// File: prisma/seed.ts
+
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  // 1. Buat Kategori Dulu
+  // =================================================================
+  // BAGIAN BARU: Membuat satu pengguna dummy untuk semua ulasan
+  // =================================================================
+  console.log('Membuat user dummy...');
+  const dummyUser = await prisma.user.upsert({
+    where: { email: 'dummy@user.com' },
+    update: {},
+    create: {
+      name: 'Pengunjung LokalKeren',
+      email: 'dummy@user.com',
+      password: 'password123', // Tidak perlu di-hash untuk seeding
+      role: 'PELANGGAN',
+    },
+  });
+  console.log('User dummy dibuat...');
+
+  // Bagian Kategori (Tidak ada perubahan, sudah benar)
   const catMakanan = await prisma.category.upsert({
     where: { slug: 'makanan' },
     update: {},
@@ -24,7 +41,7 @@ async function main() {
 
   console.log('Kategori dibuat...');
 
-  // 2. Buat UMKM dengan variasi opening hours
+  // Bagian UMKM (Tidak ada perubahan, sudah benar)
   await prisma.umkm.upsert({
     where: { slug: 'bakso-cak-man' },
     update: {},
@@ -35,10 +52,7 @@ async function main() {
       address: 'Jl. Raya ITS, Keputih, Sukolilo, Surabaya',
       phone: '08123456789',
       openingHours: '10:00 - 21:00',
-      photos: [
-        '/images/placeholder-umkm.jpg',
-        '/images/placeholder-umkm.jpg',
-      ],
+      photos: ['/images/placeholder-umkm.jpg', '/images/placeholder-umkm.jpg'],
       latitude: -7.275,
       longitude: 112.795,
       rating: 4.8,
@@ -133,7 +147,7 @@ async function main() {
     update: {},
     create: {
       name: 'Sate Ayam Pak Joko',
-      slug: 'sate-ayam-pak-joko',
+      slug: 'sate-ayam-pak-j Joko',
       description: 'Sate ayam bakar dengan bumbu kacang spesial dan nasi hangat.',
       address: 'Jl. Gebang Putih, Sukolilo, Surabaya',
       phone: '08567890123',
@@ -189,84 +203,40 @@ async function main() {
   });
 
   console.log('Data UMKM dibuat...');
-
   console.log('Menghapus ulasan lama...');
   await prisma.review.deleteMany({});
 
-  // Ambil semua UMKM untuk diberi ulasan
   const allUmkms = await prisma.umkm.findMany();
 
   console.log('Membuat ulasan dummy...');
-  
+
   for (const umkm of allUmkms) {
     const reviewsData = [];
-    
+
+    // =============================================================
+    // BAGIAN YANG DIPERBAIKI: Mengganti `author` dengan `userId`
+    // =============================================================
     if (umkm.slug === 'bakso-cak-man') {
       reviewsData.push(
-        {
-          umkmId: umkm.id,
-          author: 'Mahasiswa Lapar',
-          rating: 5,
-          comment: 'Baksonya 10/10! Kuahnya gurih banget, porsinya pas. Penyelamat banget pas lagi nugas.',
-        },
-        {
-          umkmId: umkm.id,
-          author: 'Warga Lokal',
-          rating: 4,
-          comment: 'Rasa masih otentik dari dulu. Cuma tempatnya agak panas aja kalo siang.',
-        }
+        { umkmId: umkm.id, userId: dummyUser.id, rating: 5, comment: 'Baksonya 10/10! Kuahnya gurih banget, porsinya pas. Penyelamat banget pas lagi nugas.' },
+        { umkmId: umkm.id, userId: dummyUser.id, rating: 4, comment: 'Rasa masih otentik dari dulu. Cuma tempatnya agak panas aja kalo siang.' }
       );
     } else if (umkm.slug === 'kopi-kenangan-its') {
-      reviewsData.push({
-        umkmId: umkm.id,
-        author: 'Anak Nugas',
-        rating: 5,
-        comment: 'Kopi Susu Gula Aren-nya emang paling pas buat nemenin nugas di perpus. Tempatnya juga bersih.',
-      });
+      reviewsData.push({ umkmId: umkm.id, userId: dummyUser.id, rating: 5, comment: 'Kopi Susu Gula Aren-nya emang paling pas buat nemenin nugas di perpus. Tempatnya juga bersih.' });
     } else if (umkm.slug === 'warung-bu-tini') {
       reviewsData.push(
-        {
-          umkmId: umkm.id,
-          author: 'Pecinta Gudeg',
-          rating: 5,
-          comment: 'Gudegnya authentic banget! Rasanya persis kaya di Jogja, harga juga ramah di kantong mahasiswa.',
-        },
-        {
-          umkmId: umkm.id,
-          author: 'Mahasiswa Kos',
-          rating: 4,
-          comment: 'Enak dan murah, cocok buat makan sehari-hari. Buka 24 jam juga jadi bisa makan kapan aja.',
-        }
+        { umkmId: umkm.id, userId: dummyUser.id, rating: 5, comment: 'Gudegnya authentic banget! Rasanya persis kaya di Jogja, harga juga ramah di kantong mahasiswa.' },
+        { umkmId: umkm.id, userId: dummyUser.id, rating: 4, comment: 'Enak dan murah, cocok buat makan sehari-hari. Buka 24 jam juga jadi bisa makan kapan aja.' }
       );
     } else if (umkm.slug === 'sate-ayam-pak-joko') {
-      reviewsData.push({
-        umkmId: umkm.id,
-        author: 'Sate Lover',
-        rating: 5,
-        comment: 'Sate ayamnya juicy, bumbu kacangnya pas banget. Recommended buat makan malam!',
-      });
+      reviewsData.push({ umkmId: umkm.id, userId: dummyUser.id, rating: 5, comment: 'Sate ayamnya juicy, bumbu kacangnya pas banget. Recommended buat makan malam!' });
     } else if (umkm.slug === 'ayam-geprek-bensu') {
       reviewsData.push(
-        {
-          umkmId: umkm.id,
-          author: 'Penggemar Pedas',
-          rating: 4,
-          comment: 'Level pedasnya bisa disesuaikan, enak banget! Ayamnya crispy dan bumbu gepreknya mantap.',
-        },
-        {
-          umkmId: umkm.id,
-          author: 'Mahasiswa Semester 1',
-          rating: 5,
-          comment: 'Porsinya banyak, harganya terjangkau. Jadi langganan nih!',
-        }
+        { umkmId: umkm.id, userId: dummyUser.id, rating: 4, comment: 'Level pedasnya bisa disesuaikan, enak banget! Ayamnya crispy dan bumbu gepreknya mantap.' },
+        { umkmId: umkm.id, userId: dummyUser.id, rating: 5, comment: 'Porsinya banyak, harganya terjangkau. Jadi langganan nih!' }
       );
     } else if (umkm.slug === 'laundry-express') {
-      reviewsData.push({
-        umkmId: umkm.id,
-        author: 'Mahasiswa Sibuk',
-        rating: 4,
-        comment: 'Pelayanannya cepat dan bersih. Harga per kilo juga reasonable untuk mahasiswa.',
-      });
+      reviewsData.push({ umkmId: umkm.id, userId: dummyUser.id, rating: 4, comment: 'Pelayanannya cepat dan bersih. Harga per kilo juga reasonable untuk mahasiswa.' });
     }
 
     if (reviewsData.length > 0) {

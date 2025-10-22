@@ -1,3 +1,6 @@
+
+// File: prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -5,6 +8,29 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Enum untuk peran pengguna
+enum Role {
+  PELANGGAN
+  PENGUSAHA
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String? // Kita akan hash password ini
+  role          Role      @default(PELANGGAN) // Default role adalah pelanggan
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relasi: Satu user bisa punya banyak UMKM
+  umkms   Umkm[]
+  // Relasi: Satu user bisa menulis banyak review
+  reviews Review[]
 }
 
 model Category {
@@ -34,19 +60,28 @@ model Umkm {
   Review        Review[]
   Category      Category @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+  // Relasi ke pemilik UMKM
+  ownerId       String?
+  owner         User?    @relation(fields: [ownerId], references: [id])
+
+
   @@index([name], map: "idx_umkm_name")
   @@index([slug], map: "idx_umkm_slug")
+  @@index([ownerId])
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model Review {
   id        Int      @id @default(autoincrement())
   rating    Int
   comment   String
-  author    String   @default("Pengunjung") @db.VarChar(100)
   createdAt DateTime @default(now())
   umkmId    Int
   Umkm      Umkm     @relation(fields: [umkmId], references: [id])
 
+  // Relasi ke user yang menulis review
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+
   @@index([umkmId])
+  @@index([userId])
 }

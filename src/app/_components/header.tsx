@@ -1,9 +1,11 @@
-// src/app/_components/header.tsx
+// File: src/app/_components/header.tsx
+
 import Link from 'next/link';
 import { Building2 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
-import ViewToggle from './view-toggle'; // <-- 1. IMPORT
-import FavoriteNavButton from './favorite-nav-button'; // <-- 1. IMPORT
+import ViewToggle from './view-toggle';
+import FavoriteNavButton from './favorite-nav-button';
+import UserAuth from './user-auth'; 
 
 export default function Header() {
   return (
@@ -19,8 +21,9 @@ export default function Header() {
           <div className="hidden md:block">
             <ViewToggle />
           </div>
-          <FavoriteNavButton /> {/* <-- 2. TAMBAHKAN */}
+          <FavoriteNavButton />
           <ThemeToggle />
+          <UserAuth /> 
         </nav>
       </div>
     </header>
