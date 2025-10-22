@@ -32,29 +32,51 @@ export async function getUmkms(params: {
     // Jika tidak ada lat/long, jalankan query standar seperti sebelumnya
     if (!lat || !long) {
       console.log('Mode: Pencarian Standar');
+      
+      // Build where condition for standard search
+      const whereCondition: any = {};
+      
+      if (search) {
+        whereCondition.name = {
+          contains: search,
+          mode: 'insensitive',
+        };
+      }
+      
+      // Only add category filter if category is not empty/undefined/"semua"/"all"
+      if (category && category !== 'semua' && category !== 'all' && category !== '') {
+        whereCondition.Category = {
+          slug: category,
+        };
+      }
+      
       const umkms = await db.umkm.findMany({
-        where: {
-          name: {
-            contains: search,
-            mode: 'insensitive',
-          },
-          Category: {
-            slug: category,
-          },
-        },
+        where: whereCondition,
         include: {
           Category: true,
+          ProductCategory: { // <-- UBAH INI: Ambil ProductCategory dulu
+            include: {
+              Product: { // <-- Kemudian ambil Product dari ProductCategory
+                where: { isFeatured: true }, // Ambil yg andalan saja
+                take: 2, // Ambil 2 saja
+              },
+            },
+          },
         },
         orderBy: {
           isRecommended: 'desc', // Urutkan berdasarkan rekomendasi
         },
       });
+      
       // Serialize Decimal fields to numbers
       filteredUmkms = umkms.map((umkm: any) => ({
         ...umkm,
         rating: umkm.rating ? Number(umkm.rating) : null,
       }));
-    }
+      
+      // Debug: Log untuk cek data produk
+      console.log('getUmkms result sample:', filteredUmkms[0]?.name, 'has product categories:', filteredUmkms[0]?.ProductCategory?.length);
+    } else {
 
     // --- SKENARIO 2: PENCARIAN TERDEKAT (DENGAN LOKASI) ---
     console.log('Mode: Pencarian Terdekat');
@@ -111,6 +133,14 @@ export async function getUmkms(params: {
       },
       include: {
         Category: true,
+        ProductCategory: { // <-- UBAH INI JUGA
+          include: {
+            Product: { // <-- Product ada di dalam ProductCategory
+              where: { isFeatured: true },
+              take: 2,
+            },
+          },
+        },
       },
     });
 
@@ -126,6 +156,7 @@ export async function getUmkms(params: {
       ...umkm,
       rating: umkm.rating ? Number(umkm.rating) : null,
     }));
+    } // <-- TAMBAHKAN CLOSING BRACKET INI
 
     // --- TAHAP 2: FILTER "OPEN NOW" (SETELAH DATA DI AMBIL) ---
     // Jika parameter `openNow` adalah 'true', filter hasilnya
@@ -152,27 +183,28 @@ export async function getUmkmBySlug(slug: string) {
         slug: slug,
       },
       include: {
-        Category: true,
-        Review: { // <-- TAMBAHKAN BLOK INI (gunakan 'Review' bukan 'reviews')
-          orderBy: {
-            createdAt: 'desc', // Tampilkan ulasan terbaru di atas
+        Category: true, // Kategori UMKM (Makanan, Jasa, dll)
+        Review: { // Ulasan
+          orderBy: { createdAt: 'desc' },
+        },
+        // INI BAGIAN BARU (PENTING)
+        ProductCategory: { // Ambil Kategori Produk (Minuman, Sate, dll)
+          orderBy: { id: 'asc' }, // Urutkan berdasarkan ID
+          include: {
+            Product: { // Ambil Produk di dalam setiap kategori
+              orderBy: { isFeatured: 'desc' }, // Tampilkan yg andalan dulu
+            },
           },
         },
+        // HAPUS: 'products: { ... }' (sudah tidak relevan)
       },
     });
-    if (!umkm) return null;
-    
-    // Serialize Decimal fields to numbers
-    return {
-      ...umkm,
-      rating: umkm.rating ? Number(umkm.rating) : null,
-    };
+    return umkm;
   } catch (error) {
     console.error('Gagal mengambil detail UMKM:', error);
     return null;
   }
 }
-
 // FUNGSI BARU: HANYA UNTUK MENGAMBIL SARAN PENCARIAN
 export async function getUmkmSuggestions(query: string) {
   if (!query) {

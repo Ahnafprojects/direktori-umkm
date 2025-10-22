@@ -17,22 +17,23 @@ model Category {
 }
 
 model Umkm {
-  id            Int      @id @default(autoincrement())
-  name          String   @db.VarChar(255)
-  slug          String   @unique @db.VarChar(255)
-  description   String?
-  address       String
-  phone         String?  @db.VarChar(20)
-  openingHours  String?  @db.VarChar(100)
-  photos        String[]
-  latitude      Float?
-  longitude     Float?
-  rating        Decimal? @default(4.0) @db.Decimal(2, 1)
-  hasPromo      Boolean? @default(false)
-  isRecommended Boolean? @default(false)
-  categoryId    Int
-  Review        Review[]
-  Category      Category @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(255)
+  slug            String            @unique @db.VarChar(255)
+  description     String?
+  address         String
+  phone           String?           @db.VarChar(20)
+  openingHours    String?           @db.VarChar(100)
+  photos          String[]
+  latitude        Float?
+  longitude       Float?
+  rating          Decimal?          @default(4.0) @db.Decimal(2, 1)
+  hasPromo        Boolean?          @default(false)
+  isRecommended   Boolean?          @default(false)
+  categoryId      Int
+  ProductCategory ProductCategory[]
+  Review          Review[]
+  Category        Category          @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([name], map: "idx_umkm_name")
   @@index([slug], map: "idx_umkm_slug")
@@ -47,6 +48,29 @@ model Review {
   createdAt DateTime @default(now())
   umkmId    Int
   Umkm      Umkm     @relation(fields: [umkmId], references: [id])
+
+  @@index([umkmId])
+}
+
+model Product {
+  id                Int             @id @default(autoincrement())
+  name              String          @db.VarChar(255)
+  description       String?
+  price             Int?
+  photo             String?         @db.VarChar(255)
+  isFeatured        Boolean?        @default(false)
+  productCategoryId Int
+  ProductCategory   ProductCategory @relation(fields: [productCategoryId], references: [id], onDelete: Cascade)
+
+  @@index([productCategoryId])
+}
+
+model ProductCategory {
+  id      Int       @id @default(autoincrement())
+  name    String    @db.VarChar(100)
+  umkmId  Int
+  Product Product[]
+  Umkm    Umkm      @relation(fields: [umkmId], references: [id], onDelete: Cascade)
 
   @@index([umkmId])
 }

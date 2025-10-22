@@ -84,4 +84,4 @@ export default function UmkmBulkMap({ pins, center }: Props) {
         }
       `}</style>
     </>
-  );
+  )};
