@@ -1,11 +1,12 @@
 // src/components/umkm-card.tsx
-import Image from "next/image";
-import Link from "next/link";
-import { Star, MapPin, Clock, Phone } from "lucide-react";
-import FavoriteToggleButton from "./favorite-toggle-button"; // <-- 1. IMPORT
-import ClientHydrator from "./client-hydrator"; // <-- 2. IMPORT
+import Image from 'next/image';
+import Link from 'next/link';
+import { Star, MapPin, Clock, Phone } from 'lucide-react';
+import FavoriteToggleButton from './favorite-toggle-button'; // <-- 1. IMPORT
+import ClientHydrator from './client-hydrator'; // <-- 2. IMPORT
+import { Separator } from '@/components/ui/separator'; // <-- 3. IMPORT SEPARATOR
 
-// Tipe data yang sesuai dengan return dari getUmkms yang include category
+// Tipe data yang sesuai dengan return dari getUmkms yang include category dan products
 type UmkmData = {
   id: number;
   name: string;
@@ -17,7 +18,7 @@ type UmkmData = {
   photos: string[];
   latitude: number | null;
   longitude: number | null;
-  rating: any; // Decimal type dari Prisma
+  rating: number | null; // Decimal type dari Prisma
   hasPromo: boolean | null;
   isRecommended: boolean | null;
   categoryId: number;
@@ -26,6 +27,17 @@ type UmkmData = {
     name: string;
     slug: string;
   };
+  ProductCategory: Array<{
+    id: number;
+    name: string;
+    Product: Array<{
+      id: number;
+      name: string;
+      price: number | null;
+      photo: string | null;
+      isFeatured: boolean | null;
+    }>;
+  }>;
 };
 
 type UmkmCardProps = {
@@ -33,7 +45,15 @@ type UmkmCardProps = {
 };
 
 export default function UmkmCard({ umkm }: UmkmCardProps) {
-  const firstPhoto = umkm.photos[0] || "/images/placeholder-umkm.jpg";
+  // Debug: Log untuk cek data produk
+  console.log('UMKM:', umkm.name, 'ProductCategories:', umkm.ProductCategory);
+  
+  // Ambil semua produk dari semua kategori
+  const allProducts = umkm.ProductCategory?.flatMap(cat => cat.Product) || [];
+  
+  // Ambil foto produk unggulan, ATAU foto UMKM pertama, ATAU placeholder
+  const displayPhoto = (allProducts.length > 0 && allProducts[0]?.photo) || umkm.photos[0] || '/images/placeholder-umkm.jpg';
+  const featuredProducts = allProducts.length > 0 ? allProducts.map((p) => p.name).join(', ') : '';
   const rating = umkm.rating ? Number(umkm.rating) : 4.0;
 
   return (
@@ -50,7 +70,7 @@ export default function UmkmCard({ umkm }: UmkmCardProps) {
       {/* Image */}
       <div className="relative h-48">
         <Image
-          src={firstPhoto}
+          src={displayPhoto}
           alt={`Foto tampilan depan ${umkm.name}`}
           fill
           className="object-cover"
@@ -125,6 +145,16 @@ export default function UmkmCard({ umkm }: UmkmCardProps) {
             ({Math.floor(Math.random() * 100) + 10} ulasan)
           </span>
         </div>
+
+        {/* TAMBAHKAN DAFTAR MENU UNGGULAN */}
+        {featuredProducts && (
+          <>
+            <Separator className="my-2" />
+            <p className="text-sm text-muted-foreground line-clamp-1 mb-3">
+              <span className="font-medium">Menu:</span> {featuredProducts}
+            </p>
+          </>
+        )}
 
         {/* Action Button */}
         <Link

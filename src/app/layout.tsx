@@ -8,6 +8,10 @@ import Footer from './_components/footer';
 import { cn } from '@/lib/utils';
 import PageTransitionWrapper from './page-transition-wrapper';
 import { ThemeProvider } from './theme-provider'; // <-- 1. IMPORT
+import FloatingCartButton from './_components/floating-cart-button';
+
+// 1. IMPORT DARI 'react-hot-toast'
+import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -42,6 +46,15 @@ export default function RootLayout({
             </main>
             <Footer />
           </div>
+          
+          {/* 2. TAMBAHKAN TOASTER BARU DI SINI */}
+          <Toaster 
+            position="top-center" 
+            toastOptions={{
+              duration: 2000, // Notifikasi hilang setelah 2 detik
+            }}
+          />
+<FloatingCartButton />
         </ThemeProvider>
       </body>
     </html>
