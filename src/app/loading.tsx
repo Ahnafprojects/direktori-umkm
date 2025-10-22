@@ -1,6 +1,6 @@
 // src/app/loading.tsx
 // Ini adalah fallback untuk Suspense di page.tsx
-import SkeletonCard from '@/components/skeleton-card';
+import SkeletonCard from "@/components/skeleton-card";
 
 export default function UmkmGridSkeleton() {
   return (

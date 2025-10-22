@@ -95,13 +95,32 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
             ) : (
               <CarouselItem>
                 <div className="w-full h-64 md:h-96 relative bg-secondary">
-                  <Image src={'/images/placeholder-umkm.jpg'} alt="Placeholder" fill className="object-cover" />
+                  <Image
+                    src={"/images/placeholder-umkm.jpg"} // Sediakan placeholder
+                    alt="Placeholder"
+                    fill
+                    className="object-cover"
+                  />
                 </div>
               </CarouselItem>
             )}
           </CarouselContent>
-          <CarouselPrevious className="absolute left-4" />
-          <CarouselNext className="absolute right-4" />
+          {/* Tombol Navigasi Carousel */}
+          <CarouselPrevious
+            className="absolute left-4"
+            aria-label="Geser ke foto sebelumnya" // <-- TAMBAHKAN INI
+          />
+          <CarouselNext
+            className="absolute right-4"
+            aria-label="Geser ke foto selanjutnya" // <-- TAMBAHKAN INI
+          />
+
+          {/* Badge Promo tetap di sini */}
+          {umkm.hasPromo && (
+            <Badge className="absolute top-4 left-4 z-10 text-base">
+              PROMO
+            </Badge>
+          )}
         </Carousel>
 
         {/* Info Detail & Peta */}

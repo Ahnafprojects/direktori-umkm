@@ -1,9 +1,9 @@
 // src/lib/actions.ts
-'use server'; // Wajib ada untuk Server Actions
+"use server"; // Wajib ada untuk Server Actions
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { db } from './prisma';
-import { isUmkmOpen } from './time-helper'; // <-- 1. IMPORT HELPER
+import { db } from "./prisma";
+import { isUmkmOpen } from "./time-helper"; // <-- 1. IMPORT HELPER
 
 // 1. Mengambil SEMUA kategori untuk filter
 export async function getCategories() {
@@ -11,7 +11,7 @@ export async function getCategories() {
     const categories = await db.category.findMany();
     return categories;
   } catch (error) {
-    console.error('Gagal mengambil kategori:', error);
+    console.error("Gagal mengambil kategori:", error);
     return [];
   }
 }
@@ -64,7 +64,7 @@ export async function getUmkms(params: {
           },
         },
         orderBy: {
-          isRecommended: 'desc', // Urutkan berdasarkan rekomendasi
+          isRecommended: "desc", // Urutkan berdasarkan rekomendasi
         },
       });
       
@@ -78,30 +78,29 @@ export async function getUmkms(params: {
       console.log('getUmkms result sample:', filteredUmkms[0]?.name, 'has product categories:', filteredUmkms[0]?.ProductCategory?.length);
     } else {
 
-    // --- SKENARIO 2: PENCARIAN TERDEKAT (DENGAN LOKASI) ---
-    console.log('Mode: Pencarian Terdekat');
-    const latitude = parseFloat(lat!);
-    const longitude = parseFloat(long!);
+      const latitude = parseFloat(lat!);
+      const longitude = parseFloat(long!);
 
-    // 1. Buat kondisi WHERE untuk raw query
-    let whereCondition = '';
-    const params: any[] = [latitude, longitude];
-    let paramIndex = 3; // Mulai dari $3 karena $1 dan $2 untuk latitude/longitude
+      // 1. Buat kondisi WHERE untuk raw query
+      let whereCondition = "";
+      const params: any[] = [latitude, longitude];
+      let paramIndex = 3; // Mulai dari $3 karena $1 dan $2 untuk latitude/longitude
 
-    if (search) {
-      whereCondition += ` AND u."name" ILIKE $${paramIndex}`;
-      params.push(`%${search}%`);
-      paramIndex++;
-    }
-    if (category) {
-      whereCondition += ` AND c."slug" = $${paramIndex}`;
-      params.push(category);
-      paramIndex++;
-    }
+      if (search) {
+        whereCondition += ` AND u."name" ILIKE $${paramIndex}`;
+        params.push(`%${search}%`);
+        paramIndex++;
+      }
+      if (category) {
+        whereCondition += ` AND c."slug" = $${paramIndex}`;
+        params.push(category);
+        paramIndex++;
+      }
 
-    // 2. Query Raw: Get ID & Hitung Jarak (Haversine Formula)
-    // Ini adalah inti dari fitur "Cari Terdekat".
-    const sortedResults = await db.$queryRawUnsafe(`
+      // 2. Query Raw: Get ID & Hitung Jarak (Haversine Formula)
+      // Ini adalah inti dari fitur "Cari Terdekat".
+      const sortedResults = (await db.$queryRawUnsafe(
+        `
       SELECT 
         u.id,
         ( 6371 * acos(
@@ -117,14 +116,16 @@ export async function getUmkms(params: {
       WHERE u.latitude IS NOT NULL AND u.longitude IS NOT NULL ${whereCondition}
       ORDER BY distance ASC
       LIMIT 50
-    `, ...params) as Array<{id: number, distance: number}>;
+    `,
+        ...params
+      )) as Array<{ id: number; distance: number }>;
 
-    // 3. Ambil data lengkap UMKM berdasarkan ID yang sudah terurut
-    const sortedIds = sortedResults.map((u) => u.id);
+      // 3. Ambil data lengkap UMKM berdasarkan ID yang sudah terurut
+      const sortedIds = sortedResults.map((u) => u.id);
 
-    if (sortedIds.length === 0) {
-      return [];
-    }
+      if (sortedIds.length === 0) {
+        return [];
+      }
 
     // Ambil data lengkap dari DB
     const umkmsData = await db.umkm.findMany({
@@ -144,12 +145,12 @@ export async function getUmkms(params: {
       },
     });
 
-    // 4. Urutkan ulang di JavaScript
-    // (findMany...in[...] tidak menjamin urutan, jadi kita urutkan manual)
-    const umkmsMap = new Map(umkmsData.map((u: any) => [u.id, u]));
-    const sortedUmkms = sortedIds
-      .map((id: any) => umkmsMap.get(id))
-      .filter(Boolean);
+      // 4. Urutkan ulang di JavaScript
+      // (findMany...in[...] tidak menjamin urutan, jadi kita urutkan manual)
+      const umkmsMap = new Map(umkmsData.map((u: any) => [u.id, u]));
+      const sortedUmkms = sortedIds
+        .map((id: any) => umkmsMap.get(id))
+        .filter(Boolean);
 
     // Serialize Decimal fields to numbers
     filteredUmkms = sortedUmkms.map((umkm: any) => ({
@@ -160,17 +161,14 @@ export async function getUmkms(params: {
 
     // --- TAHAP 2: FILTER "OPEN NOW" (SETELAH DATA DI AMBIL) ---
     // Jika parameter `openNow` adalah 'true', filter hasilnya
-    if (openNow === 'true' && filteredUmkms.length > 0) {
-      return filteredUmkms.filter(umkm => 
-        isUmkmOpen(umkm.openingHours)
-      );
+    if (openNow === "true" && filteredUmkms.length > 0) {
+      return filteredUmkms.filter((umkm) => isUmkmOpen(umkm.openingHours));
     }
 
     // Jika tidak, kembalikan hasil seperti biasa
     return filteredUmkms;
-
   } catch (error) {
-    console.error('Gagal mengambil UMKM:', error);
+    console.error("Gagal mengambil UMKM:", error);
     return [];
   }
 }
@@ -201,7 +199,7 @@ export async function getUmkmBySlug(slug: string) {
     });
     return umkm;
   } catch (error) {
-    console.error('Gagal mengambil detail UMKM:', error);
+    console.error("Gagal mengambil detail UMKM:", error);
     return null;
   }
 }
@@ -216,7 +214,7 @@ export async function getUmkmSuggestions(query: string) {
       where: {
         name: {
           contains: query,
-          mode: 'insensitive', // Tidak peduli huruf besar/kecil
+          mode: "insensitive", // Tidak peduli huruf besar/kecil
         },
       },
       select: {
@@ -228,7 +226,7 @@ export async function getUmkmSuggestions(query: string) {
     });
     return suggestions;
   } catch (error) {
-    console.error('Gagal mengambil saran:', error);
+    console.error("Gagal mengambil saran:", error);
     return [];
   }
 }
@@ -257,7 +255,7 @@ export async function getUmkmForMap() {
     const cleanedUmkms = umkms.filter(
       (umkm: any) => umkm.latitude !== null && umkm.longitude !== null
     );
-    
+
     // Transform data to match expected interface
     return cleanedUmkms.map((umkm: any) => ({
       id: umkm.id,
@@ -268,7 +266,7 @@ export async function getUmkmForMap() {
       category: { name: umkm.Category.name }, // Transform Category to category
     }));
   } catch (error) {
-    console.error('Gagal mengambil data peta:', error);
+    console.error("Gagal mengambil data peta:", error);
     return [];
   }
 }
@@ -298,7 +296,7 @@ export async function getUmkmsByIds(ids: number[]) {
       rating: umkm.rating ? Number(umkm.rating) : null,
     }));
   } catch (error) {
-    console.error('Gagal mengambil UMKM by IDs:', error);
+    console.error("Gagal mengambil UMKM by IDs:", error);
     return [];
   }
 }
