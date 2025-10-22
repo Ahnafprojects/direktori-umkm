@@ -4,19 +4,48 @@
 import { useEffect, useState } from 'react';
 import { useFavoritesStore } from '@/store/favorites-store';
 import { getUmkmsByIds } from '@/lib/actions';
-import { Category, Umkm } from '@prisma/client';
 import AnimatedGrid from '@/components/animated-grid';
 import AnimatedGridItem from '@/components/animated-grid-item';
 import UmkmCard from '@/components/umkm-card';
 import UmkmGridSkeleton from '@/app/loading'; // Kita pakai ulang skeleton
 
-type UmkmWithCategory = Umkm & {
-  category: Category;
+// Import tipe yang sesuai dari umkm-card
+type UmkmData = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  address: string;
+  phone: string | null;
+  openingHours: string | null;
+  photos: string[];
+  latitude: number | null;
+  longitude: number | null;
+  rating: number | null;
+  hasPromo: boolean | null;
+  isRecommended: boolean | null;
+  categoryId: number;
+  Category: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+  ProductCategory: Array<{
+    id: number;
+    name: string;
+    Product: Array<{
+      id: number;
+      name: string;
+      price: number | null;
+      photo: string | null;
+      isFeatured: boolean | null;
+    }>;
+  }>;
 };
 
 export default function FavoritesPage() {
   const { favoriteIds } = useFavoritesStore();
-  const [umkms, setUmkms] = useState<UmkmWithCategory[]>([]);
+  const [umkms, setUmkms] = useState<UmkmData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
