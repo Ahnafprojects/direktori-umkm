@@ -326,7 +326,10 @@ export async function getAllUmkmsForAI() {
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 // FUNGSI BARU: Ambil SEMUA UMKM (ringkas) untuk AI
@@ -345,6 +348,9 @@ export async function getAllUmkmsForAI() {
 }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -366,6 +372,9 @@ export async function getFavoriteUmkmsDetails(ids: number[]) {
 }
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes

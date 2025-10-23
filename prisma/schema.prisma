@@ -59,6 +59,13 @@ model Umkm {
   Review          Review[]
   Category        Category          @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+<<<<<<< Updated upstream
+=======
+  // Relasi ke pemilik UMKM
+  ownerId       String?
+  owner         User?    @relation(fields: [ownerId], references: [id])
+
+>>>>>>> Stashed changes
   @@index([name], map: "idx_umkm_name")
   @@index([slug], map: "idx_umkm_slug")
 }

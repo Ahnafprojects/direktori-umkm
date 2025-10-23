@@ -464,6 +464,7 @@ async function main() {
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   console.log('Menghapus data lama (urutan penting)...');
   await prisma.review.deleteMany({});
   await prisma.product.deleteMany({});
@@ -540,6 +541,8 @@ async function main() {
   }
   console.log('Seeding selesai!');
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
@@ -1297,6 +1300,9 @@ async function main() {
   console.log("Seeding completed with 4 UMKMs!");
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes

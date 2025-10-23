@@ -27,6 +27,9 @@ import AiRecommendationCarousel from './_components/ai-recommendation-carousel';
 import ClientHydrator from '@/components/client-hydrator'; // <-- 2. IMPORT
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
