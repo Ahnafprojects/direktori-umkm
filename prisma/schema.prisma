@@ -42,6 +42,25 @@ model Category {
   @@index([slug], map: "idx_category_slug")
 }
 
+model User {
+  id       String   @id @default(cuid())
+  name     String
+  email    String   @unique
+  password String
+  role     UserRole @default(PELANGGAN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relasi
+  umkms    Umkm[]   // UMKM yang dimiliki user (untuk PENGUSAHA)
+  reviews  Review[] // Review yang dibuat user
+}
+
+enum UserRole {
+  PELANGGAN
+  PENGUSAHA
+}
+
 model Umkm {
   id              Int               @id @default(autoincrement())
   name            String            @db.VarChar(255)
@@ -57,6 +76,11 @@ model Umkm {
   hasPromo        Boolean?          @default(false)
   isRecommended   Boolean?          @default(false)
   categoryId      Int
+  
+  // Relasi ke pemilik UMKM
+  ownerId       String?
+  owner         User?    @relation(fields: [ownerId], references: [id])
+  
   ProductCategory ProductCategory[]
   Review          Review[]
   Category        Category          @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -65,7 +89,7 @@ model Umkm {
   ownerId       String?
   owner         User?    @relation(fields: [ownerId], references: [id])
 
-
+main
   @@index([name], map: "idx_umkm_name")
   @@index([slug], map: "idx_umkm_slug")
   @@index([ownerId])
@@ -77,13 +101,18 @@ model Review {
   comment   String
   createdAt DateTime @default(now())
   umkmId    Int
+  userId    String
+  
+  // Relasi
   Umkm      Umkm     @relation(fields: [umkmId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   // Relasi ke user yang menulis review
   userId    String?
   user      User?    @relation(fields: [userId], references: [id])
 
   @@index([umkmId])
+  @@index([userId])
 }
 
 model Product {

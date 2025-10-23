@@ -1,6 +1,6 @@
 // src/app/umkm/[slug]/page.tsx
 import { getUmkmBySlug } from '@/lib/actions';
-import { notFound } from 'next/navigation';
+import { notFound } from 'next/navigation'
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Clock, MapPin, Phone, Star, Navigation } from 'lucide-react';
@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Prisma } from '@prisma/client';
 import ProductCard from '@/components/product-card'; // Kita pakai ulang komponen ini
 import MapWrapper from '@/components/map-wrapper'; // Gunakan MapWrapper yang sudah ada
+import ReviewSummarizer from '@/app/_components/review-summarizer';
 
 // Tipe data baru yang MENCERMINKAN DATABASE BARU KITA
 type UmkmWithDetails = Prisma.UmkmGetPayload<{
@@ -53,10 +54,10 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
       {/* --- BAGIAN HEADER UMKM (INFO, FOTO, PETA) --- */}
       <div className="space-y-4">
         {/* Info Dasar */}
-        <div className="flex justify-between items-start">
-          <div>
+        <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-start">
+          <div className="flex-1">
             <Badge variant="outline">{umkm.Category.name}</Badge>
-            <h1 className="text-4xl font-bold mt-2">{umkm.name}</h1>
+            <h1 className="text-2xl md:text-4xl font-bold mt-2">{umkm.name}</h1>
             <div className="flex items-center gap-2 text-yellow-500 mt-2">
               <Star className="h-5 w-5" />
               <span className="text-xl font-bold text-black dark:text-white">
@@ -68,6 +69,9 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
           <div className="flex items-center gap-2 flex-shrink-0">
             <ClientHydrator>
               <FavoriteToggleButton umkmId={umkm.id} umkmName={umkm.name} />
+            </ClientHydrator>
+            <ClientHydrator>
+              <ReviewSummarizer umkmName={umkm.name} reviews={umkm.Review} />
             </ClientHydrator>
             <ShareButton
               title={umkm.name}
@@ -197,11 +201,13 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
             umkm.Review.map((review: any) => (
               <div key={review.id} className="flex gap-4">
                 <Avatar>
-                  <AvatarFallback>{review.author.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>
+                    {review.user?.name ? review.user.name.substring(0, 2).toUpperCase() : 'AN'}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <div className="flex justify-between items-center">
-                    <p className="font-semibold">{review.author}</p>
+                    <p className="font-semibold">{review.user?.name || 'Anonymous'}</p>
                     <span className="text-sm text-muted-foreground">
                       {new Date(review.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </span>

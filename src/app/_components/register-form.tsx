@@ -1,8 +1,7 @@
-// File: src/app/_components/register-form.tsx
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,6 +18,9 @@ import Link from 'next/link';
 
 export default function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
+  
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,9 +47,8 @@ export default function RegisterForm() {
         throw new Error(data.message || 'Gagal mendaftar.');
       }
 
-      // Jika pendaftaran berhasil
-      alert('Pendaftaran berhasil! Silakan masuk dengan akun Anda.');
-      router.push('/login'); // Arahkan ke halaman login
+      // Jika pendaftaran berhasil, redirect ke login dengan parameter
+      router.push(`/login?redirect=${encodeURIComponent(redirectTo)}&registered=true`);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -56,13 +57,14 @@ export default function RegisterForm() {
   };
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle className="text-2xl">Buat Akun Baru</CardTitle>
-        <CardDescription>
-          Isi data di bawah ini untuk mendaftar.
-        </CardDescription>
-      </CardHeader>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-muted">
+      <Card className="w-full max-w-sm shadow-2xl border bg-card">
+        <CardHeader>
+          <CardTitle className="text-2xl text-foreground">Buat Akun Baru</CardTitle>
+          <CardDescription>
+            Isi data di bawah ini untuk mendaftar.
+          </CardDescription>
+        </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="grid gap-4">
           {error && (
@@ -84,30 +86,51 @@ export default function RegisterForm() {
           </div>
           <div className="grid gap-2">
             <Label>Daftar sebagai</Label>
-            <RadioGroup defaultValue="PELANGGAN" onValueChange={setRole} className="flex gap-4 pt-1" disabled={isLoading}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="PELANGGAN" id="r1" />
-                <Label htmlFor="r1">Pelanggan</Label>
+            <RadioGroup defaultValue="PELANGGAN" onValueChange={setRole} className="grid grid-cols-2 gap-3 pt-2" disabled={isLoading}>
+              <div className="relative">
+                <RadioGroupItem value="PELANGGAN" id="r1" className="peer sr-only" />
+                <Label 
+                  htmlFor="r1" 
+                  className="flex flex-col items-center justify-center rounded-xl border-2 border-border bg-card p-4 hover:bg-muted peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:text-primary cursor-pointer transition-all shadow-sm"
+                >
+                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-semibold text-foreground">Pelanggan</span>
+                </Label>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="PENGUSAHA" id="r2" />
-                <Label htmlFor="r2">Pengusaha UMKM</Label>
+              <div className="relative">
+                <RadioGroupItem value="PENGUSAHA" id="r2" className="peer sr-only" />
+                <Label 
+                  htmlFor="r2" 
+                  className="flex flex-col items-center justify-center rounded-xl border-2 border-border bg-card p-4 hover:bg-muted peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:text-primary cursor-pointer transition-all shadow-sm"
+                >
+                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-semibold text-foreground">Pengusaha UMKM</span>
+                </Label>
               </div>
             </RadioGroup>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-4">
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg transition-all duration-200" disabled={isLoading}>
             {isLoading ? 'Memproses...' : 'Daftar'}
           </Button>
           <div className="text-center text-sm w-full">
             Sudah punya akun?{' '}
-            <Link href="/login" className="underline">
+            <Link href={`/login?redirect=${encodeURIComponent(redirectTo)}`} className="underline text-primary hover:text-primary/80 font-semibold transition-colors">
               Masuk di sini
             </Link>
           </div>
         </CardFooter>
       </form>
-    </Card>
+      </Card>
+    </div>
   );
 }

@@ -1,4 +1,15 @@
 // src/app/page.tsx
+import { getCategories, getUmkms } from '@/lib/actions';
+import AutocompleteSearch from './_components/autocomplete-search'; // <-- 1. GANTI INI
+import CategoryFilter from './_components/category-filter';
+import UmkmCard from '@/components/umkm-card';
+import { Suspense } from 'react';
+import UmkmGridSkeleton from './loading';
+import FindNearestButton from '@/components/find-nearest-button';
+import AnimatedGrid from '@/components/animated-grid';
+import AnimatedGridItem from '@/components/animated-grid-item';
+import ViewToggle from './_components/view-toggle'; // <-- 1. IMPORT
+import OpenNowToggle from './_components/open-now-toggle'; // <-- IMPORT OPEN NOW TOGGLE
 import { getCategories, getUmkms } from "@/lib/actions";
 import AutocompleteSearch from "./_components/autocomplete-search"; // <-- 1. GANTI INI
 import CategoryFilter from "./_components/category-filter";
@@ -10,6 +21,8 @@ import AnimatedGrid from "@/components/animated-grid";
 import AnimatedGridItem from "@/components/animated-grid-item";
 import ViewToggle from "./_components/view-toggle"; // <-- 1. IMPORT
 import OpenNowToggle from "./_components/open-now-toggle"; // <-- IMPORT OPEN NOW TOGGLE
+import AiRecommendationCarousel from './_components/ai-recommendation-carousel'; // <-- 1. IMPORT
+import ClientHydrator from '@/components/client-hydrator'; // <-- 2. IMPORT
 
 // Ini adalah tipe untuk searchParams
 type HomePageProps = {
@@ -36,6 +49,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <p className="text-muted-foreground mb-6">
         Temukan dan dukung bisnis lokal di sekitarmu!
       </p>
+      <ClientHydrator>
+        <AiRecommendationCarousel />
+      </ClientHydrator>
 
       {/* Area Filter dan Search */}
       <div className="flex flex-col md:flex-row gap-4 mb-4">
