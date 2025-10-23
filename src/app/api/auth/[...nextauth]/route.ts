@@ -1,22 +1,17 @@
-// File: src/app/api/auth/[...nextauth]/route.ts
-
 import NextAuth from 'next-auth';
 import { AuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/prisma'; 
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
-
 export const authOptions: AuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(db), 
   providers: [
-    // Kamu bisa menambahkan provider lain seperti Google, GitHub, dll di sini
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'text', placeholder: 'user@example.com' },
+        email: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
@@ -24,7 +19,7 @@ export const authOptions: AuthOptions = {
           throw new Error('Email dan password wajib diisi');
         }
 
-        const user = await prisma.user.findUnique({
+        const user = await db.user.findUnique({
           where: { email: credentials.email },
         });
 
@@ -40,13 +35,12 @@ export const authOptions: AuthOptions = {
         if (!isPasswordValid) {
           throw new Error('Password salah');
         }
-
         return {
             id: user.id,
             name: user.name,
             email: user.email,
             image: user.image,
-            role: user.role, // <-- Kirim role ke session
+            role: user.role,
         };
       },
     }),
@@ -55,7 +49,6 @@ export const authOptions: AuthOptions = {
     strategy: 'jwt',
   },
   callbacks: {
-    // Callback untuk menyertakan ID dan role pengguna ke dalam token JWT
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -64,11 +57,10 @@ export const authOptions: AuthOptions = {
       }
       return token;
     },
-    // Callback untuk menyertakan ID dan role pengguna ke dalam object session
     async session({ session, token }) {
       if (session.user) {
         // @ts-ignore
-        session.user.id = token.id;
+        session.user.id = token.id as string;
         // @ts-ignore
         session.user.role = token.role;
       }
@@ -76,12 +68,9 @@ export const authOptions: AuthOptions = {
     },
   },
   pages: {
-    signIn: '/login', // Arahkan ke halaman login kustom (opsional)
-    // error: '/auth/error', // Halaman untuk menampilkan error (opsional)
+    signIn: '/login',
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
-
 const handler = NextAuth(authOptions);
-
 export { handler as GET, handler as POST };
