@@ -25,6 +25,9 @@ import ViewToggle from "./_components/view-toggle"; // <-- 1. IMPORT
 import OpenNowToggle from "./_components/open-now-toggle"; // <-- IMPORT OPEN NOW TOGGLE
 import AiRecommendationCarousel from './_components/ai-recommendation-carousel'; // <-- 1. IMPORT
 import ClientHydrator from '@/components/client-hydrator'; // <-- 2. IMPORT
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 // Ini adalah tipe untuk searchParams

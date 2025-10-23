@@ -324,6 +324,24 @@ export async function getAllUmkmsForAI() {
   }
 }
 
+<<<<<<< Updated upstream
+=======
+// FUNGSI BARU: Ambil SEMUA UMKM (ringkas) untuk AI
+export async function getAllUmkmsForAI() {
+  try {
+    const umkms = await db.umkm.findMany({
+      select: {
+        slug: true,
+        name: true,
+      },
+    });
+    return umkms;
+  } catch (error) {
+    return [];
+  }
+}
+
+>>>>>>> Stashed changes
 // FUNGSI BARU: Ambil detail UMKM favorit berdasarkan ID
 export async function getFavoriteUmkmsDetails(ids: number[]) {
   if (ids.length === 0) return [];
@@ -340,4 +358,7 @@ export async function getFavoriteUmkmsDetails(ids: number[]) {
     return [];
   }
 }
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes

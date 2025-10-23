@@ -33,6 +33,7 @@ export default function CategoryFilter({ categories }: Props) {
 
   return (
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     <RadioGroup
       value={activeCategory}
       onValueChange={handleFilter}
@@ -62,6 +63,21 @@ export default function CategoryFilter({ categories }: Props) {
         Semua
       </Button>
       {categories.map((cat) => (
+=======
+    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <Button
+        variant={activeCategory === "all" ? "default" : "outline"}
+        onClick={() => handleFilter("all")}
+        className={`whitespace-nowrap transition-all duration-200 ${
+          activeCategory === "all"
+            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+            : 'hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300'
+        }`}
+      >
+        Semua
+      </Button>
+      {categories.map((cat) => (
+>>>>>>> Stashed changes
         <Button
           key={cat.id}
           variant={activeCategory === cat.slug ? "default" : "outline"}
@@ -74,6 +90,9 @@ export default function CategoryFilter({ categories }: Props) {
         >
           {cat.name}
         </Button>
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
       ))}
     </div>

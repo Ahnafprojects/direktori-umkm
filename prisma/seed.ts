@@ -462,6 +462,7 @@ const umkmData = [
 
 async function main() {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   console.log('Menghapus data lama (urutan penting)...');
   await prisma.review.deleteMany({});
   await prisma.product.deleteMany({});
@@ -538,6 +539,8 @@ async function main() {
   }
   console.log('Seeding selesai!');
 =======
+=======
+>>>>>>> Stashed changes
   console.log("Clearing existing data...");
   await prisma.review.deleteMany();
   await prisma.product.deleteMany();
@@ -1289,6 +1292,9 @@ async function main() {
   ]);
 
   console.log("Seeding completed with 4 UMKMs!");
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 }
 

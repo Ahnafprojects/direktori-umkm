@@ -41,6 +41,9 @@ model Umkm {
   ownerId       String?
   owner         User?    @relation(fields: [ownerId], references: [id])
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
   @@index([name], map: "idx_umkm_name")
   @@index([slug], map: "idx_umkm_slug")

@@ -1,5 +1,6 @@
 // src/components/umkm-map.tsx
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 'use client'; // <-- WAJIB!
 
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -15,6 +16,12 @@ L.Icon.Default.mergeOptions({
   shadowUrl: iconShadow.src,
 });
 // --- Akhir Perbaikan Ikon ---
+=======
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
+>>>>>>> Stashed changes
 =======
 'use client';
 
@@ -119,6 +126,7 @@ export default function UmkmMap({ latitude, longitude, popupText, showRoute = fa
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         
         {/* Marker: Pin lokasi UMKM */}
         <Marker 
@@ -137,6 +145,14 @@ export default function UmkmMap({ latitude, longitude, popupText, showRoute = fa
 >>>>>>> Stashed changes
         </Marker>
 
+=======
+
+        {/* UMKM Marker */}
+        <Marker position={position} keyboard={true} icon={customIcon}>
+          <Popup>{popupText}</Popup>
+        </Marker>
+
+>>>>>>> Stashed changes
         {/* User location marker */}
         {showRoute && userLocation && (
           <Marker position={userLocation} icon={userIcon}>
