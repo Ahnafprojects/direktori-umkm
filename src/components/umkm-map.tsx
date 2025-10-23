@@ -1,47 +1,25 @@
 // src/components/umkm-map.tsx
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 'use client'; // <-- WAJIB!
 
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 // --- Perbaikan untuk ikon default Leaflet ---
 // Ini memperbaiki masalah umum di React di mana ikon marker tidak muncul
-import iconUrl from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-L.Icon.Default.mergeOptions({
-  iconUrl: iconUrl.src,
-  shadowUrl: iconShadow.src,
+const customIcon = new L.Icon({
+  iconUrl: "/images/icon/loc_icon.png",
+  // shadowUrl: "/marker-shadow.png",
+  iconSize: [40, 40],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32],
+  shadowSize: [41, 41],
 });
 // --- Akhir Perbaikan Ikon ---
-=======
-'use client';
 
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
->>>>>>> Stashed changes
-=======
-'use client';
 
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
->>>>>>> Stashed changes
-=======
-'use client';
-
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
->>>>>>> Stashed changes
-=======
-'use client';
-
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
->>>>>>> Stashed changes
 
 type Props = {
   latitude: number;
@@ -139,52 +117,45 @@ export default function UmkmMap({ latitude, longitude, popupText, showRoute = fa
           attribution='&copy; <a href="https://osm.org/copyright">OSM</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
         
+
         {/* Marker: Pin lokasi UMKM */}
-        <Marker 
+        <Marker
           position={position}
           keyboard={true} // <-- TAMBAHKAN INI
+          icon={customIcon}
         >
           <Popup>
             {/* Popup: Teks yang muncul saat marker di-klik */}
             {popupText}
           </Popup>
-=======
-
-        {/* UMKM Marker */}
-        <Marker position={position} keyboard={true} icon={customIcon}>
-          <Popup>{popupText}</Popup>
->>>>>>> Stashed changes
-        </Marker>
-
-=======
 
         {/* UMKM Marker */}
         <Marker position={position} keyboard={true} icon={customIcon}>
           <Popup>{popupText}</Popup>
         </Marker>
 
->>>>>>> Stashed changes
-=======
+
 
         {/* UMKM Marker */}
         <Marker position={position} keyboard={true} icon={customIcon}>
           <Popup>{popupText}</Popup>
         </Marker>
 
->>>>>>> Stashed changes
-=======
 
         {/* UMKM Marker */}
         <Marker position={position} keyboard={true} icon={customIcon}>
           <Popup>{popupText}</Popup>
         </Marker>
 
->>>>>>> Stashed changes
+
+
+        {/* UMKM Marker */}
+        <Marker position={position} keyboard={true} icon={customIcon}>
+          <Popup>{popupText}</Popup>
+        </Marker>
+
+
         {/* User location marker */}
         {showRoute && userLocation && (
           <Marker position={userLocation} icon={userIcon}>
@@ -216,7 +187,7 @@ export default function UmkmMap({ latitude, longitude, popupText, showRoute = fa
           border-radius: 2px !important;
           pointer-events: auto !important;
         }
-        
+
         .leaflet-control-attribution:hover {
           opacity: 0.8 !important;
           background: rgba(255, 255, 255, 0.9) !important;

@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 // src/app/layout.tsx
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
@@ -10,13 +9,8 @@ import { cn } from '@/lib/utils';
 import PageTransitionWrapper from './page-transition-wrapper';
 import { ThemeProvider } from './theme-provider'; // <-- 1. IMPORT
 import FloatingCartButton from './_components/floating-cart-button';
-=======
 // File: src/app/layout.tsx
 
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import "leaflet/dist/leaflet.css";
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import Header from "./_components/header";
 import Footer from "./_components/footer";
@@ -27,25 +21,16 @@ import { ThemeProvider } from "./theme-provider"; // <-- 1. IMPORT
 import FloatingCartButton from "./_components/floating-cart-button";
 import ClientHydrator from '@/components/client-hydrator'; // <-- 1. IMPORT
 import WelcomeModal from './_components/welcome-modal'; // <-- 2. IMPORT
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+
 
 // 1. IMPORT DARI 'react-hot-toast'
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Direktori UMKM LokalKeren',
-  description: 'Bikin Keren UMKM Lokal: Direktori Digital Lingkungan Sekitar',
+  title: "Direktori UMKM LokalKeren",
+  description: "Bikin Keren UMKM Lokal: Direktori Digital Lingkungan Sekitar",
 };
 
 export default function RootLayout({
@@ -57,11 +42,10 @@ export default function RootLayout({
     <html lang="id" suppressHydrationWarning>
       <body
         className={cn(
-          'min-h-screen bg-background font-sans antialiased',
+          "min-h-screen bg-background font-sans antialiased",
           inter.className
         )}
       >
-<<<<<<< Updated upstream
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -85,7 +69,6 @@ export default function RootLayout({
           />
 <FloatingCartButton />
         </ThemeProvider>
-=======
         <AuthProvider>
           <ThemeProvider
             attribute="class"
@@ -112,7 +95,6 @@ export default function RootLayout({
             />
           </ThemeProvider>
         </AuthProvider>
->>>>>>> Stashed changes
       </body>
     </html>
   );

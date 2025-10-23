@@ -1,5 +1,4 @@
 // src/app/page.tsx
-<<<<<<< Updated upstream
 import { getCategories, getUmkms } from '@/lib/actions';
 import AutocompleteSearch from './_components/autocomplete-search'; // <-- 1. GANTI INI
 import CategoryFilter from './_components/category-filter';
@@ -11,7 +10,6 @@ import AnimatedGrid from '@/components/animated-grid';
 import AnimatedGridItem from '@/components/animated-grid-item';
 import ViewToggle from './_components/view-toggle'; // <-- 1. IMPORT
 import OpenNowToggle from './_components/open-now-toggle'; // <-- IMPORT OPEN NOW TOGGLE
-=======
 import { getCategories, getUmkms } from "@/lib/actions";
 import AutocompleteSearch from "./_components/autocomplete-search"; // <-- 1. GANTI INI
 import CategoryFilter from "./_components/category-filter";
@@ -25,16 +23,6 @@ import ViewToggle from "./_components/view-toggle"; // <-- 1. IMPORT
 import OpenNowToggle from "./_components/open-now-toggle"; // <-- IMPORT OPEN NOW TOGGLE
 import AiRecommendationCarousel from './_components/ai-recommendation-carousel'; // <-- 1. IMPORT
 import ClientHydrator from '@/components/client-hydrator'; // <-- 2. IMPORT
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
 // Ini adalah tipe untuk searchParams
 type HomePageProps = {
@@ -49,6 +37,7 @@ type HomePageProps = {
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const { search, category, lat, long, openNow } = await searchParams; // <-- AMBIL lat, long, dan openNow
+  console.log(search, category, lat, long, openNow);
 
   // 1. Ambil data kategori (untuk tombol filter)
   const categories = await getCategories();
@@ -78,11 +67,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       {/* Area Grid UMKM */}
       {/* Tampilkan judul dinamis */}
       <h2 className="text-2xl font-semibold mb-4">
-        {lat ? 'UMKM Terdekat Darimu' : 'Hasil Pencarian'}
+        {lat ? "UMKM Terdekat Darimu" : "Hasil Pencarian"}
       </h2>
-      
+
       {/* Suspense: Tampilkan Skeleton saat data UMKM dimuat */}
-      <Suspense fallback={<UmkmGridSkeleton />}>
+      <Suspense key={`${category}-${search}-${lat}-${openNow}`} fallback={<UmkmGridSkeleton />}>
         {/* Komponen ini akan mengambil data UMKM berdasarkan filter */}
         <UmkmList
           search={search}
