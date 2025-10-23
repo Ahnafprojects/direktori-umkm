@@ -26,6 +26,9 @@ import OpenNowToggle from "./_components/open-now-toggle"; // <-- IMPORT OPEN NO
 import AiRecommendationCarousel from './_components/ai-recommendation-carousel'; // <-- 1. IMPORT
 import ClientHydrator from '@/components/client-hydrator'; // <-- 2. IMPORT
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes

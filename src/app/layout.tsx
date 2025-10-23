@@ -28,6 +28,9 @@ import FloatingCartButton from "./_components/floating-cart-button";
 import ClientHydrator from '@/components/client-hydrator'; // <-- 1. IMPORT
 import WelcomeModal from './_components/welcome-modal'; // <-- 2. IMPORT
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
