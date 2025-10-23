@@ -59,7 +59,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </h2>
 
       {/* Suspense: Tampilkan Skeleton saat data UMKM dimuat */}
-      <Suspense fallback={<UmkmGridSkeleton />}>
+      <Suspense
+        fallback={<UmkmGridSkeleton />}
+        key={`${search}-${category}-${lat}-${long}-${openNow}`}
+      >
         {/* Komponen ini akan mengambil data UMKM berdasarkan filter */}
         <UmkmList
           search={search}
