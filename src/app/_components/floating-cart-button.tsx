@@ -28,8 +28,10 @@ export default function FloatingCartButton() {
     return null;
   }
 
-  // Jika di halaman checkout, favorites, atau map, jangan tampilkan floating cart
-  if (pathname === '/checkout' || pathname === '/favorites' || pathname === '/map') {
+  // Jika di halaman checkout, favorites, map, login, atau register, jangan tampilkan floating cart
+  if (pathname === '/checkout' || pathname === '/favorites' || pathname === '/map' || 
+      pathname === '/login' || pathname === '/register' || 
+      pathname.startsWith('/checkout/register')) {
     return null;
   }
 
@@ -39,7 +41,7 @@ export default function FloatingCartButton() {
       {/* Ini adalah container mengambang */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[90%] md:w-1/3">
         <Link href="/checkout">
-          <div className="flex justify-between items-center bg-primary text-primary-foreground p-4 rounded-lg shadow-lg hover:bg-primary/90 transition-all">
+          <div className="flex justify-between items-center bg-emerald-500 text-white p-4 rounded-lg shadow-lg hover:bg-emerald-600 transition-all duration-200 border border-emerald-400">
             <div className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
               <span className="font-bold">{totalItems} Item</span>

@@ -148,7 +148,7 @@ export default function UmkmCard({ umkm }: UmkmCardProps) {
         {/* Action Button */}
         <Link 
           href={`/umkm/${umkm.slug}`}
-          className="block w-full bg-primary hover:bg-primary/90 text-primary-foreground text-center py-2 px-4 rounded transition-colors duration-200"
+          className="block w-full bg-emerald-500 hover:bg-emerald-600 text-white text-center py-2 px-4 rounded transition-colors duration-200 font-medium shadow-sm hover:shadow-md"
         >
           Lihat Detail
         </Link>

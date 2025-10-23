@@ -186,6 +186,9 @@ export async function getUmkmBySlug(slug: string) {
         Category: true, // Kategori UMKM (Makanan, Jasa, dll)
         Review: { // Ulasan
           orderBy: { createdAt: 'desc' },
+          include: {
+            user: true, // Include user data for review author
+          },
         },
         // INI BAGIAN BARU (PENTING)
         ProductCategory: { // Ambil Kategori Produk (Minuman, Sate, dll)
@@ -301,4 +304,40 @@ export async function getUmkmsByIds(ids: number[]) {
     console.error('Gagal mengambil UMKM by IDs:', error);
     return [];
   }
+<<<<<<< Updated upstream
 }
+=======
+}
+
+// FUNGSI BARU: Ambil SEMUA UMKM (ringkas) untuk AI
+export async function getAllUmkmsForAI() {
+  try {
+    const umkms = await db.umkm.findMany({
+      select: {
+        slug: true,
+        name: true,
+      },
+    });
+    return umkms;
+  } catch (error) {
+    return [];
+  }
+}
+
+// FUNGSI BARU: Ambil detail UMKM favorit berdasarkan ID
+export async function getFavoriteUmkmsDetails(ids: number[]) {
+  if (ids.length === 0) return [];
+  try {
+    const umkms = await db.umkm.findMany({
+      where: { id: { in: ids } },
+      select: {
+        slug: true,
+        name: true,
+      },
+    });
+    return umkms;
+  } catch (error) {
+    return [];
+  }
+}
+>>>>>>> Stashed changes
