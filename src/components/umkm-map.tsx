@@ -1,25 +1,23 @@
 // src/components/umkm-map.tsx
-'use client'; // <-- WAJIB!
+
+"use client"; // <-- WAJIB!
 
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
 
 // --- Perbaikan untuk ikon default Leaflet ---
 // Ini memperbaiki masalah umum di React di mana ikon marker tidak muncul
+import iconUrl from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
-const customIcon = new L.Icon({
-  iconUrl: "/images/icon/loc_icon.png",
-  // shadowUrl: "/marker-shadow.png",
-  iconSize: [40, 40],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32],
-  shadowSize: [41, 41],
+L.Icon.Default.mergeOptions({
+  iconUrl: iconUrl.src,
+  shadowUrl: iconShadow.src,
 });
 // --- Akhir Perbaikan Ikon ---
 
-
+import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 type Props = {
   latitude: number;
@@ -29,7 +27,13 @@ type Props = {
   userLocation?: [number, number];
 };
 
-export default function UmkmMap({ latitude, longitude, popupText, showRoute = false, userLocation }: Props) {
+export default function UmkmMap({
+  latitude,
+  longitude,
+  popupText,
+  showRoute = false,
+  userLocation,
+}: Props) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [mapComponents, setMapComponents] = useState<any>(null);
 
@@ -38,22 +42,17 @@ export default function UmkmMap({ latitude, longitude, popupText, showRoute = fa
 
     const loadMapComponents = async () => {
       try {
-        const [
-          { MapContainer, TileLayer, Marker, Popup, Polyline },
-          L
-        ] = await Promise.all([
-          import('react-leaflet'),
-          import('leaflet')
-        ]);
+        const [{ MapContainer, TileLayer, Marker, Popup, Polyline }, L] =
+          await Promise.all([import("react-leaflet"), import("leaflet")]);
 
         if (!mounted) return;
 
         // Fix leaflet default icon issue
         delete (L.Icon.Default.prototype as any)._getIconUrl;
         L.Icon.Default.mergeOptions({
-          iconRetinaUrl: '/images/icon/loc_icon.png',
-          iconUrl: '/images/icon/loc_icon.png',
-          shadowUrl: '',
+          iconRetinaUrl: "/images/icon/loc_icon.png",
+          iconUrl: "/images/icon/loc_icon.png",
+          shadowUrl: "",
         });
 
         const customIcon = new L.Icon({
@@ -64,7 +63,8 @@ export default function UmkmMap({ latitude, longitude, popupText, showRoute = fa
         });
 
         const userIcon = new L.Icon({
-          iconUrl: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiMzYjgyZjYiLz4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iNCIgZmlsbD0id2hpdGUiLz4KPC9zdmc+",
+          iconUrl:
+            "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiMzYjgyZjYiLz4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iNCIgZmlsbD0id2hpdGUiLz4KPC9zdmc+",
           iconSize: [24, 24],
           iconAnchor: [12, 12],
         });
@@ -76,12 +76,12 @@ export default function UmkmMap({ latitude, longitude, popupText, showRoute = fa
           Popup,
           Polyline,
           customIcon,
-          userIcon
+          userIcon,
         });
 
         setIsLoaded(true);
       } catch (error) {
-        console.error('Error loading map components:', error);
+        console.error("Error loading map components:", error);
       }
     };
 
@@ -100,7 +100,15 @@ export default function UmkmMap({ latitude, longitude, popupText, showRoute = fa
     );
   }
 
-  const { MapContainer, TileLayer, Marker, Popup, Polyline, customIcon, userIcon } = mapComponents;
+  const {
+    MapContainer,
+    TileLayer,
+    Marker,
+    Popup,
+    Polyline,
+    customIcon,
+    userIcon,
+  } = mapComponents;
   const position: [number, number] = [latitude, longitude];
 
   return (
@@ -117,44 +125,11 @@ export default function UmkmMap({ latitude, longitude, popupText, showRoute = fa
           attribution='&copy; <a href="https://osm.org/copyright">OSM</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        
 
         {/* Marker: Pin lokasi UMKM */}
-        <Marker
-          position={position}
-          keyboard={true} // <-- TAMBAHKAN INI
-          icon={customIcon}
-        >
-          <Popup>
-            {/* Popup: Teks yang muncul saat marker di-klik */}
-            {popupText}
-          </Popup>
-
-        {/* UMKM Marker */}
         <Marker position={position} keyboard={true} icon={customIcon}>
           <Popup>{popupText}</Popup>
         </Marker>
-
-
-
-        {/* UMKM Marker */}
-        <Marker position={position} keyboard={true} icon={customIcon}>
-          <Popup>{popupText}</Popup>
-        </Marker>
-
-
-        {/* UMKM Marker */}
-        <Marker position={position} keyboard={true} icon={customIcon}>
-          <Popup>{popupText}</Popup>
-        </Marker>
-
-
-
-        {/* UMKM Marker */}
-        <Marker position={position} keyboard={true} icon={customIcon}>
-          <Popup>{popupText}</Popup>
-        </Marker>
-
 
         {/* User location marker */}
         {showRoute && userLocation && (
@@ -168,15 +143,15 @@ export default function UmkmMap({ latitude, longitude, popupText, showRoute = fa
           <Polyline
             positions={[userLocation, position]}
             pathOptions={{
-              color: '#10b981',
+              color: "#10b981",
               weight: 4,
               opacity: 0.8,
-              dashArray: '10, 10'
+              dashArray: "10, 10",
             }}
           />
         )}
       </MapContainer>
-      
+
       {/* Custom CSS */}
       <style jsx global>{`
         .leaflet-control-attribution {

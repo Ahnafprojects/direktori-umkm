@@ -1,14 +1,10 @@
 // src/app/_components/category-filter.tsx
 "use client";
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'; // <-- IMPORT
-import { Label } from '@/components/ui/label'; // <-- IMPORT
-import { Category } from '@prisma/client';
-import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // <-- IMPORT
 import { Label } from "@/components/ui/label"; // <-- IMPORT
+import { Button } from "@/components/ui/button";
 import { Category } from "@prisma/client";
 
 type Props = {
@@ -37,8 +33,8 @@ export default function CategoryFilter({ categories }: Props) {
         onClick={() => handleFilter("all")}
         className={`whitespace-nowrap transition-all duration-200 ${
           activeCategory === "all"
-            ? 'bg-blue-600 hover:bg-blue-700 text-white'
-            : 'hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300'
+            ? "bg-blue-600 hover:bg-blue-700 text-white"
+            : "hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
         }`}
       >
         Semua
@@ -50,31 +46,12 @@ export default function CategoryFilter({ categories }: Props) {
           onClick={() => handleFilter(cat.slug)}
           className={`whitespace-nowrap transition-all duration-200 ${
             activeCategory === cat.slug
-              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-              : 'hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300'
+              ? "bg-blue-600 hover:bg-blue-700 text-white"
+              : "hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
           }`}
         >
           {cat.name}
         </Button>
-    <RadioGroup
-      value={activeCategory}
-      onValueChange={handleFilter}
-      className="flex gap-2 overflow-x-auto pb-2"
-      aria-label="Filter Kategori UMKM"
-    >
-      <div className="flex items-center space-x-2">
-        <RadioGroupItem value="all" id="cat-all" />
-        <Label htmlFor="cat-all" className="cursor-pointer">
-          Semua
-        </Label>
-      </div>
-      {categories.map((cat) => (
-        <div key={cat.id} className="flex items-center space-x-2">
-          <RadioGroupItem value={cat.slug} id={`cat-${cat.slug}`} />
-          <Label htmlFor={`cat-${cat.slug}`} className="cursor-pointer">
-            {cat.name}
-          </Label>
-        </div>
       ))}
     </div>
   );
