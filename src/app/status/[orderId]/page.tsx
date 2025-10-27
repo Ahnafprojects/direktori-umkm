@@ -17,15 +17,15 @@ const LiveMap = dynamic(() => import('@/components/live-tracking-map'), {
   loading: () => <Skeleton className="w-full h-full" />,
 });
 
-// 2. Data Status (Simulasi)
+// 2. Data Status (Simulasi) - timing yang lebih realistis
 const statusSteps = [
   { text: "Pesanan Diterima...", delay: 2000 },
-  { text: "Mencari Driver...", delay: 4000 },
-  { text: "Driver Ditemukan!", delay: 6000 },
-  { text: "Driver Menuju Resto...", delay: 10000 },
-  { text: "Driver Mengambil Pesanan...", delay: 15000 },
-  { text: "Driver Mengantar Pesananmu!", delay: 25000 },
-  { text: "Pesanan Tiba! Selamat Menikmati!", delay: 35000 },
+  { text: "Mencari Driver...", delay: 5000 },
+  { text: "Driver Ditemukan!", delay: 8000 },
+  { text: "Driver Menuju Resto...", delay: 15000 },
+  { text: "Driver Mengambil Pesanan...", delay: 60000 }, // 1 menit
+  { text: "Driver Mengantar Pesananmu!", delay: 80000 }, // 1 menit 20 detik
+  { text: "Pesanan Tiba! Selamat Menikmati!", delay: 200000 }, // 3+ menit (sesuai progress driver)
 ];
 
 export default function StatusPage() {
@@ -34,10 +34,11 @@ export default function StatusPage() {
 
   // 3. State untuk Simulasi
   const [statusIndex, setStatusIndex] = useState(0);
+  const [estimatedTime, setEstimatedTime] = useState("15-20 menit");
 
   // 4. Ambil koordinat dari URL
-  const restoParam = (searchParams.get('resto') || '-7.27,112.79').split(',');
-  const userParam = (searchParams.get('user') || '-7.28,112.78').split(',');
+  const restoParam = (searchParams.get('resto') || '-7.2711,112.7442').split(',');
+  const userParam = (searchParams.get('user') || '-7.2797,112.7903').split(',');
   const restoCoords: [number, number] = [parseFloat(restoParam[0]), parseFloat(restoParam[1])];
   const userCoords: [number, number] = [parseFloat(userParam[0]), parseFloat(userParam[1])];
 
@@ -49,6 +50,11 @@ export default function StatusPage() {
       setTimeout(() => router.push('/'), 4000); // Balik ke home
       return;
     }
+
+    // Update estimated time based on status
+    if (statusIndex === 2) setEstimatedTime("10-15 menit");
+    if (statusIndex === 4) setEstimatedTime("5-8 menit");
+    if (statusIndex === 5) setEstimatedTime("2-3 menit");
 
     const currentStep = statusSteps[statusIndex];
     const timer = setTimeout(() => {
@@ -70,6 +76,9 @@ export default function StatusPage() {
           {statusSteps[statusIndex].text}
         </h2>
         <p className="text-muted-foreground">ID Pesanan: LOKAL-123</p>
+        <p className="text-sm text-blue-600 mt-2">
+          ⏱️ Estimasi Tiba: {estimatedTime}
+        </p>
       </div>
 
       {/* 6. Tombol Chat (Simulasi) */}
