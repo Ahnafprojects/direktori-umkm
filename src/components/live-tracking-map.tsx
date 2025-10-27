@@ -30,13 +30,23 @@ const MapComponent = dynamic(() => import('react-leaflet').then((mod) => {
       
       const L = require('leaflet');
       
-      // Custom driver icon
+      // Custom driver icon (warna beda untuk membedakan)
       const driverIcon = new L.Icon({
-        iconUrl: '/leaflet/marker-icon.png', // Use default icon for now
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: '/leaflet/marker-shadow.png',
         iconSize: [25, 41],
         iconAnchor: [12, 41],
         popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+
+      // Custom resto icon 
+      const restoIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
         shadowUrl: '/leaflet/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
         shadowSize: [41, 41]
       });
       
@@ -53,7 +63,8 @@ const MapComponent = dynamic(() => import('react-leaflet').then((mod) => {
               clearInterval(interval);
               return 1;
             }
-            return prev + 0.01; // 1% progress per second
+            // Kecepatan lebih realistis: 0.5% per detik (200 detik untuk sampai = ~3.3 menit)
+            return prev + 0.005;
           });
         }, 1000);
         
@@ -73,8 +84,10 @@ const MapComponent = dynamic(() => import('react-leaflet').then((mod) => {
       return (
         <MapContainer
           bounds={bounds}
-          scrollWheelZoom={false}
+          scrollWheelZoom={true}
+          zoomControl={true}
           className="w-full h-full z-0"
+          style={{ minHeight: '300px' }}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -82,21 +95,45 @@ const MapComponent = dynamic(() => import('react-leaflet').then((mod) => {
           />
           
           {/* Route line */}
-          <Polyline positions={[restoCoords, userCoords]} color="blue" />
+          <Polyline positions={[restoCoords, userCoords]} color="#2563eb" weight={4} />
           
           {/* Restaurant marker */}
-          <Marker position={restoCoords}>
-            <Popup>Sate Klopo Ondomohen</Popup>
+          <Marker position={restoCoords} icon={restoIcon}>
+            <Popup>
+              <div className="text-sm">
+                <div className="font-bold">🍽️ Sate Klopo Ondomohen</div>
+                <div className="text-xs text-gray-600">
+                  {restoCoords[0].toFixed(6)}, {restoCoords[1].toFixed(6)}
+                </div>
+              </div>
+            </Popup>
           </Marker>
           
           {/* User location marker */}
           <Marker position={userCoords}>
-            <Popup>Lokasimu</Popup>
+            <Popup>
+              <div className="text-sm">
+                <div className="font-bold">🏠 Lokasi Tujuan</div>
+                <div className="text-xs text-gray-600">
+                  {userCoords[0].toFixed(6)}, {userCoords[1].toFixed(6)}
+                </div>
+              </div>
+            </Popup>
           </Marker>
           
           {/* Driver marker (animated) */}
           <Marker position={driverPosition} icon={driverIcon}>
-            <Popup>Driver OTW!</Popup>
+            <Popup>
+              <div className="text-sm">
+                <div className="font-bold">🏍️ Driver Budi</div>
+                <div className="text-xs text-gray-600">
+                  Progress: {Math.round(progress * 100)}%
+                </div>
+                <div className="text-xs text-blue-600">
+                  {driverPosition[0].toFixed(6)}, {driverPosition[1].toFixed(6)}
+                </div>
+              </div>
+            </Popup>
           </Marker>
         </MapContainer>
       );

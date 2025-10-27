@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useCartStore } from '@/store/cart-store';
+import { useHistoryStore } from '@/store/history-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -34,8 +35,8 @@ const FAKE_ESTIMASI = '15 - 20 menit';
 
 // --- Alamat Tersimpan (Simulasi) ---
 const savedAddresses = [
-  { id: 'rumah', icon: Home, label: 'Rumah', address: 'Jl. Mawar No. 10, Keputih, Surabaya', coords: { lat: -7.280, long: 112.790 } },
-  { id: 'kantor', icon: Building, label: 'Kantor', address: 'Gedung PENS, Jl. Raya ITS, Surabaya', coords: { lat: -7.275, long: 112.794 } },
+  { id: 'rumah', icon: Home, label: 'Rumah', address: 'Jl. Mawar No. 10, Keputih, Surabaya', coords: { lat: -7.2797, long: 112.7903 } },
+  { id: 'kantor', icon: Building, label: 'Kantor', address: 'Gedung PENS, Jl. Raya ITS, Surabaya', coords: { lat: -7.2758, long: 112.7942 } },
 ];
 
 // --- Data Metode Pembayaran ---
@@ -72,6 +73,7 @@ export default function CheckoutPage() {
   const clearCart = useCartStore((state) => state.clearCart);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
+  const { addOrder } = useHistoryStore();
   
   const totalPrice = getTotalPrice();
 
@@ -81,6 +83,7 @@ export default function CheckoutPage() {
   
   // State untuk lokasi yg akan ditampilkan di peta
   const [mapLocation, setMapLocation] = useState<Coords>(savedAddresses[0].coords); // Default-nya 'Rumah'
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null); // Akurasi GPS
   
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -118,22 +121,28 @@ export default function CheckoutPage() {
   useEffect(() => {
     // Auto-detect user location when page loads
     if (navigator.geolocation && deliveryOption === 'delivery') {
+      // Try to get highest accuracy location
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude } = position.coords;
+          const { latitude, longitude, accuracy } = position.coords;
           const newCoords = { lat: latitude, long: longitude };
           setMapLocation(newCoords);
+          setLocationAccuracy(accuracy);
           setSelectedAddressId('current'); // Set to current location
-          console.log('Auto-detected location:', newCoords);
+          console.log('Auto-detected location:', newCoords, 'Accuracy:', accuracy, 'meters');
         },
         (err) => {
           console.warn('Auto location detection failed:', err);
-          // Silently fail, keep default location
+          // Fallback to default Surabaya location if GPS fails
+          const fallbackCoords = { lat: -7.2797, long: 112.7903 };
+          setMapLocation(fallbackCoords);
+          setLocationAccuracy(null);
+          console.log('Using fallback location:', fallbackCoords);
         },
         {
-          enableHighAccuracy: true,
-          timeout: 8000,
-          maximumAge: 300000 // 5 minutes cache
+          enableHighAccuracy: true,     // Use GPS if available
+          timeout: 15000,               // Wait longer for accurate GPS
+          maximumAge: 60000             // Use cached position if less than 1 minute old
         }
       );
     }
@@ -151,38 +160,73 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Try with high accuracy first
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const { latitude, longitude } = position.coords;
+        const { latitude, longitude, accuracy } = position.coords;
         const newCoords = { lat: latitude, long: longitude };
         setMapLocation(newCoords); // <-- UPDATE PETA
+        setLocationAccuracy(accuracy);
         setIsLocating(false);
-        toast.success('Lokasi berhasil terdeteksi!', { icon: '📍' });
+        
+        if (accuracy <= 100) {
+          toast.success(`Lokasi akurat terdeteksi! (±${Math.round(accuracy)}m)`, { icon: '🎯' });
+        } else {
+          toast.success(`Lokasi terdeteksi (±${Math.round(accuracy)}m)`, { icon: '📍' });
+        }
+        console.log('Location detected:', newCoords, 'Accuracy:', accuracy, 'meters');
       },
       (err) => {
-        console.error(err);
-        let errorMessage = 'Gagal mendapatkan lokasi. ';
-        switch(err.code) {
-          case err.PERMISSION_DENIED:
-            errorMessage += 'Izinkan akses lokasi di browser.';
-            break;
-          case err.POSITION_UNAVAILABLE:
-            errorMessage += 'Lokasi tidak tersedia.';
-            break;
-          case err.TIMEOUT:
-            errorMessage += 'Timeout. Coba lagi.';
-            break;
-          default:
-            errorMessage += 'Error tidak dikenal.';
-            break;
-        }
-        setLocationError(errorMessage);
-        setIsLocating(false);
+        console.error('High accuracy failed, trying standard accuracy...', err);
+        
+        // Fallback: Try with standard accuracy
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude, accuracy } = position.coords;
+            const newCoords = { lat: latitude, long: longitude };
+            setMapLocation(newCoords);
+            setLocationAccuracy(accuracy);
+            setIsLocating(false);
+            toast.success(`Lokasi terdeteksi (standar, ±${Math.round(accuracy)}m)`, { icon: '📍' });
+            console.log('Fallback location detected:', newCoords, 'Accuracy:', accuracy, 'meters');
+          },
+          (fallbackErr) => {
+            console.error('Both location attempts failed:', fallbackErr);
+            let errorMessage = 'Gagal mendapatkan lokasi. ';
+            switch(fallbackErr.code) {
+              case fallbackErr.PERMISSION_DENIED:
+                errorMessage += 'Izinkan akses lokasi di browser dan refresh halaman.';
+                break;
+              case fallbackErr.POSITION_UNAVAILABLE:
+                errorMessage += 'GPS tidak tersedia. Pastikan lokasi aktif.';
+                break;
+              case fallbackErr.TIMEOUT:
+                errorMessage += 'Timeout. Pastikan koneksi internet stabil.';
+                break;
+              default:
+                errorMessage += 'Error tidak dikenal.';
+                break;
+            }
+            setLocationError(errorMessage);
+            setIsLocating(false);
+            
+            // Use fallback location (area Keputih, Surabaya Timur - dekat PENS)
+            const fallbackCoords = { lat: -7.2797, long: 112.7903 };
+            setMapLocation(fallbackCoords);
+            setLocationAccuracy(null);
+            toast.error('GPS gagal. Menggunakan lokasi default Keputih, Surabaya', { icon: '⚠️' });
+          },
+          {
+            enableHighAccuracy: false,  // Standard accuracy as fallback
+            timeout: 15000,
+            maximumAge: 300000
+          }
+        );
       },
       {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000
+        enableHighAccuracy: true,       // Try GPS first
+        timeout: 20000,                 // Allow more time for GPS
+        maximumAge: 30000               // Fresh location preferred
       }
     );
   };
@@ -193,6 +237,7 @@ export default function CheckoutPage() {
     const selected = savedAddresses.find(addr => addr.id === id);
     if (selected) {
       setMapLocation(selected.coords); // <-- UPDATE PETA
+      setLocationAccuracy(null); // Reset accuracy untuk alamat tersimpan
     }
     setLocationError(null);
     setIsLocating(false);
@@ -302,14 +347,24 @@ export default function CheckoutPage() {
     }
     
     toast.success(successMessage, { icon, duration: 3000 });
+    
+    // Simpan pesanan ke history sebelum clear cart
+    const newOrder = {
+      id: `ORDER-${Date.now()}`, // ID unik berdasarkan timestamp
+      date: new Date().toISOString(),
+      items: cartItems,
+      totalPrice: getTotalPrice()
+    };
+    addOrder(newOrder);
+    
     clearCart();
 
     // --- UBAH INI ---
     // Arahkan ke Halaman Status setelah 1 detik
     setTimeout(() => {
       // Kita kirim data lokasi resto & rumah via query params
-      // (Ini cara "curang" tapi cepat untuk simulasi)
-      const restoCoords = "-7.271512,112.744211"; // Ambil dari UMKM (kita hardcode dulu)
+      // Koordinat yang lebih akurat untuk area Surabaya Timur (Sate Klopo Ondomohen)
+      const restoCoords = "-7.2711,112.7442"; // Lokasi resto di Jl. Raya Klampis
       const userCoords = `${mapLocation.lat},${mapLocation.long}`;
 
       router.push(`/status/LOKAL-123?resto=${restoCoords}&user=${userCoords}`);
@@ -443,6 +498,20 @@ export default function CheckoutPage() {
                       {locationError && (
                         <p className="text-red-600 font-semibold">{locationError}</p>
                       )}
+                      {!locationError && locationAccuracy && (
+                        <div className="text-green-600">
+                          <p className="font-medium">Lokasi terdeteksi</p>
+                          <p className="text-xs">
+                            Akurasi: ±{Math.round(locationAccuracy)}m
+                            {locationAccuracy <= 50 && ' (Sangat Akurat)'}
+                            {locationAccuracy > 50 && locationAccuracy <= 100 && ' (Akurat)'}
+                            {locationAccuracy > 100 && ' (Standar)'}
+                          </p>
+                        </div>
+                      )}
+                      {!locationError && !locationAccuracy && selectedAddressId === 'current' && (
+                        <p className="text-blue-600 text-xs">Tap untuk mendeteksi lokasi akurat</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -450,7 +519,7 @@ export default function CheckoutPage() {
               
               {/* --- PETA MINI LIVE (MENGGANTIKAN KOTAK ABU-ABU) --- */}
               <div className="w-full h-48 bg-secondary rounded-md overflow-hidden">
-                <CheckoutMap location={mapLocation} />
+                <CheckoutMap location={mapLocation} accuracy={locationAccuracy || undefined} />
               </div>
 
               {/* Estimasi */}
