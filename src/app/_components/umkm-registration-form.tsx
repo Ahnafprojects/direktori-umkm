@@ -11,41 +11,40 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Category } from "@prisma/client";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+// 1. IMPORT KOMPONEN PICKER LOKASI YANG BARU
+import LocationPicker from "./location-picker";
 
 interface UmkmRegistrationFormProps {
     categories: Category[];
 }
 
-// Tipe untuk state produk
 type ProductInput = {
     name: string;
     description: string;
     price: string;
 };
 
+// Tipe data untuk posisi peta
+type Position = { lat: number; lng: number };
+
 export default function UmkmRegistrationForm({ categories }: UmkmRegistrationFormProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [products, setProducts] = useState<ProductInput[]>([{ name: '', description: '', price: '' }]);
     
-    // State untuk menyimpan daftar produk yang akan ditambahkan
-    const [products, setProducts] = useState<ProductInput[]>([
-        { name: '', description: '', price: '' }
-    ]);
+    // 2. BUAT STATE UNTUK MENYIMPAN LOKASI YANG DIPILIH DARI PETA
+    const [location, setLocation] = useState<Position | null>(null);
 
-    // Fungsi untuk mengubah data produk saat input diisi
+    // ... (fungsi-fungsi untuk produk tidak berubah)
     const handleProductChange = (index: number, event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const values = [...products];
         values[index][event.target.name as keyof ProductInput] = event.target.value;
         setProducts(values);
     };
-
-    // Fungsi untuk menambah baris input produk baru
     const handleAddProduct = () => {
         setProducts([...products, { name: '', description: '', price: '' }]);
     };
-
-    // Fungsi untuk menghapus baris input produk
     const handleRemoveProduct = (index: number) => {
         const values = [...products];
         values.splice(index, 1);
@@ -60,10 +59,13 @@ export default function UmkmRegistrationForm({ categories }: UmkmRegistrationFor
         const formData = new FormData(event.currentTarget);
         const basicData = Object.fromEntries(formData.entries());
 
-        // Gabungkan data dasar dengan data produk dari state
+        // Gabungkan data form dengan data dari state (lokasi & produk)
         const finalData = {
             ...basicData,
-            products: products.filter(p => p.name && p.price) // Hanya kirim produk yang valid
+            // 3. TAMBAHKAN LATITUDE & LONGITUDE DARI STATE LOKASI
+            latitude: location?.lat,
+            longitude: location?.lng,
+            products: products.filter(p => p.name && p.price)
         };
 
         try {
@@ -97,14 +99,14 @@ export default function UmkmRegistrationForm({ categories }: UmkmRegistrationFor
                 </div>
             )}
             
-            {/* --- Info Dasar UMKM --- */}
+            {/* --- Info Dasar UMKM (tidak berubah) --- */}
             <div className="space-y-4">
                 <h3 className="text-lg font-medium">Informasi Dasar</h3>
-                <div className="space-y-2">
+                {/* ... (semua input dasar Anda tetap sama) ... */}
+                 <div className="space-y-2">
                     <Label htmlFor="name">Nama UMKM</Label>
                     <Input id="name" name="name" placeholder="Contoh: Bakso Cak Man" required disabled={isLoading} />
                 </div>
-                {/* ... input lain yang sudah ada ... */}
                 <div className="space-y-2">
                     <Label htmlFor="description">Deskripsi Singkat</Label>
                     <Textarea id="description" name="description" placeholder="Jelaskan secara singkat tentang bisnis Anda..." required disabled={isLoading} />
@@ -138,28 +140,26 @@ export default function UmkmRegistrationForm({ categories }: UmkmRegistrationFor
 
             <Separator />
             
-            {/* --- Bagian Input Peta --- */}
+            {/* --- 4. GANTI BAGIAN PETA DENGAN KOMPONEN BARU --- */}
             <div className="space-y-4">
-                <h3 className="text-lg font-medium">Lokasi Peta</h3>
+                <h3 className="text-lg font-medium">Pilih Lokasi di Peta</h3>
                 <p className="text-sm text-muted-foreground">
-                    Untuk mendapatkan koordinat, buka Google Maps, klik kanan pada lokasi Anda, dan salin angka yang muncul.
+                    Klik pada peta untuk menempatkan penanda lokasi persis bisnis Anda.
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="latitude">Latitude</Label>
-                        <Input id="latitude" name="latitude" type="number" step="any" placeholder="-7.279912" disabled={isLoading} />
+                <LocationPicker position={location} onLocationChange={setLocation} />
+                {/* Menampilkan koordinat yang dipilih untuk feedback pengguna */}
+                {location && (
+                    <div className="text-sm text-muted-foreground mt-2">
+                        Koordinat Terpilih: Lat: {location.lat.toFixed(6)}, Lng: {location.lng.toFixed(6)}
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="longitude">Longitude</Label>
-                        <Input id="longitude" name="longitude" type="number" step="any" placeholder="112.790784" disabled={isLoading} />
-                    </div>
-                </div>
+                )}
             </div>
 
             <Separator />
 
-            {/* --- Bagian Input Menu Dinamis --- */}
+            {/* --- Bagian Input Menu Dinamis (tidak berubah) --- */}
             <div className="space-y-4">
+                {/* ... (semua input menu Anda tetap sama) ... */}
                 <h3 className="text-lg font-medium">Menu / Daftar Produk</h3>
                 {products.map((product, index) => (
                     <div key={index} className="p-4 border rounded-md space-y-4 relative">
