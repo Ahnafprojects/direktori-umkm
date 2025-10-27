@@ -267,6 +267,7 @@ export async function getUmkmForMap() {
         slug: true,
         latitude: true,
         longitude: true,
+        photos: true,
         Category: {
           select: { name: true },
         },
@@ -284,6 +285,9 @@ export async function getUmkmForMap() {
       slug: umkm.slug,
       latitude: umkm.latitude,
       longitude: umkm.longitude,
+      photoUrl:
+        (Array.isArray(umkm.photos) && umkm.photos[0]) ||
+        "/images/placeholder-umkm.jpg",
       category: { name: umkm.Category.name }, // Transform Category to category
     }));
   } catch (error) {

@@ -45,6 +45,7 @@ type MapPin = {
   slug: string;
   latitude: number;
   longitude: number;
+  photoUrl?: string;
   category: { name: string };
 };
 
@@ -79,6 +80,15 @@ export default function UmkmBulkMap({ pins, center }: Props) {
           >
             <Popup>
               <div className="space-y-2">
+                {/* Gambar UMKM */}
+                <div className="w-full">
+                  <img
+                    src={pin.photoUrl || "/images/placeholder-umkm.jpg"}
+                    alt={`Foto ${pin.name}`}
+                    className="w-full h-28 object-cover rounded-md mb-2"
+                    loading="lazy"
+                  />
+                </div>
                 <h3 className="font-bold">{pin.name}</h3>
                 <p className="text-sm text-muted-foreground">
                   {pin.category.name}
