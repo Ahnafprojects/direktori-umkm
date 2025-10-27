@@ -10,6 +10,8 @@ import AnimatedGrid from "@/components/animated-grid";
 import AnimatedGridItem from "@/components/animated-grid-item";
 import ViewToggle from "./_components/view-toggle"; // <-- 1. IMPORT
 import OpenNowToggle from "./_components/open-now-toggle"; // <-- IMPORT OPEN NOW TOGGLE
+import AiRecommendationCarousel from "./_components/ai-recommendation-carousel"; // <-- 1. IMPORT
+import ClientHydrator from "@/components/client-hydrator"; // <-- 2. IMPORT
 
 // Ini adalah tipe untuk searchParams
 type HomePageProps = {
@@ -24,7 +26,6 @@ type HomePageProps = {
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const { search, category, lat, long, openNow } = await searchParams; // <-- AMBIL lat, long, dan openNow
-  console.log(search, category, lat, long, openNow);
 
   // 1. Ambil data kategori (untuk tombol filter)
   const categories = await getCategories();
@@ -36,6 +37,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <p className="text-muted-foreground mb-6">
         Temukan dan dukung bisnis lokal di sekitarmu!
       </p>
+      <ClientHydrator>
+        <AiRecommendationCarousel />
+      </ClientHydrator>
 
       {/* Area Filter dan Search */}
       <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -55,7 +59,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </h2>
 
       {/* Suspense: Tampilkan Skeleton saat data UMKM dimuat */}
-      <Suspense key={`${category}-${search}-${lat}-${openNow}`} fallback={<UmkmGridSkeleton />}>
+      <Suspense
+        fallback={<UmkmGridSkeleton />}
+        key={`${search}-${category}-${lat}-${long}-${openNow}`}
+      >
         {/* Komponen ini akan mengambil data UMKM berdasarkan filter */}
         <UmkmList
           search={search}

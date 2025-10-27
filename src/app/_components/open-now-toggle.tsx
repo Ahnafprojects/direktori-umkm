@@ -2,8 +2,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 export default function OpenNowToggle() {
   const router = useRouter();
@@ -11,27 +10,28 @@ export default function OpenNowToggle() {
 
   const isOpenNow = searchParams.get('openNow') === 'true';
 
-  const handleToggle = (isChecked: boolean) => {
+  const handleToggle = () => {
     const params = new URLSearchParams(searchParams.toString());
-    if (isChecked) {
-      params.set('openNow', 'true');
-    } else {
+    if (isOpenNow) {
       params.delete('openNow');
+    } else {
+      params.set('openNow', 'true');
     }
     // Ganti URL tanpa me-refresh scroll
     router.push(`/?${params.toString()}`, { scroll: false });
   };
 
   return (
-    <div className="flex items-center space-x-2">
-      <Switch
-        id="open-now-filter"
-        checked={isOpenNow}
-        onCheckedChange={handleToggle}
-      />
-      <Label htmlFor="open-now-filter" className="font-semibold cursor-pointer">
-        Buka Sekarang
-      </Label>
-    </div>
+    <Button
+      variant={isOpenNow ? "default" : "outline"}
+      onClick={handleToggle}
+      className={`transition-all duration-200 ${
+        isOpenNow 
+          ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+          : 'hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300'
+      }`}
+    >
+      Buka Sekarang
+    </Button>
   );
 }

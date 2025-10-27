@@ -65,7 +65,12 @@ export default function ProductCard({ product }: Props) {
 
         {/* Tombol Add to Cart */}
         <div className="flex items-end">
-          <Button size="icon" variant="outline" onClick={handleAddToCart}>
+          <Button 
+            size="icon" 
+            variant="outline" 
+            onClick={handleAddToCart}
+            className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-600"
+          >
             <Plus className="h-4 w-4" />
           </Button>
         </div>
