@@ -1,8 +1,7 @@
-// File: src/app/_components/login-form.tsx
+// File: src/app/_components/checkout-register-form.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,30 +14,19 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ShoppingCart, ArrowLeft, LogIn } from 'lucide-react';
+import { ShoppingCart, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LoginForm() {
+export default function CheckoutRegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/checkout';
   
-  const redirectTo = searchParams.get('redirect') || '/';
-  const fromCheckout = searchParams.get('checkout') === 'true';
-  const justRegistered = searchParams.get('registered') === 'true';
-  
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-
-  useEffect(() => {
-    if (justRegistered) {
-      setShowSuccessMessage(true);
-      const timer = setTimeout(() => setShowSuccessMessage(false), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [justRegistered]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,25 +34,28 @@ export default function LoginForm() {
     setIsLoading(true);
 
     try {
-      // Menggunakan 'credentials' sesuai dengan provider yang kita buat
-      const result = await signIn('credentials', {
-        redirect: false, // Penting: jangan redirect otomatis agar bisa handle error
-        email,
-        password,
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name, 
+          email, 
+          password, 
+          role: 'PELANGGAN' // OTOMATIS PELANGGAN untuk checkout
+        }),
       });
 
-      if (result?.error) {
-        // Jika NextAuth mengembalikan error (misal: password salah)
-        setError('Email atau password salah. Silakan coba lagi.');
-        setIsLoading(false);
-      } else if (result?.ok) {
-        // Jika login berhasil, redirect ke URL yang diminta atau halaman utama
-        router.push(redirectTo);
-        router.refresh(); // Refresh halaman untuk memperbarui status sesi di header
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Gagal mendaftar.');
       }
-    } catch (error) {
-      // Jika terjadi error tak terduga
-      setError('Terjadi kesalahan. Silakan coba lagi nanti.');
+
+      // Redirect ke login dengan parameter redirect dan registered
+      router.push(`/login?redirect=${encodeURIComponent(redirectTo)}&registered=true&checkout=true`);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -73,40 +64,19 @@ export default function LoginForm() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-muted">
       <Card className="w-full max-w-md shadow-2xl border bg-card">
         <CardHeader className="text-center space-y-4 pb-8">
-          {fromCheckout ? (
-            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
-              <ShoppingCart className="w-10 h-10 text-primary-foreground" />
-            </div>
-          ) : (
-            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
-              <LogIn className="w-10 h-10 text-primary-foreground" />
-            </div>
-          )}
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
+            <ShoppingCart className="w-10 h-10 text-primary-foreground" />
+          </div>
           <CardTitle className="text-3xl font-bold text-foreground">
-            {fromCheckout ? 'Masuk untuk Checkout' : 'Masuk ke Akun'}
+            Daftar untuk Checkout
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground">
-            {fromCheckout 
-              ? 'Masuk ke akun Anda untuk melanjutkan pembelian'
-              : 'Masukkan email dan password untuk melanjutkan'
-            }
+            Buat akun pelanggan untuk melanjutkan pembelian Anda
           </CardDescription>
         </CardHeader>
         
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-6">
-            {showSuccessMessage && justRegistered && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 rounded-xl text-sm text-green-700 dark:text-green-400 flex items-start gap-3">
-                <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <div>
-                  <p className="font-medium">Pendaftaran Berhasil!</p>
-                  <p className="text-xs mt-1">Sekarang masuk dengan akun yang baru dibuat.</p>
-                </div>
-              </div>
-            )}
-            
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-xl text-sm text-red-700 dark:text-red-400 flex items-start gap-3">
                 <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -116,24 +86,56 @@ export default function LoginForm() {
               </div>
             )}
             
+            {/* Info Box */}
+            <div className="bg-muted border border-border p-4 rounded-xl text-sm text-muted-foreground">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <div>
+                  <p className="font-medium text-foreground">Akun Pelanggan</p>
+                  <p className="text-xs mt-1">Anda akan terdaftar sebagai pelanggan untuk dapat berbelanja di platform UMKM kami.</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium text-foreground flex items-center gap-2">
+                <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Nama Lengkap
+              </Label>
+              <Input 
+                id="name" 
+                required 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                disabled={isLoading}
+                className="h-12 border-border focus:border-primary focus:ring-primary/20 rounded-xl transition-all duration-200"
+                placeholder="Masukkan nama lengkap Anda"
+              />
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-foreground flex items-center gap-2">
                 <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                 </svg>
-                Email
+                Email Address
               </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="nama@email.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+              <Input 
+                id="email" 
+                type="email" 
+                required 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
                 disabled={isLoading}
                 className="h-12 border-border focus:border-primary focus:ring-primary/20 rounded-xl transition-all duration-200"
+                placeholder="nama@email.com"
               />
             </div>
+            
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium text-foreground flex items-center gap-2">
                 <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,15 +143,15 @@ export default function LoginForm() {
                 </svg>
                 Password
               </Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+              <Input 
+                id="password" 
+                type="password" 
+                required 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
                 disabled={isLoading}
                 className="h-12 border-border focus:border-primary focus:ring-primary/20 rounded-xl transition-all duration-200"
-                placeholder="Masukkan password Anda"
+                placeholder="Masukkan password yang kuat"
               />
             </div>
           </CardContent>
@@ -170,23 +172,20 @@ export default function LoginForm() {
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  {fromCheckout ? <ShoppingCart className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
-                  {fromCheckout ? 'Masuk & Lanjut Checkout' : 'Masuk'}
+                  <ShoppingCart className="w-5 h-5" />
+                  Daftar & Lanjut Checkout
                 </span>
               )}
             </Button>
             
             <div className="text-center space-y-3">
               <p className="text-sm text-muted-foreground">
-                Belum punya akun?{' '}
+                Sudah punya akun?{' '}
                 <Link 
-                  href={fromCheckout 
-                    ? `/checkout/register?redirect=${encodeURIComponent(redirectTo)}` 
-                    : `/register?redirect=${encodeURIComponent(redirectTo)}`
-                  }
+                  href={`/login?redirect=${encodeURIComponent(redirectTo)}&checkout=true`}
                   className="font-semibold text-primary hover:text-primary/80 transition-colors"
                 >
-                  {fromCheckout ? 'Daftar untuk Checkout' : 'Daftar di sini'}
+                  Masuk di sini
                 </Link>
               </p>
               

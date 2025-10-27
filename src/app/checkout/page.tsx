@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { useCartStore } from '@/store/cart-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -55,7 +56,7 @@ const paymentMethods = {
   ]
 };
 
-type Coords = { lat: number; long: number };
+export type Coords = { lat: number; long: number };
 
 // --- 3. BUAT KOMPONEN PETA MINI (LIVE) ---
 const CheckoutMap = dynamic(() => import('@/components/checkout-map'), {
@@ -65,6 +66,7 @@ const CheckoutMap = dynamic(() => import('@/components/checkout-map'), {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const cartItems = useCartStore((state) => state.cartItems);
   const getTotalPrice = useCartStore((state) => state.getTotalPrice);
   const clearCart = useCartStore((state) => state.clearCart);
@@ -95,6 +97,47 @@ export default function CheckoutPage() {
   // -----------------------------
 
   const finalTotal = deliveryOption === 'delivery' ? totalPrice + DELIVERY_FEE : totalPrice;
+
+  // --- REDIRECT JIKA BELUM LOGIN ---
+  useEffect(() => {
+    // Tunggu sampai status loading selesai
+    if (status === 'loading') return;
+    
+    // Jika tidak ada session (belum login), redirect ke register
+    if (status === 'unauthenticated') {
+      toast.error('Silakan daftar atau masuk untuk melanjutkan checkout!', { 
+        icon: '🔐',
+        duration: 3000 
+      });
+      router.push('/register?redirect=' + encodeURIComponent('/checkout'));
+      return;
+    }
+  }, [status, router]);
+
+  // --- AUTO-DETECT LOKASI REAL SAAT PAGE LOAD ---
+  useEffect(() => {
+    // Auto-detect user location when page loads
+    if (navigator.geolocation && deliveryOption === 'delivery') {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const newCoords = { lat: latitude, long: longitude };
+          setMapLocation(newCoords);
+          setSelectedAddressId('current'); // Set to current location
+          console.log('Auto-detected location:', newCoords);
+        },
+        (err) => {
+          console.warn('Auto location detection failed:', err);
+          // Silently fail, keep default location
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 300000 // 5 minutes cache
+        }
+      );
+    }
+  }, [deliveryOption]);
 
   // --- FUNGSI BARU: AUTO-DETECT LOKASI ---
   const handleDetectLocation = () => {
@@ -283,6 +326,37 @@ export default function CheckoutPage() {
           <Button asChild className="mt-4"><Link href="/">Kembali ke Beranda</Link></Button>
         </div>
       )
+  }
+
+  // Tampilan loading saat cek authentication
+  if (status === 'loading') {
+    return (
+      <div className="container mx-auto p-4 max-w-2xl">
+        <Card>
+          <CardHeader>
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="h-4 bg-gray-200 rounded animate-pulse" />
+            <div className="h-32 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 bg-gray-200 rounded animate-pulse" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Jika belum login, tampilan redirect (loading)
+  if (status === 'unauthenticated') {
+    return (
+      <div className="container mx-auto p-4 text-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <h1 className="text-2xl font-bold">Redirecting...</h1>
+          <p className="text-muted-foreground">Silakan daftar atau masuk terlebih dahulu</p>
+        </div>
+      </div>
+    );
   }
 
   return (
