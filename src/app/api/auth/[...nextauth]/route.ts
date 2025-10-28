@@ -4,13 +4,11 @@ import NextAuth from 'next-auth';
 import { AuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
-
 export const authOptions: AuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(db),
   providers: [
     // Kamu bisa menambahkan provider lain seperti Google, GitHub, dll di sini
     CredentialsProvider({
@@ -24,7 +22,7 @@ export const authOptions: AuthOptions = {
           throw new Error('Email dan password wajib diisi');
         }
 
-        const user = await prisma.user.findUnique({
+        const user = await db.user.findUnique({
           where: { email: credentials.email },
         });
 

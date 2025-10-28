@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useCartStore } from '@/store/cart-store';
-import { useHistoryStore } from '@/store/history-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -14,11 +13,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Bike, MapPin, Package, Clock, Home, Building, LocateFixed, Loader2, CreditCard, Wallet, Banknote, QrCode, ChevronDown, Plus, Minus, Trash2, MessageCircle, Send } from 'lucide-react';
+import { Bike, MapPin, Package, Clock, Home, Building, LocateFixed, Loader2, CreditCard, Wallet, Banknote, QrCode, ChevronDown, Plus, Minus, Trash2 } from 'lucide-react';
 import dynamic from 'next/dynamic'; // <-- 1. IMPORT DYNAMIC
 import { Skeleton } from '@/components/ui/skeleton'; // <-- 2. IMPORT SKELETON
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 // Helper untuk format Rupiah
@@ -73,7 +71,6 @@ export default function CheckoutPage() {
   const clearCart = useCartStore((state) => state.clearCart);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
-  const { addOrder } = useHistoryStore();
   
   const totalPrice = getTotalPrice();
 
@@ -87,16 +84,12 @@ export default function CheckoutPage() {
   
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false); // State loading untuk checkout
   
   // --- State Pembayaran ---
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [selectedEwallet, setSelectedEwallet] = useState('');
   const [selectedBank, setSelectedBank] = useState('');
-  
-  // --- State Chat ---
-  const [chatMessage, setChatMessage] = useState('');
-  const [driverMessages, setDriverMessages] = useState<string[]>([]);
-  const [storeMessages, setStoreMessages] = useState<string[]>([]);
   // -----------------------------
 
   const finalTotal = deliveryOption === 'delivery' ? totalPrice + DELIVERY_FEE : totalPrice;
@@ -243,73 +236,7 @@ export default function CheckoutPage() {
     setIsLocating(false);
   }
 
-  // --- FUNGSI CHAT ---
-  const sendMessageToDriver = () => {
-    if (chatMessage.trim()) {
-      setDriverMessages(prev => [...prev, `Anda: ${chatMessage}`]);
-      // Simulasi balasan driver
-      setTimeout(() => {
-        setDriverMessages(prev => [...prev, `Driver: Siap, pesanan sedang dalam perjalanan! 🏍️`]);
-      }, 1000);
-      setChatMessage('');
-    }
-  };
-
-  const sendQuickMessageToDriver = (message: string) => {
-    setDriverMessages(prev => [...prev, `Anda: ${message}`]);
-    // Simulasi balasan driver berdasarkan pesan
-    setTimeout(() => {
-      let reply = 'Baik, terima kasih! 🏍️';
-      if (message.includes('dimana')) reply = 'Saya sedang dalam perjalanan ke toko, estimasi 5 menit lagi! 📍';
-      if (message.includes('lama')) reply = 'Estimasi sampai 15-20 menit ya! ⏰';
-      if (message.includes('hati-hati')) reply = 'Siap, terima kasih! Saya akan hati-hati di jalan 🙏';
-      if (message.includes('telepon')) reply = 'Oke, nanti saya telepon jika sudah sampai depan 📞';
-      
-      setDriverMessages(prev => [...prev, `Driver: ${reply}`]);
-    }, 1000);
-  };
-
-  const sendMessageToStore = () => {
-    if (chatMessage.trim()) {
-      setStoreMessages(prev => [...prev, `Anda: ${chatMessage}`]);
-      // Simulasi balasan toko
-      setTimeout(() => {
-        setStoreMessages(prev => [...prev, `Toko: Pesanan sedang diproses, terima kasih! 👨‍🍳`]);
-      }, 1000);
-      setChatMessage('');
-    }
-  };
-
-  const sendQuickMessageToStore = (message: string) => {
-    setStoreMessages(prev => [...prev, `Anda: ${message}`]);
-    // Simulasi balasan toko berdasarkan pesan
-    setTimeout(() => {
-      let reply = 'Baik, siap! 👨‍🍳';
-      if (message.includes('lama')) reply = 'Pesanan akan selesai dalam 10-15 menit ya! ⏰';
-      if (message.includes('pedas')) reply = 'Sudah saya catat, pedas tingkat sedang ya! 🌶️';
-      if (message.includes('tambahan')) reply = 'Boleh, ada tambahan apa nih? 📝';
-      if (message.includes('ganti')) reply = 'Bisa kok, mau diganti jadi apa? 🔄';
-      
-      setStoreMessages(prev => [...prev, `Toko: ${reply}`]);
-    }, 1000);
-  };
-
-  // Data pilihan chat cepat
-  const driverQuickChats = [
-    'Driver sudah dimana?',
-    'Estimasi berapa lama lagi?',
-    'Tolong hati-hati di jalan',
-    'Telepon jika sudah sampai ya'
-  ];
-
-  const storeQuickChats = [
-    'Pesanan berapa lama lagi?',
-    'Bisa tambah level pedas?',
-    'Ada tambahan menu?',
-    'Bisa ganti minuman?'
-  ];
-
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     // Validasi
     if (deliveryOption === 'delivery' && selectedAddressId === 'current' && !mapLocation) {
       toast.error('Lokasi belum terdeteksi. Coba lagi.', { icon: '📍' });
@@ -325,51 +252,95 @@ export default function CheckoutPage() {
       toast.error('Pilih bank untuk pembayaran!', { icon: '🏦' });
       return;
     }
-    
-    // Simulasi Transaksi berdasarkan metode pembayaran
-    let successMessage = 'Pesanan Berhasil Dibuat!';
-    let icon = '🎉';
-    
-    if (paymentMethod === 'qris') {
-      successMessage = 'Silakan scan QR Code untuk pembayaran!';
-      icon = '📱';
-    } else if (paymentMethod === 'ewallet') {
-      const wallet = paymentMethods.ewallet.find(w => w.id === selectedEwallet);
-      successMessage = `Pembayaran via ${wallet?.label} berhasil!`;
-      icon = wallet?.logo || '💳';
-    } else if (paymentMethod === 'transfer' || paymentMethod === 'va') {
-      const bank = paymentMethods.banks.find(b => b.id === selectedBank);
-      successMessage = `Pembayaran via ${bank?.label} sedang diproses!`;
-      icon = '🏦';
-    } else if (paymentMethod === 'cash') {
-      successMessage = 'Pesanan diterima! Bayar tunai saat tiba.';
-      icon = '💰';
+
+    setIsLoading(true); // Mulai loading
+
+    try {
+      // --- INI BAGIAN BARUNYA ---
+      // Ambil ID UMKM dari product category
+      // Perlu fetch product dengan relasi ProductCategory untuk mendapatkan umkmId
+      const firstProductId = cartItems[0]?.id;
+      if (!firstProductId) {
+        throw new Error("Tidak ada produk di keranjang.");
+      }
+
+      // Fetch product dengan relasi untuk mendapatkan umkmId
+      const productResponse = await fetch(`/api/products/${firstProductId}`);
+      if (!productResponse.ok) {
+        throw new Error("Gagal mengambil data produk.");
+      }
+      
+      const productData = await productResponse.json();
+      const umkmId = productData.ProductCategory?.umkmId;
+      
+      if (!umkmId) {
+        throw new Error("UMKM ID tidak ditemukan. Pastikan produk memiliki data UMKM.");
+      }
+
+      // Tentukan alamat yang dikirim
+      let deliveryAddress = null;
+      if (deliveryOption === 'delivery') {
+         // Logika untuk mendapatkan alamat terpilih (dari state)
+         if (selectedAddressId === 'current' && mapLocation) {
+             deliveryAddress = `Lokasi Terdeteksi: ${mapLocation.lat}, ${mapLocation.long}`;
+         } else {
+             const saved = savedAddresses.find(a => a.id === selectedAddressId);
+             deliveryAddress = saved ? saved.address : null;
+         }
+      }
+
+      // Panggil API Backend
+      const response = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cartItems: cartItems,
+          finalTotal: finalTotal,
+          deliveryOption: deliveryOption,
+          address: deliveryAddress,
+          umkmId: umkmId,
+          paymentMethod: paymentMethod,
+          selectedEwallet: selectedEwallet,
+          selectedBank: selectedBank
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server response error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || 'Gagal membuat pesanan');
+        } catch (parseError) {
+          throw new Error(`Server error (${response.status}): ${errorText || 'Unknown error'}`);
+        }
+      }
+
+      const createdOrder = await response.json();
+      // --- AKHIR BAGIAN BARU ---
+
+      toast.success('Pesanan Berhasil Dibuat!', { icon: '🎉', duration: 3000 });
+      clearCart(); // Kosongkan keranjang (Zustand)
+
+      // Redirect ke halaman status (bisa pakai orderCode dari createdOrder)
+      setTimeout(() => {
+         // Koordinat yang lebih akurat untuk area Surabaya Timur (Sate Klopo Ondomohen)
+         const restoCoords = "-7.2711,112.7442"; // Lokasi resto di Jl. Raya Klampis
+         const userCoords = deliveryAddress && mapLocation ? `${mapLocation.lat},${mapLocation.long}` : '-7.2797,112.7903';
+         router.push(`/status/${createdOrder.orderCode || 'LOKAL-123'}?resto=${restoCoords}&user=${userCoords}&deliveryOption=${deliveryOption}`);
+      }, 1000);
+
+    } catch (error: any) {
+      console.error("Checkout error:", error);
+      toast.error(error.message || 'Gagal memproses pesanan.');
+    } finally {
+      setIsLoading(false); // Selesai loading
     }
-    
-    toast.success(successMessage, { icon, duration: 3000 });
-    
-    // Simpan pesanan ke history sebelum clear cart
-    const newOrder = {
-      id: `ORDER-${Date.now()}`, // ID unik berdasarkan timestamp
-      date: new Date().toISOString(),
-      items: cartItems,
-      totalPrice: getTotalPrice()
-    };
-    addOrder(newOrder);
-    
-    clearCart();
-
-    // --- UBAH INI ---
-    // Arahkan ke Halaman Status setelah 1 detik
-    setTimeout(() => {
-      // Kita kirim data lokasi resto & rumah via query params
-      // Koordinat yang lebih akurat untuk area Surabaya Timur (Sate Klopo Ondomohen)
-      const restoCoords = "-7.2711,112.7442"; // Lokasi resto di Jl. Raya Klampis
-      const userCoords = `${mapLocation.lat},${mapLocation.long}`;
-
-      router.push(`/status/LOKAL-123?resto=${restoCoords}&user=${userCoords}`);
-    }, 1000);
-    // --- AKHIR PERUBAHAN ---
   };
 
   // Tampilan jika keranjang kosong
@@ -530,191 +501,6 @@ export default function CheckoutPage() {
                   <p className="font-bold text-lg ml-1">{FAKE_ESTIMASI}</p>
                 </div>
               </div>
-
-              {/* --- CHAT & STATUS DELIVERY --- */}
-              {deliveryOption === 'delivery' && (
-                <div className="space-y-4 bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200 dark:border-green-800">
-                  <h4 className="font-semibold text-green-800 dark:text-green-200">📦 Status Pengiriman</h4>
-                  
-                  {/* Driver Profile */}
-                  <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
-                        R
-                      </div>
-                      <div>
-                        <p className="font-semibold">Rudi Susanto</p>
-                        <p className="text-sm text-muted-foreground">⭐ 4.8 • Honda Beat Putih</p>
-                        <p className="text-xs text-green-600 font-medium">🟢 Sedang menuju toko</p>
-                      </div>
-                    </div>
-                    
-                    {/* Chat dengan Driver */}
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          Chat Driver Rudi
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Chat dengan Driver Rudi 🏍️</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          {/* Pilihan Chat Cepat */}
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium text-muted-foreground">Chat Cepat:</p>
-                            <div className="grid grid-cols-1 gap-2">
-                              {driverQuickChats.map((quickMsg, index) => (
-                                <Button
-                                  key={index}
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-left justify-start h-auto p-2 text-xs"
-                                  onClick={() => sendQuickMessageToDriver(quickMsg)}
-                                >
-                                  {quickMsg}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-                          
-                          <Separator />
-                          
-                          {/* Chat Messages */}
-                          <div className="h-48 bg-secondary/20 rounded-lg p-3 overflow-y-auto">
-                            {driverMessages.length === 0 ? (
-                              <p className="text-muted-foreground text-sm text-center">
-                                Pilih chat cepat atau tulis pesan sendiri!
-                              </p>
-                            ) : (
-                              driverMessages.map((msg, index) => (
-                                <div key={index} className={`mb-2 p-2 rounded-lg text-sm ${
-                                  msg.startsWith('Anda:') 
-                                    ? 'bg-primary text-primary-foreground ml-8' 
-                                    : 'bg-secondary mr-8'
-                                }`}>
-                                  {msg}
-                                </div>
-                              ))
-                            )}
-                          </div>
-                          
-                          {/* Input Chat */}
-                          <div className="flex gap-2">
-                            <Textarea
-                              placeholder="Tulis pesan untuk driver..."
-                              value={chatMessage}
-                              onChange={(e) => setChatMessage(e.target.value)}
-                              rows={2}
-                              className="flex-1"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault();
-                                  sendMessageToDriver();
-                                }
-                              }}
-                            />
-                            <Button onClick={sendMessageToDriver} size="sm">
-                              <Send className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-
-                  {/* Toko Profile */}
-                  <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
-                        W
-                      </div>
-                      <div>
-                        <p className="font-semibold">Warung Sari Rasa</p>
-                        <p className="text-sm text-muted-foreground">⭐ 4.6 • Masakan Rumahan</p>
-                        <p className="text-xs text-orange-600 font-medium">👨‍🍳 Sedang memasak pesanan</p>
-                      </div>
-                    </div>
-                    
-                    {/* Chat dengan Toko */}
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          Chat Warung Sari Rasa
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Chat dengan Warung Sari Rasa 🏪</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          {/* Pilihan Chat Cepat */}
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium text-muted-foreground">Chat Cepat:</p>
-                            <div className="grid grid-cols-1 gap-2">
-                              {storeQuickChats.map((quickMsg, index) => (
-                                <Button
-                                  key={index}
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-left justify-start h-auto p-2 text-xs"
-                                  onClick={() => sendQuickMessageToStore(quickMsg)}
-                                >
-                                  {quickMsg}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-                          
-                          <Separator />
-                          
-                          {/* Chat Messages */}
-                          <div className="h-48 bg-secondary/20 rounded-lg p-3 overflow-y-auto">
-                            {storeMessages.length === 0 ? (
-                              <p className="text-muted-foreground text-sm text-center">
-                                Pilih chat cepat atau tulis pesan sendiri!
-                              </p>
-                            ) : (
-                              storeMessages.map((msg, index) => (
-                                <div key={index} className={`mb-2 p-2 rounded-lg text-sm ${
-                                  msg.startsWith('Anda:') 
-                                    ? 'bg-primary text-primary-foreground ml-8' 
-                                    : 'bg-secondary mr-8'
-                                }`}>
-                                  {msg}
-                                </div>
-                              ))
-                            )}
-                          </div>
-                          
-                          {/* Input Chat */}
-                          <div className="flex gap-2">
-                            <Textarea
-                              placeholder="Tulis pesan untuk toko..."
-                              value={chatMessage}
-                              onChange={(e) => setChatMessage(e.target.value)}
-                              rows={2}
-                              className="flex-1"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault();
-                                  sendMessageToStore();
-                                }
-                              }}
-                            />
-                            <Button onClick={sendMessageToStore} size="sm">
-                              <Send className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -946,7 +732,7 @@ export default function CheckoutPage() {
           <div className="space-y-2">
             <h3 className="font-semibold">Rincian Pembayaran</h3>
             <div className="flex justify-between">
-              <p className="text-muted-foreground">Subtotal Makanan</p>
+              <p className="text-muted-foreground">Subtotal Harga</p>
               <p>{formatRupiah(totalPrice)}</p>
             </div>
             
@@ -970,8 +756,9 @@ export default function CheckoutPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           {/* Main Checkout Button */}
-          <Button className="w-full" size="lg" onClick={handleCheckout}>
-            Bayar {formatRupiah(finalTotal)} (Simulasi)
+          <Button className="w-full" size="lg" onClick={handleCheckout} disabled={isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Bayar {formatRupiah(finalTotal)} (Simulasi Bayar)
           </Button>
         </CardFooter>
       </Card>
