@@ -6,12 +6,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-// Fungsi untuk membuat slug yang unik
 function createSlug(name: string) {
-    return name
-        .toLowerCase()
-        .replace(/ /g, '-')
-        .replace(/[^\w-]+/g, '');
+    return name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 }
 
 export async function POST(request: Request) {
@@ -29,7 +25,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, description, address, phone, openingHours, categoryId, latitude, longitude, products } = body;
     
-    // Validasi dasar
     if (!name || !description || !address || !categoryId) {
         return NextResponse.json({ message: 'Nama, deskripsi, alamat, dan kategori wajib diisi.' }, { status: 400 });
     }
