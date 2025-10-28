@@ -1,3 +1,5 @@
+// schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -6,6 +8,10 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// ==================
+// MODEL YANG SUDAH ADA
+// ==================
 
 model Category {
   id   Int    @id @default(autoincrement())
@@ -17,17 +23,18 @@ model Category {
 }
 
 model User {
-  id       String   @id @default(cuid())
-  name     String
-  email    String   @unique
-  password String
-  role     UserRole @default(PELANGGAN)
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(PELANGGAN)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Relasi
-  umkms    Umkm[]   // UMKM yang dimiliki user (untuk PENGUSAHA)
-  reviews  Review[] // Review yang dibuat user
+  umkms     Umkm[]   // UMKM yang dimiliki user (jika role PENGUSAHA)
+  reviews   Review[] // Review yang dibuat user
+  orders    Order[]  // Pesanan yang dibuat user (BARU DITAMBAHKAN)
 }
 
 enum UserRole {
@@ -36,31 +43,33 @@ enum UserRole {
 }
 
 model Umkm {
-  id              Int               @id @default(autoincrement())
-  name            String            @db.VarChar(255)
-  slug            String            @unique @db.VarChar(255)
+  id              Int      @id @default(autoincrement())
+  name            String   @db.VarChar(255)
+  slug            String   @unique @db.VarChar(255)
   description     String?
   address         String
-  phone           String?           @db.VarChar(20)
-  openingHours    String?           @db.VarChar(100)
+  phone           String?  @db.VarChar(20)
+  openingHours    String?  @db.VarChar(100)
   photos          String[]
   latitude        Float?
   longitude       Float?
-  rating          Decimal?          @default(4.0) @db.Decimal(2, 1)
-  hasPromo        Boolean?          @default(false)
-  isRecommended   Boolean?          @default(false)
+  rating          Decimal? @default(4.0) @db.Decimal(2, 1)
+  hasPromo        Boolean? @default(false)
+  isRecommended   Boolean? @default(false)
   categoryId      Int
-  
+
   // Relasi ke pemilik UMKM
-  ownerId       String?
-  owner         User?    @relation(fields: [ownerId], references: [id])
-  
+  ownerId         String? // ID User Pemilik
+  owner           User?    @relation(fields: [ownerId], references: [id])
+
   ProductCategory ProductCategory[]
   Review          Review[]
   Category        Category          @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  orders          Order[]           // Pesanan yang masuk ke UMKM ini (BARU DITAMBAHKAN)
 
   @@index([name], map: "idx_umkm_name")
   @@index([slug], map: "idx_umkm_slug")
+  @@index([ownerId]) // Tambahkan index untuk ownerId
 }
 
 model Review {
@@ -70,7 +79,7 @@ model Review {
   createdAt DateTime @default(now())
   umkmId    Int
   userId    String
-  
+
   // Relasi
   Umkm      Umkm     @relation(fields: [umkmId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
@@ -80,14 +89,15 @@ model Review {
 }
 
 model Product {
-  id                Int             @id @default(autoincrement())
-  name              String          @db.VarChar(255)
+  id                Int      @id @default(autoincrement())
+  name              String   @db.VarChar(255)
   description       String?
   price             Int?
-  photo             String?         @db.VarChar(255)
-  isFeatured        Boolean?        @default(false)
+  photo             String?  @db.VarChar(255)
+  isFeatured        Boolean? @default(false)
   productCategoryId Int
   ProductCategory   ProductCategory @relation(fields: [productCategoryId], references: [id], onDelete: Cascade)
+  orderItems        OrderItem[]     // Item pesanan yang terkait dengan produk ini (BARU DITAMBAHKAN)
 
   @@index([productCategoryId])
 }
@@ -100,4 +110,64 @@ model ProductCategory {
   Umkm    Umkm      @relation(fields: [umkmId], references: [id], onDelete: Cascade)
 
   @@index([umkmId])
+}
+
+
+// ==================
+// MODEL BARU UNTUK TRANSAKSI
+// ==================
+
+// ENUM Status Pesanan
+enum OrderStatus {
+  PENDING    // Menunggu pembayaran / konfirmasi
+  PAID       // Sudah dibayar
+  PREPARING  // Sedang disiapkan UMKM
+  SHIPPING   // Sedang diantar
+  DELIVERED  // Sudah sampai
+  CANCELLED  // Dibatalkan
+}
+
+// Model ORDER (Header Kuitansi)
+model Order {
+  id              Int         @id @default(autoincrement())
+  orderCode       String      @unique @db.VarChar(100) // Kode order unik
+  createdAt       DateTime    @default(now())
+  totalAmount     Int         // Total harga akhir (termasuk ongkir)
+  status          OrderStatus @default(PENDING)
+  deliveryOption  String      @db.VarChar(50) // 'pickup' or 'delivery'
+  deliveryAddress String?     // Alamat jika 'delivery'
+  paymentMethod   String?     @db.VarChar(50) // 'cash', 'qris', 'ewallet', 'transfer', 'va'
+  paymentDetails  String?     @db.VarChar(100) // ID ewallet/bank yang dipilih
+
+
+  // Kunci relasi
+  userId          String      // ID pengguna yang memesan (PENTING: String, sesuai User.id)
+  umkmId          Int         // ID UMKM tempat memesan
+
+  // Relasi
+  user            User        @relation(fields: [userId], references: [id])
+  umkm            Umkm        @relation(fields: [umkmId], references: [id])
+  items           OrderItem[] // Daftar item dalam pesanan ini
+
+  @@index([userId])
+  @@index([umkmId])
+}
+
+// Model ORDER ITEM (Detail Barang di Kuitansi)
+model OrderItem {
+  id            Int     @id @default(autoincrement())
+  quantity      Int
+  pricePerItem  Int     // Harga produk saat dibeli
+  productName   String  @db.VarChar(255) // Nama produk saat dibeli
+
+  // Kunci relasi
+  orderId       Int
+  productId     Int
+
+  // Relasi
+  order         Order   @relation(fields: [orderId], references: [id], onDelete: Cascade) // Jika order dihapus, item ikut hapus
+  product       Product @relation(fields: [productId], references: [id], onDelete: Restrict) // Produk tidak bisa dihapus jika pernah dipesan
+
+  @@index([orderId])
+  @@index([productId])
 }

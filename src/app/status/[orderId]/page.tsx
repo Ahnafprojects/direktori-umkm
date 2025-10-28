@@ -36,9 +36,10 @@ export default function StatusPage() {
   const [statusIndex, setStatusIndex] = useState(0);
   const [estimatedTime, setEstimatedTime] = useState("15-20 menit");
 
-  // 4. Ambil koordinat dari URL
+  // 4. Ambil koordinat dan deliveryOption dari URL
   const restoParam = (searchParams.get('resto') || '-7.2711,112.7442').split(',');
   const userParam = (searchParams.get('user') || '-7.2797,112.7903').split(',');
+  const deliveryOption = searchParams.get('deliveryOption') || 'pickup'; // Default pickup jika tidak ada
   const restoCoords: [number, number] = [parseFloat(restoParam[0]), parseFloat(restoParam[1])];
   const userCoords: [number, number] = [parseFloat(userParam[0]), parseFloat(userParam[1])];
 
@@ -66,55 +67,71 @@ export default function StatusPage() {
 
   return (
     <main className="container mx-auto p-4 max-w-2xl">
-      <div className="w-full h-80 md:h-96 rounded-md overflow-hidden border">
-        <LiveMap restoCoords={restoCoords} userCoords={userCoords} />
-      </div>
+      {/* Map hanya ditampilkan jika deliveryOption adalah 'delivery' */}
+      {deliveryOption === 'delivery' && (
+        <div className="w-full h-80 md:h-96 rounded-md overflow-hidden border mb-6">
+          <LiveMap restoCoords={restoCoords} userCoords={userCoords} />
+        </div>
+      )}
 
       <div className="my-8 text-center">
         <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
         <h2 className="text-2xl font-bold mt-4">
-          {statusSteps[statusIndex].text}
+          {deliveryOption === 'delivery' 
+            ? statusSteps[statusIndex].text 
+            : statusIndex < 3 
+              ? "Pesanan Sedang Diproses..." 
+              : "Pesanan Siap Diambil!"}
         </h2>
         <p className="text-muted-foreground">ID Pesanan: LOKAL-123</p>
-        <p className="text-sm text-blue-600 mt-2">
-          ⏱️ Estimasi Tiba: {estimatedTime}
-        </p>
+        {deliveryOption === 'delivery' && (
+          <p className="text-sm text-blue-600 mt-2">
+            ⏱️ Estimasi Tiba: {estimatedTime}
+          </p>
+        )}
+        {deliveryOption === 'pickup' && (
+          <p className="text-sm text-green-600 mt-2">
+            📍 Silakan ambil di toko saat pesanan sudah siap
+          </p>
+        )}
       </div>
 
-      {/* 6. Tombol Chat (Simulasi) */}
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="w-full" variant="outline" size="lg">
-            <MessageSquare className="mr-2 h-5 w-5" />
-            Chat Driver (Simulasi)
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Chat dengan Driver</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 p-4">
-            {/* Chat palsu */}
-            <div className="flex justify-start">
-              <div className="bg-muted p-3 rounded-lg max-w-[80%]">
-                <p className="font-semibold">Driver (Budi)</p>
-                <p>Siap kak, OTW ke resto!</p>
+      {/* Chat Driver hanya ditampilkan jika deliveryOption adalah 'delivery' */}
+      {deliveryOption === 'delivery' && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="w-full" variant="outline" size="lg">
+              <MessageSquare className="mr-2 h-5 w-5" />
+              Chat Driver (Simulasi)
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Chat dengan Driver</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 p-4">
+              {/* Chat palsu */}
+              <div className="flex justify-start">
+                <div className="bg-muted p-3 rounded-lg max-w-[80%]">
+                  <p className="font-semibold">Driver (Budi)</p>
+                  <p>Siap kak, OTW ke resto!</p>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <div className="bg-primary text-primary-foreground p-3 rounded-lg max-w-[80%]">
+                  <p className="font-semibold">Kamu</p>
+                  <p>Oke, ditunggu ya!</p>
+                </div>
+              </div>
+              {/* Input Chat Palsu */}
+              <div className="flex gap-2">
+                <Input placeholder="Ketik pesan..." disabled />
+                <Button disabled><Send className="h-4 w-4" /></Button>
               </div>
             </div>
-            <div className="flex justify-end">
-              <div className="bg-primary text-primary-foreground p-3 rounded-lg max-w-[80%]">
-                <p className="font-semibold">Kamu</p>
-                <p>Oke, ditunggu ya!</p>
-              </div>
-            </div>
-            {/* Input Chat Palsu */}
-            <div className="flex gap-2">
-              <Input placeholder="Ketik pesan..." disabled />
-              <Button disabled><Send className="h-4 w-4" /></Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </main>
   );
 }
