@@ -733,7 +733,7 @@ export default function CheckoutPage() {
             <h3 className="font-semibold">Rincian Pembayaran</h3>
             <div className="flex justify-between">
               <p className="text-muted-foreground">Subtotal Harga</p>
-              <p>{formatRupiah(totalPrice)}</p>
+              <p>{formatRupiah(totalPrice)}</p> 
             </div>
             
             {deliveryOption === 'delivery' && (
