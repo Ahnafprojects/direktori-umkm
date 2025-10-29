@@ -1,169 +1,160 @@
 // src/components/umkm-card.tsx
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star, MapPin, Clock, Phone } from 'lucide-react';
-import FavoriteToggleButton from './favorite-toggle-button'; // <-- 1. IMPORT
-import ClientHydrator from './client-hydrator'; // <-- 2. IMPORT
-import { Separator } from '@/components/ui/separator'; // <-- 3. IMPORT SEPARATOR
+import { Star, MapPin } from 'lucide-react';
+import FavoriteToggleButton from './favorite-toggle-button';
+import ClientHydrator from './client-hydrator';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Prisma } from '@prisma/client';
 
-// Tipe data yang sesuai dengan return dari getUmkms yang include category dan products
-type UmkmData = {
+type ProductData = {
   id: number;
   name: string;
-  slug: string;
-  description: string | null;
-  address: string;
-  phone: string | null;
-  openingHours: string | null;
-  photos: string[];
-  latitude: number | null;
-  longitude: number | null;
-  rating: number | null; // Decimal type dari Prisma
-  hasPromo: boolean | null;
-  isRecommended: boolean | null;
-  categoryId: number;
-  Category: {
-    id: number;
-    name: string;
-    slug: string;
-  };
-  ProductCategory: Array<{
-    id: number;
-    name: string;
-    Product: Array<{
-      id: number;
-      name: string;
-      price: number | null;
-      photo: string | null;
-      isFeatured: boolean | null;
-    }>;
-  }>;
+  isFeatured?: boolean | null;
+  photo?: string | null;
 };
 
+type ProductCategoryData = {
+  id: number;
+  products: ProductData[];
+};
+
+type UmkmWithDetails = Prisma.UmkmGetPayload<{
+  include: {
+    Category: true;
+    productCategories: {
+     include: {
+      products: { // Untuk mendapatkan produk di dalamnya
+        // Optional: Hanya ambil yang featured untuk efisiensi
+         where: { isFeatured: true },
+        take: 5, // Ambil beberapa saja
+      }};
+    };
+  };
+}>;
+
 type UmkmCardProps = {
-  umkm: UmkmData;
+  umkm: UmkmWithDetails;
 };
 
 export default function UmkmCard({ umkm }: UmkmCardProps) {
-  // Debug: Log untuk cek data produk
-  console.log('UMKM:', umkm.name, 'ProductCategories:', umkm.ProductCategory);
+  // Support both shapes: API may return ProductCategory (capitalized) or productCategories
+  const rawProductCats = (umkm as any).productCategories ?? (umkm as any).ProductCategory;
+  const productCats = rawProductCats as ProductCategoryData[] | undefined;
+  const allProducts = productCats?.flatMap((cat: ProductCategoryData) => cat.products ?? []) ?? [];
+
+  const displayPhoto = (allProducts.find(
+    (p: ProductData) => p.isFeatured && p.photo
+  )?.photo) || umkm.photos?.[0] || '/images/placeholder-umkm.jpg';
+
+  // --- LOGIKA BARU UNTUK FEATURED PRODUCTS ---
+  let featuredProductNames: string[] = allProducts
+    .filter((p) => p.isFeatured) // 1. Ambil yang featured
+    .map((p) => p.name);
+
+  // 2. Jika tidak ada yang featured, ambil 2 produk pertama
+  if (featuredProductNames.length === 0 && allProducts.length > 0) {
+    featuredProductNames = allProducts.slice(0, 2).map((p) => p.name);
+  } else {
+    // 3. Jika ada yang featured, batasi maksimal 2
+    featuredProductNames = featuredProductNames.slice(0, 2);
+  }
+  const featuredProductsString = featuredProductNames.join(', ');
+  const hasMoreFeatured = allProducts.filter(p => p.isFeatured).length > 2 || (featuredProductNames.length === 0 && allProducts.length > 2);
+  // --- AKHIR LOGIKA BARU ---
   
-  // Ambil semua produk dari semua kategori
-  const allProducts = umkm.ProductCategory?.flatMap(cat => cat.Product) || [];
-  
-  // Ambil foto produk unggulan, ATAU foto UMKM pertama, ATAU placeholder
-  const displayPhoto = (allProducts.length > 0 && allProducts[0]?.photo) || umkm.photos[0] || '/images/placeholder-umkm.jpg';
-  const featuredProducts = allProducts.length > 0 ? allProducts.map((p) => p.name).join(', ') : '';
-  const rating = umkm.rating ? Number(umkm.rating) : 4.0;
+  const featuredList = allProducts
+    .filter((p: ProductData) => !!p.isFeatured)
+    .map((p: ProductData) => p.name);
+
+  // If there are no explicitly featured items, fall back to first products
+  const candidateList = featuredList.length > 0 ? featuredList : allProducts.map((p: ProductData) => p.name);
+  const featuredProducts = candidateList.slice(0, 2).join(', ');
+  // const hasMoreFeatured = candidateList.length > 2;
+ 
+  const rating = umkm.rating ? Number(umkm.rating) : 0;
+  const hasRating = umkm.rating !== null && umkm.rating !== undefined;
+  const umkmIdAsNumber = typeof umkm.id === 'string' ? parseInt(umkm.id, 10) : umkm.id;
 
   return (
-    <div className="bg-card rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 relative border border-border">
-      {/* 3. WRAPPER UNTUK POSISI TOMBOL */}
-      <div className="absolute top-2 right-2 z-10">
-        <ClientHydrator>
-          {" "}
-          {/* 4. BUNGKUS DENGAN HYDRATOR */}
-          <FavoriteToggleButton umkmId={umkm.id} umkmName={umkm.name} />
-        </ClientHydrator>
-      </div>
+    <Link href={`/umkm/${umkm.slug}`} className="group block h-full">
+      <div className="flex lg:block bg-card rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 relative border border-border h-full">
 
-      {/* Image */}
-      <div className="relative h-48">
-        <Image
-          src={displayPhoto}
-          alt={`Foto tampilan depan ${umkm.name}`}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          unoptimized
-        />
-
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex gap-2">
-          {umkm.isRecommended && (
-            <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
-              Rekomendasi
-            </span>
-          )}
-          {umkm.hasPromo && (
-            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">
-              Promo
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="p-4">
-        {/* Title and Category */}
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-lg line-clamp-1 text-card-foreground">
-            {umkm.name}
-          </h3>
-          <span className="bg-secondary text-secondary-foreground text-xs px-2 py-1 rounded">
-            {umkm.Category.name}
-          </span>
-        </div>
-
-        {/* Description */}
-        {umkm.description && (
-          <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
-            {umkm.description}
-          </p>
-        )}
-
-        {/* Address */}
-        <div className="flex items-start gap-2 mb-2">
-          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-          <p className="text-muted-foreground text-sm line-clamp-2">
-            {umkm.address}
-          </p>
-        </div>
-
-        {/* Opening Hours */}
-        {umkm.openingHours && (
-          <div className="flex items-center gap-2 mb-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <p className="text-muted-foreground text-sm">{umkm.openingHours}</p>
+        {/* Bagian Gambar */}
+        <div className="relative w-2/5 sm:w-1/3 lg:w-full h-auto min-h-[140px] sm:min-h-[160px] lg:h-48 flex-shrink-0">
+          <Image
+            src={displayPhoto}
+            alt={`Foto ${umkm.name}`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 40vw, (max-width: 1024px) 33vw, 25vw"
+          />
+          
+          {/* Tombol Favorit - Desktop (di kanan atas gambar) */}
+          <div className="absolute top-2 right-2 z-10 hidden lg:block">
+            <ClientHydrator>
+              <FavoriteToggleButton umkmId={umkmIdAsNumber} umkmName={umkm.name} />
+            </ClientHydrator>
           </div>
-        )}
-
-        {/* Phone */}
-        {umkm.phone && (
-          <div className="flex items-center gap-2 mb-3">
-            <Phone className="h-4 w-4 text-muted-foreground" />
-            <p className="text-muted-foreground text-sm">{umkm.phone}</p>
-          </div>
-        )}
-
-        {/* Rating */}
-        <div className="flex items-center gap-1 mb-4">
-          <Star className="h-4 w-4 text-yellow-400 fill-current" />
-          <span className="text-sm font-medium text-card-foreground">
-            {rating.toFixed(1)}
-          </span>
-          <span className="text-muted-foreground text-sm">
-            ({Math.floor(Math.random() * 100) + 10} ulasan)
-          </span>
         </div>
 
-        {/* TAMBAHKAN DAFTAR MENU UNGGULAN */}
-        {featuredProducts && (
-          <>
-            <Separator className="my-2" />
-            <p className="text-sm text-muted-foreground line-clamp-1 mb-3">
-              <span className="font-medium">Menu:</span> {featuredProducts}
-            </p>
-          </>
-        )}
+        {/* Bagian Konten Teks */}
+        <div className="p-2.5 sm:p-3 lg:p-4 flex flex-col justify-between lg:justify-start w-3/5 sm:w-2/3 lg:w-full relative">
+          
+          {/* Tombol Favorit - Mobile/Tablet (di pojok kanan atas konten) */}
+          <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 z-10 lg:hidden">
+            <ClientHydrator>
+              <FavoriteToggleButton umkmId={umkmIdAsNumber} umkmName={umkm.name} />
+            </ClientHydrator>
+          </div>
 
-        {/* Action Button */}
-        <Link
-          href={`/umkm/${umkm.slug}`}
-          className="block w-full bg-emerald-500 hover:bg-emerald-600 text-white text-center py-2 px-4 rounded transition-colors duration-200 font-medium shadow-sm hover:shadow-md"
-        >
-          Lihat Detail
-        </Link>
+          <div>
+            {/* Nama & Kategori */}
+            <div className="mb-1 pr-7 sm:pr-8 lg:pr-0">
+              {/* Kategori hanya tampil di desktop */}
+              <Badge variant="secondary" className="mb-1 text-[10px] sm:text-xs hidden lg:inline-block">
+                {umkm.Category.name}
+              </Badge>
+              <h3 className="font-semibold text-xs sm:text-sm md:text-base lg:text-lg line-clamp-2 lg:line-clamp-2 text-card-foreground group-hover:text-primary transition-colors leading-tight">
+                {umkm.name}
+              </h3>
+            </div>
+
+            {/* Rating */}
+            <div className="flex items-center gap-0.5 sm:gap-1 mb-1.5 sm:mb-2 text-[11px] sm:text-xs lg:text-sm">
+              <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 text-yellow-400 fill-current flex-shrink-0" />
+              <span className="font-medium text-card-foreground">
+                {rating.toFixed(1)}
+              </span>
+            </div>
+
+            {/* Alamat */}
+            <div className="flex items-start gap-1 sm:gap-1.5 mb-1.5 sm:mb-2">
+              <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <p className="text-muted-foreground text-[10px] sm:text-xs line-clamp-2 lg:line-clamp-2 leading-tight">
+                {umkm.address}
+              </p>
+              
+           
+            </div>
+
+            {/* Menu Unggulan - Selalu tampil di semua device */}
+            {featuredProducts && (
+              <>
+                {/* Separator hanya tampil di desktop */}
+                <Separator className="my-2 hidden lg:block" />
+                <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1 mt-1 lg:mt-0 leading-tight">
+                  <span className="font-medium">Menu:</span> {featuredProducts}
+                  {hasMoreFeatured && (
+                    <span className="text-muted-foreground ml-1">…selengkapnya</span>
+                  )}
+                </p>
+              </>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }
