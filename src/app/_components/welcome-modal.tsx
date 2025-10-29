@@ -13,6 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { MapPin, ShoppingCart, Search } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { Building2, ScrollText } from 'lucide-react';
 
 // Ini adalah "kunci" di memori browser
 const LOCAL_STORAGE_KEY = 'hasVisitedLokalKeren';
@@ -45,20 +47,15 @@ export default function WelcomeModal() {
       <DialogContent className="sm:max-w-lg border shadow-lg bg-white rounded-lg">
         <DialogHeader>
           <div className="flex items-center justify-center gap-3 mb-4">
-            <Image 
-              src="/images/icon/icon-192x192.png" 
-              alt="LokalKeren Logo" 
-              width={48} 
-              height={48}
-              className="rounded-lg"
-            />
-            <div>
-              <DialogTitle className="text-2xl font-bold text-gray-900">
-                LokalKeren
-              </DialogTitle>
-              <p className="text-sm text-gray-500">Direktori UMKM Lokal</p>
-            </div>
+             
+             
+          <Building2 className="h-8 w-8 text-primary" />
+          <span className='text-2xl  font-semibold'>LokalKeren</span>
+
           </div>
+          <DialogTitle className=" text-center text-gray-900">
+            Selamat Datang! 👋
+          </DialogTitle>
           <DialogDescription className="text-center text-gray-600 leading-relaxed">
             Platform untuk menemukan dan mendukung UMKM lokal di sekitar Anda. 
             Jelajahi, favoritkan, dan pesan dari bisnis-bisnis lokal terpercaya.

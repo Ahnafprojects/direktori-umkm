@@ -14,7 +14,7 @@ import {
   CommandGroup,
   CommandItem,
 } from '@/components/ui/command';
-import { Loader2, Search, Store } from 'lucide-react';
+import { Loader2, Store } from 'lucide-react';
 
 type Suggestion = {
   id: number;
@@ -70,20 +70,20 @@ export default function AutocompleteSearch() {
     // Kita tetap pakai <form> agar tombol Enter berfungsi
     <form onSubmit={handleFormSubmit} className="flex-1 relative">
       <Command className="overflow-visible">
-        <CommandInput
-          placeholder="Cari bakso, kopi, atau jasa..."
-          value={inputValue}
-          onValueChange={setInputValue} // Update state saat diketik
-          onFocus={() => setIsOpen(suggestions.length > 0)} // Buka jika ada saran
-          onBlur={() => setTimeout(() => setIsOpen(false), 150)} // Tutup saat fokus hilang
-        />
-        
-        {/* Ikon Search di dalam input */}
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          {isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          ) : (
-            <Search className="h-4 w-4 text-muted-foreground" />
+        <div className="relative">
+          <CommandInput
+            placeholder="Cari bakso, kopi, atau jasa..."
+            value={inputValue}
+            onValueChange={setInputValue} // Update state saat diketik
+            onFocus={() => setIsOpen(suggestions.length > 0)} // Buka jika ada saran
+            onBlur={() => setTimeout(() => setIsOpen(false), 150)} // Tutup saat fokus hilang
+          />
+          
+          {/* Tampilkan loading spinner di posisi icon search (ganti icon bawaan saat loading) */}
+          {isPending && (
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
           )}
         </div>
 

@@ -16,6 +16,9 @@ import { Prisma } from '@prisma/client';
 import ProductCard from '@/components/product-card'; // Kita pakai ulang komponen ini
 import MapWrapper from '@/components/map-wrapper'; // Gunakan MapWrapper yang sudah ada
 import ReviewSummarizer from '@/app/_components/review-summarizer';
+import AddReviewForm from '@/app/_components/add-review-form';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // Tipe data baru yang MENCERMINKAN DATABASE BARU KITA
 type UmkmWithDetails = Prisma.UmkmGetPayload<{
@@ -43,6 +46,11 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
   if (!umkm) {
     notFound();
   }
+
+  // --- DAPATKAN USER ID DARI SESSION ---
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id || null;
+  // --------------------------------------
 
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${umkm.latitude},${umkm.longitude}`;
 
@@ -228,6 +236,21 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
             <p className="text-muted-foreground">Jadilah yang pertama memberi ulasan!</p>
           )}
         </div>
+
+        {/* --- FORM TAMBAH ULASAN (Hanya tampil jika user login) --- */}
+        <ClientHydrator>
+          {userId ? (
+            <AddReviewForm umkmId={umkm.id} userId={userId} />
+          ) : (
+            <div className="p-4 border rounded-lg text-center">
+              <p className="text-muted-foreground mb-4">Silakan login untuk memberikan ulasan</p>
+              <Button asChild>
+                <Link href="/login">Login</Link>
+              </Button>
+            </div>
+          )}
+        </ClientHydrator>
+        {/* ---------------------------------------------------------- */}
       </div>
 
     </main>
