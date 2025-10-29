@@ -1,7 +1,8 @@
 // File: src/app/_components/header.tsx
 
 import Link from 'next/link';
-import { Building2 } from 'lucide-react';
+import { Building2, ScrollText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './theme-toggle';
 import ViewToggle from './view-toggle';
 import FavoriteNavButton from './favorite-nav-button';
@@ -21,6 +22,11 @@ export default function Header() {
           <div className="hidden md:block">
             <ViewToggle />
           </div>
+          <Button asChild variant="ghost" size="icon">
+            <Link href="/history" aria-label="Riwayat Pesanan">
+              <ScrollText className="h-5 w-5" />
+            </Link>
+          </Button>
           <FavoriteNavButton />
           <ThemeToggle />
           <UserAuth /> 

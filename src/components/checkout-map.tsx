@@ -28,9 +28,10 @@ const customIcon = new L.Icon({
 
 type Props = {
   location: Coords; // Menerima lokasi (lat, long)
+  accuracy?: number; // Optional accuracy in meters
 };
 
-export default function CheckoutMap({ location }: Props) {
+export default function CheckoutMap({ location, accuracy }: Props) {
   const position: [number, number] = [location.lat, location.long];
 
   return (
@@ -38,8 +39,8 @@ export default function CheckoutMap({ location }: Props) {
     <MapContainer
       key={`${location.lat}-${location.long}`}
       center={position}
-      zoom={16} // Zoom level yang pas
-      scrollWheelZoom={false} // Nonaktifkan zoom
+      zoom={17} // Zoom level lebih detail untuk akurasi
+      scrollWheelZoom={true} // Enable zoom untuk user bisa zoom in/out
       className="w-full h-full z-0"
     >
       <TileLayer
@@ -47,7 +48,20 @@ export default function CheckoutMap({ location }: Props) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <Marker position={position} icon={customIcon} keyboard={true}>
-        <Popup>Lokasi Pengantaranmu</Popup>
+        <Popup>
+          <div className="text-sm">
+            <div className="font-medium">📍 Lokasi Pengantaranmu</div>
+            <div className="text-xs text-gray-600 mt-1">
+              Lat: {location.lat.toFixed(6)}<br/>
+              Long: {location.long.toFixed(6)}
+              {accuracy && (
+                <div className="mt-1 text-blue-600">
+                   Akurasi: ±{Math.round(accuracy)}m
+                </div>
+              )}
+            </div>
+          </div>
+        </Popup>
       </Marker>
     </MapContainer>
   );
