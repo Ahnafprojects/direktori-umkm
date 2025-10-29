@@ -11,8 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Category } from "@prisma/client";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-// 1. IMPORT KOMPONEN PICKER LOKASI YANG BARU
 import LocationPicker from "./location-picker";
+// =================================================================
+// 1. UBAH IMPORT KE 'react-hot-toast'
+// =================================================================
+import { toast } from "react-hot-toast";
 
 interface UmkmRegistrationFormProps {
     categories: Category[];
@@ -24,27 +27,24 @@ type ProductInput = {
     price: string;
 };
 
-// Tipe data untuk posisi peta
 type Position = { lat: number; lng: number };
 
 export default function UmkmRegistrationForm({ categories }: UmkmRegistrationFormProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [products, setProducts] = useState<ProductInput[]>([{ name: '', description: '', price: '' }]);
-    
-    // 2. BUAT STATE UNTUK MENYIMPAN LOKASI YANG DIPILIH DARI PETA
     const [location, setLocation] = useState<Position | null>(null);
 
-    // ... (fungsi-fungsi untuk produk tidak berubah)
     const handleProductChange = (index: number, event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const values = [...products];
         values[index][event.target.name as keyof ProductInput] = event.target.value;
         setProducts(values);
     };
+
     const handleAddProduct = () => {
         setProducts([...products, { name: '', description: '', price: '' }]);
     };
+
     const handleRemoveProduct = (index: number) => {
         const values = [...products];
         values.splice(index, 1);
@@ -54,15 +54,12 @@ export default function UmkmRegistrationForm({ categories }: UmkmRegistrationFor
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setIsLoading(true);
-        setError(null);
         
         const formData = new FormData(event.currentTarget);
         const basicData = Object.fromEntries(formData.entries());
 
-        // Gabungkan data form dengan data dari state (lokasi & produk)
         const finalData = {
             ...basicData,
-            // 3. TAMBAHKAN LATITUDE & LONGITUDE DARI STATE LOKASI
             latitude: location?.lat,
             longitude: location?.lng,
             products: products.filter(p => p.name && p.price)
@@ -75,17 +72,23 @@ export default function UmkmRegistrationForm({ categories }: UmkmRegistrationFor
                 body: JSON.stringify(finalData),
             });
             
+            const responseData = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Gagal mendaftarkan UMKM.');
+                throw new Error(responseData.message || 'Gagal mendaftarkan UMKM.');
             }
             
-            alert('UMKM berhasil didaftarkan!');
-            router.push('/dashboard/umkm/saya');
-            router.refresh();
+            // 2. GUNAKAN SINTAKS DARI 'react-hot-toast'
+            toast.success('UMKM berhasil didaftarkan!');
+
+            setTimeout(() => {
+                router.push('/dashboard/umkm/saya');
+                router.refresh();
+            }, 1500);
             
         } catch (err: any) {
-            setError(err.message);
+            // 3. GUNAKAN SINTAKS DARI 'react-hot-toast' UNTUK EROR
+            toast.error(err.message || 'Oops! Terjadi kesalahan.');
         } finally {
             setIsLoading(false);
         }
@@ -93,17 +96,10 @@ export default function UmkmRegistrationForm({ categories }: UmkmRegistrationFor
 
     return (
         <form onSubmit={handleSubmit} className="space-y-8">
-             {error && (
-                <div className="bg-destructive/15 p-3 rounded-md text-sm text-destructive">
-                    <p>{error}</p>
-                </div>
-            )}
-            
-            {/* --- Info Dasar UMKM (tidak berubah) --- */}
+            {/* ... sisa dari form Anda (tidak ada perubahan di sini) ... */}
             <div className="space-y-4">
                 <h3 className="text-lg font-medium">Informasi Dasar</h3>
-                {/* ... (semua input dasar Anda tetap sama) ... */}
-                 <div className="space-y-2">
+                <div className="space-y-2">
                     <Label htmlFor="name">Nama UMKM</Label>
                     <Input id="name" name="name" placeholder="Contoh: Bakso Cak Man" required disabled={isLoading} />
                 </div>
@@ -140,14 +136,12 @@ export default function UmkmRegistrationForm({ categories }: UmkmRegistrationFor
 
             <Separator />
             
-            {/* --- 4. GANTI BAGIAN PETA DENGAN KOMPONEN BARU --- */}
             <div className="space-y-4">
                 <h3 className="text-lg font-medium">Pilih Lokasi di Peta</h3>
                 <p className="text-sm text-muted-foreground">
                     Klik pada peta untuk menempatkan penanda lokasi persis bisnis Anda.
                 </p>
                 <LocationPicker position={location} onLocationChange={setLocation} />
-                {/* Menampilkan koordinat yang dipilih untuk feedback pengguna */}
                 {location && (
                     <div className="text-sm text-muted-foreground mt-2">
                         Koordinat Terpilih: Lat: {location.lat.toFixed(6)}, Lng: {location.lng.toFixed(6)}
@@ -157,9 +151,7 @@ export default function UmkmRegistrationForm({ categories }: UmkmRegistrationFor
 
             <Separator />
 
-            {/* --- Bagian Input Menu Dinamis (tidak berubah) --- */}
             <div className="space-y-4">
-                {/* ... (semua input menu Anda tetap sama) ... */}
                 <h3 className="text-lg font-medium">Menu / Daftar Produk</h3>
                 {products.map((product, index) => (
                     <div key={index} className="p-4 border rounded-md space-y-4 relative">

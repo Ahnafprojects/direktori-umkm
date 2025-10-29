@@ -5,6 +5,9 @@
 import { db } from "./prisma";
 import { isUmkmOpen } from "./time-helper"; // <-- 1. IMPORT HELPER
 
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { revalidatePath } from 'next/cache';
 // 1. Mengambil SEMUA kategori untuk filter
 export async function getCategories() {
   try {
@@ -355,5 +358,47 @@ export async function getFavoriteUmkmsDetails(ids: number[]) {
     return umkms;
   } catch (error) {
     return [];
+  }
+}
+export async function deleteUmkm(umkmId: number) {
+  'use server'; // Menandakan ini adalah Server Action
+
+  try {
+    const session = await getServerSession(authOptions);
+
+    // Keamanan: Pastikan user sudah login dan merupakan pengusaha
+    // @ts-ignore
+    if (!session || session.user?.role !== 'PENGUSAHA') {
+      throw new Error('Akses tidak diizinkan.');
+    }
+
+    // Keamanan: Cari UMKM yang akan dihapus
+    const umkmToDelete = await db.umkm.findUnique({
+      where: { id: umkmId },
+      select: { ownerId: true }, // Hanya butuh ownerId untuk verifikasi
+    });
+
+    // Keamanan: Pastikan UMKM ada dan user adalah pemiliknya
+    // @ts-ignore
+    if (!umkmToDelete || umkmToDelete.ownerId !== session.user.id) {
+      throw new Error('Anda tidak memiliki izin untuk menghapus UMKM ini.');
+    }
+
+    // Jika semua pemeriksaan keamanan lolos, hapus UMKM
+    await db.umkm.delete({
+      where: { id: umkmId },
+    });
+
+    // Revalidate path untuk menyegarkan data di halaman "UMKM Saya"
+    revalidatePath('/dashboard/umkm/saya');
+
+    return { success: true, message: 'UMKM berhasil dihapus.' };
+
+  } catch (error) {
+    // Tangani error dan kirim pesan yang sesuai
+    if (error instanceof Error) {
+        return { success: false, message: error.message };
+    }
+    return { success: false, message: 'Terjadi kesalahan server.' };
   }
 }
