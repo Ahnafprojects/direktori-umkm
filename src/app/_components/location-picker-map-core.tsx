@@ -1,14 +1,25 @@
 // File: src/app/_components/location-picker-map-core.tsx
 'use client';
 
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useEffect } from 'react';
 
-// 1. HAPUS SEMUA IMPORT GAMBAR DARI SINI
-// import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-// import markerIcon from 'leaflet/dist/images/marker-icon.png';
-// import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+// Path ke ikon di folder public
+const iconUrl = '/leaflet/marker-icon.png';
+const iconRetinaUrl = '/leaflet/marker-icon-2x.png';
+const shadowUrl = '/leaflet/marker-shadow.png';
+
+const customIcon = new L.Icon({
+    iconUrl,
+    iconRetinaUrl,
+    shadowUrl,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+});
 
 type Position = { lat: number; lng: number };
 
@@ -17,6 +28,7 @@ interface LocationPickerMapCoreProps {
   onLocationChange: (position: Position) => void;
 }
 
+// Komponen helper untuk menangani klik
 function MapClickHandler({ onLocationChange }: { onLocationChange: (position: Position) => void }) {
   useMapEvents({
     click(e) {
@@ -26,19 +38,23 @@ function MapClickHandler({ onLocationChange }: { onLocationChange: (position: Po
   return null;
 }
 
-export default function LocationPickerMapCore({ position, onLocationChange }: LocationPickerMapCoreProps) {
-  // 2. PERBAIKI PEMBUATAN IKON UNTUK MENGGUNAKAN PATH DARI FOLDER 'PUBLIC'
-  const customIcon = new L.Icon({
-      iconUrl: '/leaflet/marker-icon.png',
-      iconRetinaUrl: '/leaflet/marker-icon-2x.png',
-      shadowUrl: '/leaflet/marker-shadow.png',
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41],
-  });
+// =================================================================
+// KOMPONEN HELPER BARU UNTUK MENGGERAKKAN PETA
+// =================================================================
+function MapUpdater({ position }: { position: Position | null }) {
+    const map = useMap(); // Dapatkan instance peta
+    useEffect(() => {
+        if (position) {
+            // Gunakan flyTo untuk animasi yang mulus ke posisi baru
+            map.flyTo([position.lat, position.lng], 15); // Zoom level 15
+        }
+    }, [position, map]);
 
-  const defaultPosition: Position = { lat: -7.2575, lng: 112.7521 };
+    return null;
+}
+
+export default function LocationPickerMapCore({ position, onLocationChange }: LocationPickerMapCoreProps) {
+  const defaultPosition: Position = { lat: -7.2820, lng: 112.7944 }; // Default di area ITS Surabaya
 
   return (
     <MapContainer 
@@ -55,6 +71,8 @@ export default function LocationPickerMapCore({ position, onLocationChange }: Lo
       {position && <Marker position={position} icon={customIcon}></Marker>}
       
       <MapClickHandler onLocationChange={onLocationChange} />
+      {/* Tambahkan komponen updater di sini */}
+      <MapUpdater position={position} />
     </MapContainer>
   );
 }
