@@ -17,7 +17,7 @@ type CartState = {
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
-};
+}; // atuu
 
 export const useCartStore = create<CartState>()(
   // Kita pakai `persist` agar keranjang tidak hilang saat di-refresh
