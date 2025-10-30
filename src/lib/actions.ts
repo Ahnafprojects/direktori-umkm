@@ -1,153 +1,220 @@
-// src/lib/actions.ts
-"use server"; // Wajib ada untuk Server Actions
+"use server";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { db } from "./prisma";
-import { isUmkmOpen } from "./time-helper"; // <-- 1. IMPORT HELPER
+import { isUmkmOpen } from "./time-helper";
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { revalidatePath } from 'next/cache';
+import { Prisma } from '@prisma/client';
+import { z } from 'zod';
 
-// 1. Mengambil SEMUA kategori untuk filter
+// ... (semua fungsi 'get' kamu tidak berubah, jadi saya salin langsung)
 export async function getCategories() {
-  try {
-    const categories = await db.category.findMany();
-    return categories;
-  } catch (error) {
-    console.error("Gagal mengambil kategori:", error);
-    return [];
-  }
+    try {
+        const categories = await db.category.findMany();
+        return categories;
+    } catch (error) {
+        console.error("Gagal mengambil kategori:", error);
+        return [];
+    }
 }
 
-// 2. MODIFIKASI FUNGSI getUmkms
 export async function getUmkms(params: {
-  search?: string;
-  category?: string;
-  lat?: string; // <-- Tambah parameter lat
-  long?: string; // <-- Tambah parameter long
-  openNow?: string; // <-- 2. TAMBAH PARAMETER BARU
+    search?: string;
+    category?: string;
+    lat?: string;
+    long?: string;
+    openNow?: string;
 }) {
-  const { search, category, lat, long, openNow } = params;
-  let filteredUmkms: any[] = [];
+    const { search, category, lat, long, openNow } = params;
+    let filteredUmkms: any[] = [];
 
-  try {
-    // --- SKENARIO 1: PENCARIAN BIASA (TANPA LOKASI) ---
-    // Jika tidak ada lat/long, jalankan query standar seperti sebelumnya
-    if (!lat || !long) {
-      console.log("Mode: Pencarian Standar");
+    try {
+        if (!lat || !long) {
+            const whereCondition: any = {};
+            if (search) {
+                whereCondition.name = { contains: search, mode: "insensitive" };
+            }
+            if (category && category !== "semua" && category !== "all" && category !== "") {
+                whereCondition.Category = { slug: category };
+            }
+            const umkms = await db.umkm.findMany({
+                where: whereCondition,
+                include: {
+                    Category: true,
+                    ProductCategory: {
+                        include: {
+                            Product: { where: { isFeatured: true }, take: 2 },
+                        },
+                    },
+                },
+                orderBy: { isRecommended: "desc" },
+            });
+            filteredUmkms = umkms.map((umkm: any) => ({
+                ...umkm,
+                rating: umkm.rating ? Number(umkm.rating) : null,
+            }));
+        } else {
+            const latitude = parseFloat(lat!);
+            const longitude = parseFloat(long!);
+            let whereCondition = "";
+            const queryParams: any[] = [latitude, longitude];
+            let paramIndex = 3;
+            if (search) {
+                whereCondition += ` AND u."name" ILIKE $${paramIndex}`;
+                queryParams.push(`%${search}%`);
+                paramIndex++;
+            }
+            if (category) {
+                whereCondition += ` AND c."slug" = $${paramIndex}`;
+                queryParams.push(category);
+                paramIndex++;
+            }
+            const sortedResults = (await db.$queryRawUnsafe(
+                `SELECT u.id, ( 6371 * acos( cos( radians($1) ) * cos( radians( u.latitude ) ) * cos( radians( u.longitude ) - radians($2) ) + sin( radians($1) ) * sin( radians( u.latitude ) ) ) ) AS distance FROM "Umkm" u LEFT JOIN "Category" c ON u."categoryId" = c.id WHERE u.latitude IS NOT NULL AND u.longitude IS NOT NULL ${whereCondition} ORDER BY distance ASC LIMIT 50`,
+                ...queryParams
+            )) as Array<{ id: number; distance: number }>;
+            const sortedIds = sortedResults.map((u) => u.id);
+            if (sortedIds.length === 0) return [];
+            const umkmsData = await db.umkm.findMany({
+                where: { id: { in: sortedIds } },
+                include: {
+                    Category: true,
+                    ProductCategory: {
+                        include: {
+                            Product: { where: { isFeatured: true }, take: 2 },
+                        },
+                    },
+                },
+            });
+            const umkmsMap = new Map(umkmsData.map((u: any) => [u.id, u]));
+            const sortedUmkms = sortedIds.map((id: any) => umkmsMap.get(id)).filter(Boolean);
+            filteredUmkms = sortedUmkms.map((umkm: any) => ({
+                ...umkm,
+                rating: umkm.rating ? Number(umkm.rating) : null,
+            }));
+        }
 
-      // Build where condition for standard search
-      const whereCondition: any = {};
+        if (openNow === "true" && filteredUmkms.length > 0) {
+            return filteredUmkms.filter((umkm) => isUmkmOpen(umkm.openingHours));
+        }
+        return filteredUmkms;
+    } catch (error) {
+        console.error("Gagal mengambil UMKM:", error);
+        return [];
+    }
+}
 
-      if (search) {
-        whereCondition.name = {
-          contains: search,
-          mode: "insensitive",
-        };
-      }
-
-      // Only add category filter if category is not empty/undefined/"semua"/"all"
-      if (
-        category &&
-        category !== "semua" &&
-        category !== "all" &&
-        category !== ""
-      ) {
-        whereCondition.Category = {
-          slug: category,
-        };
-      }
-
-      const umkms = await db.umkm.findMany({
-        where: whereCondition,
-        include: {
-          Category: true,
-          ProductCategory: {
-            // <-- UBAH INI: Ambil ProductCategory dulu
+export async function getUmkmBySlug(slug: string) {
+    try {
+        const umkm = await db.umkm.findUnique({
+            where: { slug: slug },
             include: {
               Product: {
                 // <-- Kemudian ambil Product dari ProductCategory
                 take: 3, // Ambil 3 saja
               },
+                Category: true,
+                Review: {
+                    orderBy: { createdAt: "desc" },
+                    include: { user: true },
+                },
+                ProductCategory: {
+                    orderBy: { id: "asc" },
+                    include: { Product: { orderBy: { isFeatured: "desc" } } },
+                },
             },
-          },
-        },
-        orderBy: {
-          isRecommended: "desc", // Urutkan berdasarkan rekomendasi
-        },
-      });
+        });
+        return umkm;
+    } catch (error) {
+        console.error("Gagal mengambil detail UMKM:", error);
+        return null;
+    }
+}
 
-      // Serialize Decimal fields to numbers
-      filteredUmkms = umkms.map((umkm: any) => ({
-        ...umkm,
-        rating: umkm.rating ? Number(umkm.rating) : null,
-      }));
-
-      // Debug: Log untuk cek data produk
-      console.log(
-        "getUmkms result sample:",
-        filteredUmkms[0]?.name,
-        "has product categories:",
-        filteredUmkms[0]?.ProductCategory?.length
-      );
-    } else {
-      // --- SKENARIO 2: PENCARIAN TERDEKAT (DENGAN LOKASI) ---
-      console.log("Mode: Pencarian Terdekat");
-      const latitude = parseFloat(lat!);
-      const longitude = parseFloat(long!);
-
-      // 1. Buat kondisi WHERE untuk raw query
-      let whereCondition = "";
-      const params: any[] = [latitude, longitude];
-      let paramIndex = 3; // Mulai dari $3 karena $1 dan $2 untuk latitude/longitude
-
-      if (search) {
-        whereCondition += ` AND u."name" ILIKE $${paramIndex}`;
-        params.push(`%${search}%`);
-        paramIndex++;
-      }
-      if (category) {
-        whereCondition += ` AND c."slug" = $${paramIndex}`;
-        params.push(category);
-        paramIndex++;
-      }
-
-      // 2. Query Raw: Get ID & Hitung Jarak (Haversine Formula)
-      // Ini adalah inti dari fitur "Cari Terdekat".
-      const sortedResults = (await db.$queryRawUnsafe(
-        `
-      SELECT 
-        u.id,
-        ( 6371 * acos(
-            cos( radians($1) )
-            * cos( radians( u.latitude ) )
-            * cos( radians( u.longitude ) - radians($2) )
-            + sin( radians($1) )
-            * sin( radians( u.latitude ) )
-          )
-        ) AS distance
-      FROM "Umkm" u
-      LEFT JOIN "Category" c ON u."categoryId" = c.id
-      WHERE u.latitude IS NOT NULL AND u.longitude IS NOT NULL ${whereCondition}
-      ORDER BY distance ASC
-      LIMIT 50
-    `,
-        ...params
-      )) as Array<{ id: number; distance: number }>;
-
-      // 3. Ambil data lengkap UMKM berdasarkan ID yang sudah terurut
-      const sortedIds = sortedResults.map((u) => u.id);
-
-      if (sortedIds.length === 0) {
+export async function getUmkmSuggestions(query: string) {
+    if (!query) return [];
+    try {
+        return await db.umkm.findMany({
+            where: { name: { contains: query, mode: "insensitive" } },
+            select: { id: true, name: true, slug: true },
+            take: 5,
+        });
+    } catch (error) {
+        console.error("Gagal mengambil saran:", error);
         return [];
-      }
+    }
+}
 
-      // Ambil data lengkap dari DB
-      const umkmsData = await db.umkm.findMany({
-        where: {
-          id: { in: sortedIds },
-        },
-        include: {
-          Category: true,
-          ProductCategory: {
-            // <-- UBAH INI JUGA
+export async function getUmkmForMap() {
+    try {
+        const umkms = await db.umkm.findMany({
+            where: { latitude: { not: null }, longitude: { not: null } },
+            select: {
+                id: true, name: true, slug: true,
+                latitude: true, longitude: true, photos: true,
+                Category: { select: { name: true } },
+            },
+        });
+        const cleanedUmkms = umkms.filter((umkm: any) => umkm.latitude !== null && umkm.longitude !== null);
+        return cleanedUmkms.map((umkm: any) => ({
+            id: umkm.id, name: umkm.name, slug: umkm.slug,
+            latitude: umkm.latitude, longitude: umkm.longitude,
+            photoUrl: (Array.isArray(umkm.photos) && umkm.photos[0]) || "/images/placeholder-umkm.jpg",
+            category: { name: umkm.Category.name },
+        }));
+    } catch (error) {
+        console.error("Gagal mengambil data peta:", error);
+        return [];
+    }
+}
+
+export async function getUmkmsByIds(ids: number[]) {
+    if (ids.length === 0) return [];
+    try {
+        const umkms = await db.umkm.findMany({
+            where: { id: { in: ids } },
+            include: { Category: true },
+        });
+        const umkmsMap = new Map(umkms.map((u: any) => [u.id, u]));
+        const sortedUmkms = ids.map((id) => umkmsMap.get(id)).filter(Boolean);
+        return sortedUmkms.map((umkm: any) => ({
+            ...umkm,
+            rating: umkm.rating ? Number(umkm.rating) : null,
+        }));
+    } catch (error) {
+        console.error("Gagal mengambil UMKM by IDs:", error);
+        return [];
+    }
+}
+
+export async function getAllUmkmsForAI() {
+    try {
+        return await db.umkm.findMany({
+            select: { slug: true, name: true },
+        });
+    } catch (error) {
+        return [];
+    }
+}
+
+export async function getFavoriteUmkmsDetails(ids: number[]) {
+    if (ids.length === 0) return [];
+    try {
+        return await db.umkm.findMany({
+            where: { id: { in: ids } },
+            select: { slug: true, name: true },
+        });
+    } catch (error) {
+        return [];
+    }
+}
+
+export async function getUmkmForEdit(slug: string) {
+    try {
+        const umkm = await db.umkm.findUnique({
+            where: { slug },
             include: {
               Product: {
                 // <-- Product ada di dalam ProductCategory
@@ -164,91 +231,56 @@ export async function getUmkms(params: {
       const sortedUmkms = sortedIds
         .map((id: any) => umkmsMap.get(id))
         .filter(Boolean);
+                ProductCategory: {
+                    include: {
+                        Product: {
+                            orderBy: { id: 'asc' }
+                        }
+                    }
+                }
+            }
+        });
 
-      // Serialize Decimal fields to numbers
-      filteredUmkms = sortedUmkms.map((umkm: any) => ({
-        ...umkm,
-        rating: umkm.rating ? Number(umkm.rating) : null,
-      }));
-    } // <-- TAMBAHKAN CLOSING BRACKET INI
+        if (!umkm) return null;
 
-    // --- TAHAP 2: FILTER "OPEN NOW" (SETELAH DATA DI AMBIL) ---
-    // Jika parameter `openNow` adalah 'true', filter hasilnya
-    if (openNow === "true" && filteredUmkms.length > 0) {
-      return filteredUmkms.filter((umkm) => isUmkmOpen(umkm.openingHours));
+        const products = umkm.ProductCategory[0]?.Product.map(p => ({
+            name: p.name,
+            description: p.description || '',
+            price: p.price ? String(p.price) : ''
+        })) || [];
+
+        return {
+            id: umkm.id, ownerId: umkm.ownerId, name: umkm.name,
+            description: umkm.description || '', address: umkm.address,
+            phone: umkm.phone || '', openingHours: umkm.openingHours || '',
+            photos: umkm.photos, latitude: umkm.latitude, longitude: umkm.longitude,
+            categoryId: umkm.categoryId, products: products,
+        };
+
+    } catch (error) {
+        console.error("Gagal mengambil data UMKM untuk diedit:", error);
+        return null;
     }
-
-    // Jika tidak, kembalikan hasil seperti biasa
-    return filteredUmkms;
-  } catch (error) {
-    console.error("Gagal mengambil UMKM:", error);
-    return [];
-  }
 }
 
-// 3. Mengambil SATU UMKM untuk halaman detail
-export async function getUmkmBySlug(slug: string) {
-  try {
-    const umkm = await db.umkm.findUnique({
-      where: {
-        slug: slug,
-      },
-      include: {
-        Category: true, // Kategori UMKM (Makanan, Jasa, dll)
-        Review: {
-          // Ulasan
-          orderBy: { createdAt: "desc" },
-          include: {
-            user: true, // Include user data for review author
-          },
-        },
-        // INI BAGIAN BARU (PENTING)
-        ProductCategory: {
-          // Ambil Kategori Produk (Minuman, Sate, dll)
-          orderBy: { id: "asc" }, // Urutkan berdasarkan ID
-          include: {
-            Product: {
-              // Ambil Produk di dalam setiap kategori
-              orderBy: { isFeatured: "desc" }, // Tampilkan yg andalan dulu
-            },
-          },
-        },
-        // HAPUS: 'products: { ... }' (sudah tidak relevan)
-      },
-    });
-    return umkm;
-  } catch (error) {
-    console.error("Gagal mengambil detail UMKM:", error);
-    return null;
-  }
-}
-// FUNGSI BARU: HANYA UNTUK MENGAMBIL SARAN PENCARIAN
-export async function getUmkmSuggestions(query: string) {
-  if (!query) {
-    return [];
-  }
-
-  try {
-    const suggestions = await db.umkm.findMany({
-      where: {
-        name: {
-          contains: query,
-          mode: "insensitive", // Tidak peduli huruf besar/kecil
-        },
-      },
-      select: {
-        id: true,
-        name: true, // Hanya ambil nama
-        slug: true, // Hanya ambil slug (untuk link)
-      },
-      take: 5, // Batasi hanya 5 hasil teratas
-    });
-    return suggestions;
-  } catch (error) {
-    console.error("Gagal mengambil saran:", error);
-    return [];
-  }
-}
+// === PERUBAHAN UTAMA: Skema validasi untuk path lokal ===
+const UmkmFormSchema = z.object({
+  name: z.string().min(3, "Nama UMKM wajib diisi."),
+  description: z.string().min(1, "Deskripsi wajib diisi."),
+  address: z.string().min(5, "Alamat wajib diisi."),
+  phone: z.string().optional(),
+  openingHours: z.string().optional(),
+  categoryId: z.string().min(1, "Kategori wajib dipilih."),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  // Hapus .url() agar bisa menerima path lokal seperti '/uploads/file.png'
+  photos: z.array(z.string()).optional(),
+  products: z.array(z.object({
+    name: z.string().min(1),
+    description: z.string().optional(),
+    price: z.string().min(1),
+  })).optional()
+});
 
 // FUNGSI BARU: UNTUK MENGAMBIL SEMUA PIN PETA
 export async function getUmkmForMap() {
@@ -300,66 +332,138 @@ export async function getUmkmForMap() {
     console.error("Gagal mengambil data peta:", error);
     return [];
   }
+
+function createSlug(name: string): string {
+    const baseSlug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+    const uniqueSuffix = Date.now().toString().slice(-5);
+    return `${baseSlug}-${uniqueSuffix}`;
 }
 
-// FUNGSI BARU: MENGAMBIL UMKM BERDASARKAN ARRAY ID
-export async function getUmkmsByIds(ids: number[]) {
-  if (ids.length === 0) {
-    return [];
-  }
-  try {
-    const umkms = await db.umkm.findMany({
-      where: {
-        id: { in: ids },
-      },
-      include: {
-        Category: true,
-      },
-    });
+// Tidak ada perubahan di 'createUmkm' dan 'updateUmkm', namun kodenya tetap disertakan
+export async function createUmkm(data: any) {
+    const session = await getServerSession(authOptions);
+    // @ts-ignore
+    if (!session || session.user?.role !== 'PENGUSAHA') {
+        return { success: false, message: 'Anda tidak memiliki akses.' };
+    }
 
-    // Mengurutkan hasil sesuai urutan array 'ids'
-    const umkmsMap = new Map(umkms.map((u: any) => [u.id, u]));
-    const sortedUmkms = ids.map((id) => umkmsMap.get(id)).filter(Boolean);
+    const validationResult = UmkmFormSchema.safeParse(data);
+    if (!validationResult.success) {
+        const firstError = validationResult.error.issues[0].message;
+        return { success: false, message: firstError };
+    }
+    const validatedData = validationResult.data;
 
-    // Serialize Decimal fields to numbers
-    return sortedUmkms.map((umkm: any) => ({
-      ...umkm,
-      rating: umkm.rating ? Number(umkm.rating) : null,
-    }));
-  } catch (error) {
-    console.error("Gagal mengambil UMKM by IDs:", error);
-    return [];
-  }
+    try {
+        const slug = createSlug(validatedData.name);
+        await db.$transaction(async (tx) => {
+            const newUmkm = await tx.umkm.create({
+                data: {
+                    name: validatedData.name, slug: slug, description: validatedData.description,
+                    address: validatedData.address, phone: validatedData.phone,
+                    openingHours: validatedData.openingHours, categoryId: parseInt(validatedData.categoryId, 10),
+                    latitude: validatedData.latitude, longitude: validatedData.longitude,
+                    photos: validatedData.photos,
+                    // @ts-ignore
+                    ownerId: session.user.id,
+                },
+            });
+            const productCategory = await tx.productCategory.create({
+                data: { name: 'Menu Utama', umkmId: newUmkm.id },
+            });
+            if (validatedData.products && validatedData.products.length > 0) {
+                await tx.product.createMany({
+                    data: validatedData.products.map((p: any) => ({
+                        name: p.name, description: p.description,
+                        price: parseInt(p.price, 10), productCategoryId: productCategory.id,
+                    })),
+                });
+            }
+        });
+        revalidatePath('/dashboard/umkm/saya');
+        return { success: true, message: 'UMKM baru berhasil didaftarkan!' };
+    } catch (error) {
+        console.error("Create UMKM error:", error);
+        return { success: false, message: 'Gagal mendaftarkan UMKM. Pastikan semua data terisi.' };
+    }
 }
 
-// FUNGSI BARU: Ambil SEMUA UMKM (ringkas) untuk AI
-export async function getAllUmkmsForAI() {
-  try {
-    const umkms = await db.umkm.findMany({
-      select: {
-        slug: true,
-        name: true,
-      },
-    });
-    return umkms;
-  } catch (error) {
-    return [];
-  }
+export async function updateUmkm(umkmId: number, data: any) {
+    const session = await getServerSession(authOptions);
+    // @ts-ignore
+    if (!session || session.user?.role !== 'PENGUSAHA') {
+        return { success: false, message: 'Anda tidak memiliki akses.' };
+    }
+
+    const umkm = await db.umkm.findUnique({ where: { id: umkmId }, select: { ownerId: true, slug: true } });
+    // @ts-ignore
+    if (!umkm || umkm.ownerId !== session.user.id) {
+        return { success: false, message: 'UMKM tidak ditemukan atau Anda bukan pemiliknya.' };
+    }
+    
+    const validationResult = UmkmFormSchema.safeParse(data);
+    if (!validationResult.success) {
+        const firstError = validationResult.error.issues[0].message;
+        return { success: false, message: firstError };
+    }
+    const validatedData = validationResult.data;
+
+    try {
+        await db.$transaction(async (tx) => {
+            await tx.umkm.update({
+                where: { id: umkmId },
+                data: {
+                    name: validatedData.name, description: validatedData.description,
+                    address: validatedData.address, phone: validatedData.phone,
+                    openingHours: validatedData.openingHours, categoryId: parseInt(validatedData.categoryId, 10),
+                    latitude: validatedData.latitude, longitude: validatedData.longitude,
+                    photos: validatedData.photos,
+                },
+            });
+            const productCategory = await tx.productCategory.findFirst({ where: { umkmId: umkmId } });
+            if (productCategory) {
+                await tx.product.deleteMany({ where: { productCategoryId: productCategory.id } });
+                if (validatedData.products && validatedData.products.length > 0) {
+                    await tx.product.createMany({
+                        data: validatedData.products.map((p: any) => ({
+                            name: p.name, description: p.description || '',
+                            price: parseInt(p.price, 10), productCategoryId: productCategory.id,
+                        }))
+                    });
+                }
+            }
+        });
+        revalidatePath('/dashboard/umkm/saya');
+        revalidatePath(`/umkm/${umkm.slug}`);
+        return { success: true, message: 'UMKM berhasil diperbarui!' };
+    } catch (error) {
+        console.error("Update UMKM error:", error);
+        return { success: false, message: 'Terjadi kesalahan pada server.' };
+    }
 }
 
-// FUNGSI BARU: Ambil detail UMKM favorit berdasarkan ID
-export async function getFavoriteUmkmsDetails(ids: number[]) {
-  if (ids.length === 0) return [];
-  try {
-    const umkms = await db.umkm.findMany({
-      where: { id: { in: ids } },
-      select: {
-        slug: true,
-        name: true,
-      },
-    });
-    return umkms;
-  } catch (error) {
-    return [];
-  }
+export async function deleteUmkm(umkmId: number) {
+    const session = await getServerSession(authOptions);
+    try {
+        // @ts-ignore
+        if (!session || session.user?.role !== 'PENGUSAHA') {
+            throw new Error('Akses tidak diizinkan.');
+        }
+        const umkmToDelete = await db.umkm.findUnique({
+            where: { id: umkmId },
+            select: { ownerId: true },
+        });
+        // @ts-ignore
+        if (!umkmToDelete || umkmToDelete.ownerId !== session.user.id) {
+            throw new Error('Anda tidak memiliki izin untuk menghapus UMKM ini.');
+        }
+        await db.umkm.delete({ where: { id: umkmId } });
+        revalidatePath('/dashboard/umkm/saya');
+        return { success: true, message: 'UMKM berhasil dihapus.' };
+    } catch (error) {
+        if (error instanceof Error) {
+            return { success: false, message: error.message };
+        }
+        return { success: false, message: 'Terjadi kesalahan server.' };
+    }
 }
