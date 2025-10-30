@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,23 +14,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Category } from "@prisma/client";
-import {
-  PlusCircle,
-  Trash2,
-  Search,
-  Loader2,
-  LocateFixed,
-  Upload,
-  X,
-} from "lucide-react";
+import { PlusCircle, Trash2, Search, Loader2, LocateFixed } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import LocationPicker from "./location-picker";
+import CloudinaryUpload from "@/components/cloudinary-upload";
 import { toast } from "react-hot-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import { createUmkm, updateUmkm } from "@/lib/actions";
-
-// Hapus import Vercel Blob, karena kita tidak memakainya lagi
-// import { upload } from '@vercel/blob/client';
 
 type ProductInput = { name: string; description: string; price: string };
 type Position = { lat: number; lng: number };
@@ -75,7 +64,6 @@ export default function UmkmRegistrationForm({
 }: UmkmRegistrationFormProps) {
   const router = useRouter();
   const isEditMode = !!initialData;
-  const inputFileRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(initialData?.name || "");
   const [description, setDescription] = useState(
@@ -107,7 +95,6 @@ export default function UmkmRegistrationForm({
   const [isLoading, setIsLoading] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const debouncedAddress = useDebounce(address, 1500);
 
   const handleProductChange = (
@@ -134,49 +121,12 @@ export default function UmkmRegistrationForm({
     setProducts(values);
   };
 
-  // === PERUBAHAN UTAMA: Fungsi untuk upload ke server lokal ===
-  const handlePhotoUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    if (!event.target.files) return;
-
-    const file = event.target.files[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    const toastId = toast.loading("Mengupload foto...");
-
-    const formData = new FormData();
-    formData.append("file", file); // 'file' harus cocok dengan nama di API route
-
-    try {
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Gagal mengupload file.");
-      }
-
-      const { url } = await response.json();
-      setPhotos((prevPhotos) => [...prevPhotos, url]);
-      toast.success("Foto berhasil diupload!", { id: toastId });
-    } catch (error: any) {
-      toast.error(error.message || "Gagal mengupload foto.", { id: toastId });
-    } finally {
-      setIsUploading(false);
-      if (inputFileRef.current) {
-        inputFileRef.current.value = "";
-      }
-    }
+  const handlePhotoUpload = (url: string) => {
+    setPhotos((prevPhotos) => [...prevPhotos, url]);
   };
 
   const handleRemovePhoto = (urlToRemove: string) => {
     setPhotos(photos.filter((url) => url !== urlToRemove));
-    // Note: Untuk penyimpanan lokal, kita tidak perlu menghapus file dari server saat ini
-    // untuk menyederhanakan. File akan tetap ada di folder /public/uploads.
   };
 
   // ... (sisa fungsi lainnya tidak berubah)
@@ -342,58 +292,30 @@ export default function UmkmRegistrationForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="photos">Foto UMKM (Maks. 5 foto)</Label>
-          <div className="p-4 border-2 border-dashed rounded-lg">
+          <Label>Foto UMKM (Maks. 5 foto)</Label>
+          {photos.length < 5 && (
+            <CloudinaryUpload onUpload={handlePhotoUpload} className="mb-4" />
+          )}
+          {photos.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {photos.map((url) => (
-                <div key={url} className="relative aspect-square group">
-                  <Image
-                    src={url}
-                    alt="Preview UMKM"
-                    fill
-                    className="object-cover rounded-md"
-                  />
-                  <div className="absolute top-0 right-0">
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="h-6 w-6 opacity-75 group-hover:opacity-100"
-                      onClick={() => handleRemovePhoto(url)}
-                      disabled={isUploading || isLoading}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+              {photos.map((url, index) => (
+                <CloudinaryUpload
+                  key={url}
+                  currentImage={url}
+                  onUpload={(newUrl) => {
+                    const newPhotos = [...photos];
+                    newPhotos[index] = newUrl;
+                    setPhotos(newPhotos);
+                  }}
+                  onRemove={() => handleRemovePhoto(url)}
+                  className="aspect-square"
+                />
               ))}
-              {photos.length < 5 && (
-                <button
-                  type="button"
-                  onClick={() => inputFileRef.current?.click()}
-                  disabled={isUploading || isLoading}
-                  className="flex items-center justify-center w-full aspect-square border-2 border-dashed border-muted-foreground/50 rounded-md hover:bg-muted/50 transition-colors"
-                >
-                  {isUploading ? (
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Upload className="h-8 w-8 text-muted-foreground" />
-                  )}
-                </button>
-              )}
             </div>
-          </div>
-          <Input
-            ref={inputFileRef}
-            type="file"
-            id="file-upload"
-            className="hidden"
-            accept="image/*"
-            onChange={handlePhotoUpload}
-            disabled={isUploading || isLoading}
-          />
+          )}
           <p className="text-sm text-muted-foreground">
-            Foto pertama akan menjadi foto utama.
+            Foto pertama akan menjadi foto utama. Klik pada foto untuk
+            menggantinya.
           </p>
         </div>
 
@@ -567,7 +489,7 @@ export default function UmkmRegistrationForm({
       <Button
         type="submit"
         className="w-full"
-        disabled={isLoading || isGeocoding || isLocating || isUploading}
+        disabled={isLoading || isGeocoding || isLocating}
       >
         {isLoading
           ? isEditMode

@@ -1,46 +1,61 @@
-// File: src/app/api/upload/route.ts
+// src/app/api/upload/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { v2 as cloudinary } from "cloudinary";
 
-import { NextResponse, NextRequest } from 'next/server';
-import path from 'path';
-import fs from 'fs/promises';
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: "396972229362362",
+  api_secret: "vKVMsS7sUd83oHCKgdA-iKaFnww",
+});
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
-    // 1. Dapatkan FormData dari request
+export async function POST(request: NextRequest) {
+  try {
     const formData = await request.formData();
-    const file = formData.get('file') as File | null; // 'file' adalah nama field dari form
+    const file = formData.get("file") as File;
 
     if (!file) {
-        return NextResponse.json({ error: 'Tidak ada file yang diupload.' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Tidak ada file yang diupload." },
+        { status: 400 }
+      );
     }
 
-    // 2. Siapkan path untuk menyimpan file
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    // Convert file to buffer
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
-    // Pastikan direktori 'uploads' sudah ada
-    try {
-        await fs.mkdir(uploadDir, { recursive: true });
-    } catch (error) {
-        console.error("Gagal membuat direktori upload:", error);
-        return NextResponse.json({ error: 'Gagal menyiapkan penyimpanan file.' }, { status: 500 });
-    }
+    // Upload to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            resource_type: "auto",
+            folder: "direktori-umkm", // Organize uploads in a folder
+            transformation: [
+              { width: 800, height: 600, crop: "limit" }, // Resize large images
+              { quality: "auto" }, // Optimize quality
+              { format: "auto" }, // Auto format (webp, etc.)
+            ],
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        )
+        .end(buffer);
+    });
 
-    try {
-        // 3. Buat nama file yang unik dan path lengkapnya
-        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-        const fileExtension = path.extname(file.name || '.jpg');
-        const newFilename = `${uniqueSuffix}${fileExtension}`;
-        const newPath = path.join(uploadDir, newFilename);
-
-        // 4. Baca file sebagai buffer dan tulis ke disk
-        const buffer = Buffer.from(await file.arrayBuffer());
-        await fs.writeFile(newPath, buffer);
-
-        // 5. Kembalikan URL publik yang bisa diakses
-        const publicUrl = `/uploads/${newFilename}`;
-        return NextResponse.json({ url: publicUrl }, { status: 200 });
-
-    } catch (error) {
-        console.error("Error saat mengupload file:", error);
-        return NextResponse.json({ error: 'Gagal mengupload file.' }, { status: 500 });
-    }
+    // Return the secure URL (format yang sama dengan API lama)
+    return NextResponse.json({
+      url: (result as any).secure_url,
+      public_id: (result as any).public_id,
+    });
+  } catch (error) {
+    console.error("Upload error:", error);
+    return NextResponse.json(
+      { error: "Gagal mengupload file.", details: error },
+      { status: 500 }
+    );
+  }
 }
