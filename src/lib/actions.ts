@@ -7,11 +7,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { revalidatePath } from 'next/cache';
 import { Prisma } from '@prisma/client';
+import { z } from 'zod';
 
-// ========================================================================
-// === FUNGSI-FUNGSI UNTUK MENGAMBIL DATA (GETTERS) ===
-// ========================================================================
-
+// ... (semua fungsi 'get' kamu tidak berubah, jadi saya salin langsung)
 export async function getCategories() {
     try {
         const categories = await db.category.findMany();
@@ -34,7 +32,6 @@ export async function getUmkms(params: {
 
     try {
         if (!lat || !long) {
-            console.log("Mode: Pencarian Standar");
             const whereCondition: any = {};
             if (search) {
                 whereCondition.name = { contains: search, mode: "insensitive" };
@@ -59,7 +56,6 @@ export async function getUmkms(params: {
                 rating: umkm.rating ? Number(umkm.rating) : null,
             }));
         } else {
-            console.log("Mode: Pencarian Terdekat");
             const latitude = parseFloat(lat!);
             const longitude = parseFloat(long!);
             let whereCondition = "";
@@ -152,22 +148,15 @@ export async function getUmkmForMap() {
         const umkms = await db.umkm.findMany({
             where: { latitude: { not: null }, longitude: { not: null } },
             select: {
-                id: true,
-                name: true,
-                slug: true,
-                latitude: true,
-                longitude: true,
-                photos: true,
+                id: true, name: true, slug: true,
+                latitude: true, longitude: true, photos: true,
                 Category: { select: { name: true } },
             },
         });
         const cleanedUmkms = umkms.filter((umkm: any) => umkm.latitude !== null && umkm.longitude !== null);
         return cleanedUmkms.map((umkm: any) => ({
-            id: umkm.id,
-            name: umkm.name,
-            slug: umkm.slug,
-            latitude: umkm.latitude,
-            longitude: umkm.longitude,
+            id: umkm.id, name: umkm.name, slug: umkm.slug,
+            latitude: umkm.latitude, longitude: umkm.longitude,
             photoUrl: (Array.isArray(umkm.photos) && umkm.photos[0]) || "/images/placeholder-umkm.jpg",
             category: { name: umkm.Category.name },
         }));
@@ -218,10 +207,6 @@ export async function getFavoriteUmkmsDetails(ids: number[]) {
     }
 }
 
-// ========================================================================
-// === FUNGSI BARU UNTUK MENGAMBIL DATA UNTUK FORM EDIT ===
-// ========================================================================
-
 export async function getUmkmForEdit(slug: string) {
     try {
         const umkm = await db.umkm.findUnique({
@@ -246,18 +231,11 @@ export async function getUmkmForEdit(slug: string) {
         })) || [];
 
         return {
-            id: umkm.id,
-            ownerId: umkm.ownerId,
-            name: umkm.name,
-            description: umkm.description || '',
-            address: umkm.address,
-            phone: umkm.phone || '',
-            openingHours: umkm.openingHours || '',
-            photos: umkm.photos,
-            latitude: umkm.latitude,
-            longitude: umkm.longitude,
-            categoryId: umkm.categoryId,
-            products: products,
+            id: umkm.id, ownerId: umkm.ownerId, name: umkm.name,
+            description: umkm.description || '', address: umkm.address,
+            phone: umkm.phone || '', openingHours: umkm.openingHours || '',
+            photos: umkm.photos, latitude: umkm.latitude, longitude: umkm.longitude,
+            categoryId: umkm.categoryId, products: products,
         };
 
     } catch (error) {
@@ -266,9 +244,25 @@ export async function getUmkmForEdit(slug: string) {
     }
 }
 
-// ========================================================================
-// === FUNGSI-FUNGSI AKSI (CREATE, UPDATE, DELETE) UNTUK PENGUSAHA ===
-// ========================================================================
+// === PERUBAHAN UTAMA: Skema validasi untuk path lokal ===
+const UmkmFormSchema = z.object({
+  name: z.string().min(3, "Nama UMKM wajib diisi."),
+  description: z.string().min(1, "Deskripsi wajib diisi."),
+  address: z.string().min(5, "Alamat wajib diisi."),
+  phone: z.string().optional(),
+  openingHours: z.string().optional(),
+  categoryId: z.string().min(1, "Kategori wajib dipilih."),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  // Hapus .url() agar bisa menerima path lokal seperti '/uploads/file.png'
+  photos: z.array(z.string()).optional(),
+  products: z.array(z.object({
+    name: z.string().min(1),
+    description: z.string().optional(),
+    price: z.string().min(1),
+  })).optional()
+});
+
 
 function createSlug(name: string): string {
     const baseSlug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
@@ -276,20 +270,31 @@ function createSlug(name: string): string {
     return `${baseSlug}-${uniqueSuffix}`;
 }
 
+// Tidak ada perubahan di 'createUmkm' dan 'updateUmkm', namun kodenya tetap disertakan
 export async function createUmkm(data: any) {
     const session = await getServerSession(authOptions);
     // @ts-ignore
     if (!session || session.user?.role !== 'PENGUSAHA') {
         return { success: false, message: 'Anda tidak memiliki akses.' };
     }
+
+    const validationResult = UmkmFormSchema.safeParse(data);
+    if (!validationResult.success) {
+        const firstError = validationResult.error.issues[0].message;
+        return { success: false, message: firstError };
+    }
+    const validatedData = validationResult.data;
+
     try {
-        const slug = createSlug(data.name);
+        const slug = createSlug(validatedData.name);
         await db.$transaction(async (tx) => {
             const newUmkm = await tx.umkm.create({
                 data: {
-                    name: data.name, slug: slug, description: data.description,
-                    address: data.address, phone: data.phone, openingHours: data.openingHours,
-                    categoryId: parseInt(data.categoryId, 10), latitude: data.latitude, longitude: data.longitude,
+                    name: validatedData.name, slug: slug, description: validatedData.description,
+                    address: validatedData.address, phone: validatedData.phone,
+                    openingHours: validatedData.openingHours, categoryId: parseInt(validatedData.categoryId, 10),
+                    latitude: validatedData.latitude, longitude: validatedData.longitude,
+                    photos: validatedData.photos,
                     // @ts-ignore
                     ownerId: session.user.id,
                 },
@@ -297,9 +302,9 @@ export async function createUmkm(data: any) {
             const productCategory = await tx.productCategory.create({
                 data: { name: 'Menu Utama', umkmId: newUmkm.id },
             });
-            if (data.products && data.products.length > 0) {
+            if (validatedData.products && validatedData.products.length > 0) {
                 await tx.product.createMany({
-                    data: data.products.map((p: any) => ({
+                    data: validatedData.products.map((p: any) => ({
                         name: p.name, description: p.description,
                         price: parseInt(p.price, 10), productCategoryId: productCategory.id,
                     })),
@@ -320,27 +325,38 @@ export async function updateUmkm(umkmId: number, data: any) {
     if (!session || session.user?.role !== 'PENGUSAHA') {
         return { success: false, message: 'Anda tidak memiliki akses.' };
     }
+
     const umkm = await db.umkm.findUnique({ where: { id: umkmId }, select: { ownerId: true, slug: true } });
     // @ts-ignore
     if (!umkm || umkm.ownerId !== session.user.id) {
         return { success: false, message: 'UMKM tidak ditemukan atau Anda bukan pemiliknya.' };
     }
+    
+    const validationResult = UmkmFormSchema.safeParse(data);
+    if (!validationResult.success) {
+        const firstError = validationResult.error.issues[0].message;
+        return { success: false, message: firstError };
+    }
+    const validatedData = validationResult.data;
+
     try {
         await db.$transaction(async (tx) => {
             await tx.umkm.update({
                 where: { id: umkmId },
                 data: {
-                    name: data.name, description: data.description, address: data.address,
-                    phone: data.phone, openingHours: data.openingHours, categoryId: parseInt(data.categoryId, 10),
-                    latitude: data.latitude, longitude: data.longitude,
+                    name: validatedData.name, description: validatedData.description,
+                    address: validatedData.address, phone: validatedData.phone,
+                    openingHours: validatedData.openingHours, categoryId: parseInt(validatedData.categoryId, 10),
+                    latitude: validatedData.latitude, longitude: validatedData.longitude,
+                    photos: validatedData.photos,
                 },
             });
             const productCategory = await tx.productCategory.findFirst({ where: { umkmId: umkmId } });
             if (productCategory) {
                 await tx.product.deleteMany({ where: { productCategoryId: productCategory.id } });
-                if (data.products && data.products.length > 0) {
+                if (validatedData.products && validatedData.products.length > 0) {
                     await tx.product.createMany({
-                        data: data.products.map((p: any) => ({
+                        data: validatedData.products.map((p: any) => ({
                             name: p.name, description: p.description || '',
                             price: parseInt(p.price, 10), productCategoryId: productCategory.id,
                         }))

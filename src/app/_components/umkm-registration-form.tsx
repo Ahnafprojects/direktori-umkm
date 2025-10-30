@@ -1,20 +1,23 @@
-// Fail: src/app/_components/umkm-registration-form.tsx
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Category } from "@prisma/client";
-import { PlusCircle, Trash2, Search, Loader2, LocateFixed } from "lucide-react";
+import { PlusCircle, Trash2, Search, Loader2, LocateFixed, Upload, X } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import LocationPicker from "./location-picker";
 import { toast } from "react-hot-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import { createUmkm, updateUmkm } from "@/lib/actions";
+
+// Hapus import Vercel Blob, karena kita tidak memakainya lagi
+// import { upload } from '@vercel/blob/client';
 
 type ProductInput = { name: string; description: string; price: string };
 type Position = { lat: number; lng: number };
@@ -29,6 +32,7 @@ type UmkmInitialData = {
     categoryId: string | number;
     latitude: number | null;
     longitude: number | null;
+    photos: string[];
     products: {
         name: string;
         description: string | null;
@@ -41,14 +45,9 @@ interface UmkmRegistrationFormProps {
     initialData?: UmkmInitialData | null;
 }
 
-// =======================================================
-// === PERUBAHAN 1: Tambahkan fungsi helper untuk format ===
-// =======================================================
 const formatRupiah = (value: string) => {
-    // Hapus semua karakter selain digit
     const numericValue = value.replace(/[^0-9]/g, '');
     if (numericValue === '') return '';
-    // Format dengan pemisah ribuan
     return new Intl.NumberFormat('id-ID').format(Number(numericValue));
 };
 
@@ -56,10 +55,10 @@ const unformatRupiah = (value: string) => {
     return value.replace(/\./g, '');
 };
 
-
 export default function UmkmRegistrationForm({ categories, initialData }: UmkmRegistrationFormProps) {
     const router = useRouter();
     const isEditMode = !!initialData;
+    const inputFileRef = useRef<HTMLInputElement>(null);
 
     const [name, setName] = useState(initialData?.name || '');
     const [description, setDescription] = useState(initialData?.description || '');
@@ -67,41 +66,33 @@ export default function UmkmRegistrationForm({ categories, initialData }: UmkmRe
     const [phone, setPhone] = useState(initialData?.phone || '');
     const [openingHours, setOpeningHours] = useState(initialData?.openingHours || '');
     const [categoryId, setCategoryId] = useState(initialData?.categoryId ? String(initialData.categoryId) : '');
-    
+    const [photos, setPhotos] = useState<string[]>(initialData?.photos || []);
     const [products, setProducts] = useState<ProductInput[]>(
         initialData?.products && initialData.products.length > 0
             ? initialData.products.map(p => ({
                 name: p.name,
                 description: p.description || '',
-                // Saat inisialisasi, langsung format harganya
                 price: formatRupiah(String(p.price))
               }))
             : [{ name: '', description: '', price: '' }]
     );
-
     const [location, setLocation] = useState<Position | null>(
         initialData?.latitude && initialData?.longitude
             ? { lat: initialData.latitude, lng: initialData.longitude }
             : null
     );
-
     const [isLoading, setIsLoading] = useState(false);
     const [isGeocoding, setIsGeocoding] = useState(false);
     const [isLocating, setIsLocating] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const debouncedAddress = useDebounce(address, 1500);
 
-    // ============================================================
-    // === PERUBAHAN 2: Modifikasi `handleProductChange`          ===
-    // ============================================================
     const handleProductChange = (index: number, event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = event.target;
         const values = [...products];
-
         if (name === 'price') {
-            // Jika field adalah harga, format nilainya
-            values[index][name] = formatRupiah(value);
+            values[index][name as keyof ProductInput] = formatRupiah(value);
         } else {
-            // Jika bukan, biarkan seperti biasa
             values[index][name as keyof ProductInput] = value;
         }
         setProducts(values);
@@ -116,6 +107,52 @@ export default function UmkmRegistrationForm({ categories, initialData }: UmkmRe
         values.splice(index, 1);
         setProducts(values);
     };
+
+    // === PERUBAHAN UTAMA: Fungsi untuk upload ke server lokal ===
+    const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event.target.files) return;
+        
+        const file = event.target.files[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const toastId = toast.loading('Mengupload foto...');
+
+        const formData = new FormData();
+        formData.append('file', file); // 'file' harus cocok dengan nama di API route
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Gagal mengupload file.');
+            }
+
+            const { url } = await response.json();
+            setPhotos(prevPhotos => [...prevPhotos, url]);
+            toast.success('Foto berhasil diupload!', { id: toastId });
+
+        } catch (error: any) {
+            toast.error(error.message || 'Gagal mengupload foto.', { id: toastId });
+        } finally {
+            setIsUploading(false);
+            if (inputFileRef.current) {
+                inputFileRef.current.value = "";
+            }
+        }
+    };
+
+    const handleRemovePhoto = (urlToRemove: string) => {
+        setPhotos(photos.filter(url => url !== urlToRemove));
+        // Note: Untuk penyimpanan lokal, kita tidak perlu menghapus file dari server saat ini
+        // untuk menyederhanakan. File akan tetap ada di folder /public/uploads.
+    };
+    
+    // ... (sisa fungsi lainnya tidak berubah)
 
     const handleGeocode = async (addr: string) => {
         if (!addr || addr.length < 5) return;
@@ -147,7 +184,6 @@ export default function UmkmRegistrationForm({ categories, initialData }: UmkmRe
     }, [debouncedAddress, initialData?.address]);
     
     const handleGetCurrentLocation = () => {
-        // ... (fungsi ini tidak berubah)
         if (!navigator.geolocation) {
             toast.error("Geolocation tidak didukung oleh browser Anda.");
             return;
@@ -183,26 +219,17 @@ export default function UmkmRegistrationForm({ categories, initialData }: UmkmRe
         event.preventDefault();
         setIsLoading(true);
 
-        // ==============================================================
-        // === PERUBAHAN 3: Bersihkan format harga sebelum submit       ===
-        // ==============================================================
         const productsToSubmit = products
             .filter(p => p.name && p.price)
             .map(p => ({
                 ...p,
-                price: unformatRupiah(p.price) // Hapus titik dari harga
+                price: unformatRupiah(p.price)
             }));
         
         const finalData = {
-            name,
-            description,
-            address,
-            phone,
-            openingHours,
-            categoryId,
-            latitude: location?.lat,
-            longitude: location?.lng,
-            products: productsToSubmit,
+            name, description, address, phone, openingHours,
+            categoryId, latitude: location?.lat, longitude: location?.lng,
+            products: productsToSubmit, photos: photos,
         };
     
         const successMessage = isEditMode ? 'UMKM berhasil diperbarui!' : 'UMKM berhasil didaftarkan!';
@@ -238,121 +265,125 @@ export default function UmkmRegistrationForm({ categories, initialData }: UmkmRe
         }
     }
 
+    // JSX di bawah ini tidak perlu diubah sama sekali
     return (
         <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-4">
-                {/* ... (bagian form lainnya tidak berubah) ... */}
-                 <h3 className="text-lg font-medium">Informasi Dasar</h3>
-                 <div className="space-y-2">
-                     <Label htmlFor="name">Nama UMKM</Label>
-                     <Input 
-                         id="name" 
-                         name="name" 
-                         placeholder="Bakso Caknan" 
-                         required 
-                         disabled={isLoading} 
-                         value={name}
-                         onChange={(e) => setName(e.target.value)}
-                     />
-                 </div>
-                 <div className="space-y-2">
-                     <Label htmlFor="description">Deskripsi Singkat</Label>
-                     <Textarea 
-                         id="description" 
-                         name="description"
-                         placeholder="deskripsi singkat..." 
-                         required 
-                         disabled={isLoading}
-                         value={description}
-                         onChange={(e) => setDescription(e.target.value)}
-                     />
-                 </div>
-                 <div className="space-y-2">
-                     <Label htmlFor="address">Alamat Lengkap</Label>
-                     <div className="flex gap-2">
-                         <Input 
-                             id="address" 
-                             name="address"
-                             placeholder="Ketik alamat atau gunakan lokasi saat ini" 
-                             required 
-                             disabled={isLoading}
-                             value={address}
-                             onChange={(e) => setAddress(e.target.value)}
-                         />
-                         <Button type="button" onClick={() => handleGeocode(address)} disabled={isGeocoding || isLoading || isLocating} aria-label="Cari Alamat">
-                             {isGeocoding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                         </Button>
-                     </div>
-                     <div className="pt-1">
-                         <Button 
-                             type="button" 
-                             variant="link" 
-                             className="p-0 h-auto text-sm text-muted-foreground hover:text-primary" 
-                             onClick={handleGetCurrentLocation}
-                             disabled={isLocating || isGeocoding || isLoading}
-                         >
-                             <LocateFixed className="mr-2 h-4 w-4" />
-                             {isLocating ? 'Mencari...' : 'Gunakan Lokasi Saya Saat Ini'}
-                         </Button>
-                     </div>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="space-y-2">
-                         <Label htmlFor="phone">Nomor Telepon (Opsional)</Label>
-                         <Input 
-                             id="phone" 
-                             name="phone"
-                             placeholder="085707040566" 
-                             type="tel" 
-                             disabled={isLoading} 
-                             value={phone || ''}
-                             onChange={(e) => setPhone(e.target.value)}
-                         />
-                     </div>
-                     <div className="space-y-2">
-                         <Label htmlFor="openingHours">Jam Buka (Opsional)</Label>
-                         <Input 
-                             id="openingHours" 
-                             placeholder="08.00 - 12.00" 
-                             name="openingHours" 
-                             disabled={isLoading} 
-                             value={openingHours || ''}
-                             onChange={(e) => setOpeningHours(e.target.value)}
-                         />
-                     </div>
-                 </div>
-                 <div className="space-y-2">
-                     <Label htmlFor="categoryId">Kategori Bisnis</Label>
-                     <Select 
-                         name="categoryId" 
-                         required 
-                         disabled={isLoading}
-                         value={categoryId}
-                         onValueChange={setCategoryId}
-                     >
-                         <SelectTrigger><SelectValue placeholder="Pilih kategori bisnis" /></SelectTrigger>
-                         <SelectContent>
-                             {categories.map(category => (
-                                 <SelectItem key={category.id} value={String(category.id)}>{category.name}</SelectItem>
-                             ))}
-                         </SelectContent>
-                     </Select>
-                 </div>
+                <h3 className="text-lg font-medium">Informasi Dasar</h3>
+                <div className="space-y-2">
+                    <Label htmlFor="name">Nama UMKM</Label>
+                    <Input id="name" name="name" placeholder="Bakso Caknan" required disabled={isLoading} value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="description">Deskripsi Singkat</Label>
+                    <Textarea id="description" name="description" placeholder="deskripsi singkat..." required disabled={isLoading} value={description} onChange={(e) => setDescription(e.target.value)} />
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="photos">Foto UMKM (Maks. 5 foto)</Label>
+                    <div className="p-4 border-2 border-dashed rounded-lg">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            {photos.map((url) => (
+                                <div key={url} className="relative aspect-square group">
+                                    <Image
+                                        src={url}
+                                        alt="Preview UMKM"
+                                        fill
+                                        className="object-cover rounded-md"
+                                    />
+                                    <div className="absolute top-0 right-0">
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="icon"
+                                            className="h-6 w-6 opacity-75 group-hover:opacity-100"
+                                            onClick={() => handleRemovePhoto(url)}
+                                            disabled={isUploading || isLoading}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                            {photos.length < 5 && (
+                                <button
+                                    type="button"
+                                    onClick={() => inputFileRef.current?.click()}
+                                    disabled={isUploading || isLoading}
+                                    className="flex items-center justify-center w-full aspect-square border-2 border-dashed border-muted-foreground/50 rounded-md hover:bg-muted/50 transition-colors"
+                                >
+                                    {isUploading ? (
+                                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                                    ) : (
+                                        <Upload className="h-8 w-8 text-muted-foreground" />
+                                    )}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    <Input
+                        ref={inputFileRef}
+                        type="file"
+                        id="file-upload"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        disabled={isUploading || isLoading}
+                    />
+                     <p className="text-sm text-muted-foreground">Foto pertama akan menjadi foto utama.</p>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="address">Alamat Lengkap</Label>
+                    <div className="flex gap-2">
+                        <Input id="address" name="address" placeholder="Ketik alamat atau gunakan lokasi saat ini" required disabled={isLoading} value={address} onChange={(e) => setAddress(e.target.value)} />
+                        <Button type="button" onClick={() => handleGeocode(address)} disabled={isGeocoding || isLoading || isLocating} aria-label="Cari Alamat">
+                            {isGeocoding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                        </Button>
+                    </div>
+                    <div className="pt-1">
+                        <Button type="button" variant="link" className="p-0 h-auto text-sm text-muted-foreground hover:text-primary" onClick={handleGetCurrentLocation} disabled={isLocating || isGeocoding || isLoading}>
+                            <LocateFixed className="mr-2 h-4 w-4" />
+                            {isLocating ? 'Mencari...' : 'Gunakan Lokasi Saya Saat Ini'}
+                        </Button>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="phone">Nomor Telepon (Opsional)</Label>
+                        <Input id="phone" name="phone" placeholder="085707040566" type="tel" disabled={isLoading} value={phone || ''} onChange={(e) => setPhone(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="openingHours">Jam Buka (Opsional)</Label>
+                        <Input id="openingHours" placeholder="08.00 - 12.00" name="openingHours" disabled={isLoading} value={openingHours || ''} onChange={(e) => setOpeningHours(e.target.value)} />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="categoryId">Kategori Bisnis</Label>
+                    <Select name="categoryId" required disabled={isLoading} value={categoryId} onValueChange={setCategoryId}>
+                        <SelectTrigger><SelectValue placeholder="Pilih kategori bisnis" /></SelectTrigger>
+                        <SelectContent>
+                            {categories.map(category => (
+                                <SelectItem key={category.id} value={String(category.id)}>{category.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
 
             <Separator />
             
             <div className="space-y-4">
-                 <h3 className="text-lg font-medium">Pilih Lokasi di Peta</h3>
-                 <p className="text-sm text-muted-foreground">
-                     Ketik alamat di atas dan klik 'Cari', atau klik langsung pada peta untuk menyempurnakan lokasi.
-                 </p>
-                 <LocationPicker position={location} onLocationChange={setLocation} />
-                 {location && (
-                     <div className="text-sm text-muted-foreground mt-2">
-                         Koordinat Terpilih: Lat: {location.lat.toFixed(6)}, Lng: {location.lng.toFixed(6)}
-                     </div>
-                 )}
+                <h3 className="text-lg font-medium">Pilih Lokasi di Peta</h3>
+                <p className="text-sm text-muted-foreground">
+                    Ketik alamat di atas dan klik 'Cari', atau klik langsung pada peta untuk menyempurnakan lokasi.
+                </p>
+                <LocationPicker position={location} onLocationChange={setLocation} />
+                {location && (
+                    <div className="text-sm text-muted-foreground mt-2">
+                        Koordinat Terpilih: Lat: {location.lat.toFixed(6)}, Lng: {location.lng.toFixed(6)}
+                    </div>
+                )}
             </div>
 
             <Separator />
@@ -369,19 +400,7 @@ export default function UmkmRegistrationForm({ categories, initialData }: UmkmRe
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor={`product-price-${index}`}>Harga</Label>
-                                {/* ======================================================= */}
-                                {/* === PERUBAHAN 4: Ubah tipe input harga                === */}
-                                {/* ======================================================= */}
-                                <Input 
-                                    id={`product-price-${index}`} 
-                                    name="price" 
-                                    type="text" // <-- Ubah dari "number"
-                                    inputMode="numeric" // <-- Tambahkan ini untuk mobile
-                                    value={product.price} 
-                                    onChange={e => handleProductChange(index, e)} 
-                                    placeholder="25.000" 
-                                    required 
-                                />
+                                <Input id={`product-price-${index}`} name="price" type="text" inputMode="numeric" value={product.price} onChange={e => handleProductChange(index, e)} placeholder="25.000" required />
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -401,7 +420,7 @@ export default function UmkmRegistrationForm({ categories, initialData }: UmkmRe
                 </Button>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading || isGeocoding || isLocating}>
+            <Button type="submit" className="w-full" disabled={isLoading || isGeocoding || isLocating || isUploading}>
                 {isLoading 
                     ? (isEditMode ? 'Menyimpan...' : 'Mendaftarkan...') 
                     : (isEditMode ? 'Simpan Perubahan' : 'Daftarkan UMKM Saya')}
