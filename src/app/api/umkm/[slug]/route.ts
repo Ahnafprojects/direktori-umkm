@@ -1,13 +1,13 @@
 // src/app/api/umkm/[slug]/route.ts
-import { db } from '@/lib/prisma';
-import { NextRequest } from 'next/server';
+import { db } from "@/lib/prisma";
+import { NextRequest } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { slug } = params;
+    const { slug } = await params;
 
     const umkm = await db.umkm.findUnique({
       where: { slug },
@@ -25,9 +25,9 @@ export async function GET(
     });
 
     if (!umkm) {
-      return new Response(JSON.stringify({ error: 'UMKM not found' }), {
+      return new Response(JSON.stringify({ error: "UMKM not found" }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -38,14 +38,13 @@ export async function GET(
     };
 
     return new Response(JSON.stringify(serializedUmkm), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
-
   } catch (error) {
-    console.error('Error fetching UMKM:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    console.error("Error fetching UMKM:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 }

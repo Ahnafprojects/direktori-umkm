@@ -72,7 +72,6 @@ export default function UmkmCard({ umkm }: UmkmCardProps) {
   const hasMoreFeatured = candidateList.length > 3;
 
   const rating = umkm.rating ? Number(umkm.rating) : 0;
-  const hasRating = umkm.rating !== null && umkm.rating !== undefined;
   const umkmIdAsNumber =
     typeof umkm.id === "string" ? parseInt(umkm.id, 10) : umkm.id;
 
