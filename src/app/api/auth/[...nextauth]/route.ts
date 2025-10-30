@@ -1,22 +1,22 @@
-import NextAuth from 'next-auth';
-import { AuthOptions } from 'next-auth';
-import { PrismaAdapter } from '@auth/prisma-adapter';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { db } from '@/lib/prisma'; 
-import bcrypt from 'bcrypt';
+import NextAuth from "next-auth";
+import { AuthOptions } from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { db } from "@/lib/prisma";
+import bcrypt from "bcrypt";
 
 export const authOptions: AuthOptions = {
-  adapter: PrismaAdapter(db), 
+  adapter: PrismaAdapter(db),
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        email: { label: 'Email', type: 'text' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email dan password wajib diisi');
+          throw new Error("Email dan password wajib diisi");
         }
 
         const user = await db.user.findUnique({
@@ -24,7 +24,7 @@ export const authOptions: AuthOptions = {
         });
 
         if (!user || !user.password) {
-          throw new Error('Email tidak terdaftar');
+          throw new Error("Email tidak terdaftar");
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -33,20 +33,20 @@ export const authOptions: AuthOptions = {
         );
 
         if (!isPasswordValid) {
-          throw new Error('Password salah');
+          throw new Error("Password salah");
         }
         return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            image: user.image,
-            role: user.role,
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          // image: user.image,
+          role: user.role,
         };
       },
     }),
   ],
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -68,7 +68,7 @@ export const authOptions: AuthOptions = {
     },
   },
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
