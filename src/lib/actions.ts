@@ -64,8 +64,7 @@ export async function getUmkms(params: {
             include: {
               Product: {
                 // <-- Kemudian ambil Product dari ProductCategory
-                where: { isFeatured: true }, // Ambil yg andalan saja
-                take: 2, // Ambil 2 saja
+                take: 3, // Ambil 3 saja
               },
             },
           },
@@ -152,8 +151,7 @@ export async function getUmkms(params: {
             include: {
               Product: {
                 // <-- Product ada di dalam ProductCategory
-                where: { isFeatured: true },
-                take: 2,
+                take: 3,
               },
             },
           },
@@ -267,6 +265,10 @@ export async function getUmkmForMap() {
         slug: true,
         latitude: true,
         longitude: true,
+        address: true,
+        phone: true,
+        openingHours: true,
+        rating: true,
         photos: true,
         Category: {
           select: { name: true },
@@ -285,6 +287,10 @@ export async function getUmkmForMap() {
       slug: umkm.slug,
       latitude: umkm.latitude,
       longitude: umkm.longitude,
+      address: umkm.address,
+      phone: umkm.phone,
+      openingHours: umkm.openingHours,
+      rating: umkm.rating ? parseFloat(umkm.rating.toString()) : null,
       photoUrl:
         (Array.isArray(umkm.photos) && umkm.photos[0]) ||
         "/images/placeholder-umkm.jpg",

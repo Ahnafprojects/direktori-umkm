@@ -32,9 +32,10 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relasi
-  umkms     Umkm[]   // UMKM yang dimiliki user (jika role PENGUSAHA)
-  reviews   Review[] // Review yang dibuat user
-  orders    Order[]  // Pesanan yang dibuat user (BARU DITAMBAHKAN)
+  umkms     Umkm[]     // UMKM yang dimiliki user (jika role PENGUSAHA)
+  reviews   Review[]   // Review yang dibuat user
+  orders    Order[]    // Pesanan yang dibuat user (BARU DITAMBAHKAN)
+  favorites Favorite[] // UMKM yang difavoritkan user
 }
 
 enum UserRole {
@@ -66,6 +67,7 @@ model Umkm {
   Review          Review[]
   Category        Category          @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   orders          Order[]           // Pesanan yang masuk ke UMKM ini (BARU DITAMBAHKAN)
+  favorites       Favorite[]        // User yang memfavoritkan UMKM ini
 
   @@index([name], map: "idx_umkm_name")
   @@index([slug], map: "idx_umkm_slug")
@@ -170,4 +172,26 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+}
+
+// ==================
+// MODEL FAVORITE
+// ==================
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  
+  // Kunci relasi
+  userId    String   // ID pengguna
+  umkmId    Int      // ID UMKM yang difavoritkan
+
+  // Relasi
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  umkm      Umkm     @relation(fields: [umkmId], references: [id], onDelete: Cascade)
+
+  // Constraint: satu user tidak bisa favorite UMKM yang sama lebih dari sekali
+  @@unique([userId, umkmId])
+  @@index([userId])
+  @@index([umkmId])
 }
