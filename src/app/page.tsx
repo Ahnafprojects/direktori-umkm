@@ -30,7 +30,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     // Kita bungkus dengan 'relative' agar dropdown tidak terpotong
-    <main className="container mx-auto p-4 relative">
+    <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 relative">
       <h1 className="text-3xl font-bold mb-4">Direktori UMKM Lokal</h1>
       <p className="text-muted-foreground mb-6">
         Temukan dan dukung bisnis lokal di sekitarmu!
@@ -48,7 +48,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <AutocompleteSearch />
       </div>
-      
+
       {/* Category Filter dengan Logo */}
       <div className="mb-8">
         <CategoryFilter categories={categories} />

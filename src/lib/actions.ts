@@ -111,6 +111,10 @@ export async function getUmkmBySlug(slug: string) {
         const umkm = await db.umkm.findUnique({
             where: { slug: slug },
             include: {
+              Product: {
+                // <-- Kemudian ambil Product dari ProductCategory
+                take: 3, // Ambil 3 saja
+              },
                 Category: true,
                 Review: {
                     orderBy: { createdAt: "desc" },
@@ -212,6 +216,21 @@ export async function getUmkmForEdit(slug: string) {
         const umkm = await db.umkm.findUnique({
             where: { slug },
             include: {
+              Product: {
+                // <-- Product ada di dalam ProductCategory
+                take: 3,
+              },
+            },
+          },
+        },
+      });
+
+      // 4. Urutkan ulang di JavaScript
+      // (findMany...in[...] tidak menjamin urutan, jadi kita urutkan manual)
+      const umkmsMap = new Map(umkmsData.map((u: any) => [u.id, u]));
+      const sortedUmkms = sortedIds
+        .map((id: any) => umkmsMap.get(id))
+        .filter(Boolean);
                 ProductCategory: {
                     include: {
                         Product: {
@@ -263,6 +282,56 @@ const UmkmFormSchema = z.object({
   })).optional()
 });
 
+// FUNGSI BARU: UNTUK MENGAMBIL SEMUA PIN PETA
+export async function getUmkmForMap() {
+  try {
+    const umkms = await db.umkm.findMany({
+      where: {
+        // Pastikan hanya ambil yg punya koordinat
+        latitude: { not: null },
+        longitude: { not: null },
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        latitude: true,
+        longitude: true,
+        address: true,
+        phone: true,
+        openingHours: true,
+        rating: true,
+        photos: true,
+        Category: {
+          select: { name: true },
+        },
+      },
+    });
+    // Kita perlu membersihkan tipe data null sebelum mengirim ke klien
+    const cleanedUmkms = umkms.filter(
+      (umkm: any) => umkm.latitude !== null && umkm.longitude !== null
+    );
+
+    // Transform data to match expected interface
+    return cleanedUmkms.map((umkm: any) => ({
+      id: umkm.id,
+      name: umkm.name,
+      slug: umkm.slug,
+      latitude: umkm.latitude,
+      longitude: umkm.longitude,
+      address: umkm.address,
+      phone: umkm.phone,
+      openingHours: umkm.openingHours,
+      rating: umkm.rating ? parseFloat(umkm.rating.toString()) : null,
+      photoUrl:
+        (Array.isArray(umkm.photos) && umkm.photos[0]) ||
+        "/images/placeholder-umkm.jpg",
+      category: { name: umkm.Category.name }, // Transform Category to category
+    }));
+  } catch (error) {
+    console.error("Gagal mengambil data peta:", error);
+    return [];
+  }
 
 function createSlug(name: string): string {
     const baseSlug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');

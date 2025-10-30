@@ -60,6 +60,13 @@ async function main() {
       slug: "jasa",
     },
   });
+
+  const catBelanja = await prisma.category.create({
+    data: {
+      name: "Belanja",
+      slug: "belanja",
+    },
+  });
   console.log("Categories created.");
 
   // 3. Create Mock User (PELANGGAN)

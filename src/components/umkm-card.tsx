@@ -1,12 +1,12 @@
 // src/components/umkm-card.tsx
-import Image from 'next/image';
-import Link from 'next/link';
-import { Star, MapPin } from 'lucide-react';
-import FavoriteToggleButton from './favorite-toggle-button';
-import ClientHydrator from './client-hydrator';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Prisma } from '@prisma/client';
+import Image from "next/image";
+import Link from "next/link";
+import { Star, MapPin } from "lucide-react";
+import FavoriteToggleButton from "./favorite-toggle-button";
+import ClientHydrator from "./client-hydrator";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Prisma } from "@prisma/client";
 
 type ProductData = {
   id: number;
@@ -24,12 +24,14 @@ type UmkmWithDetails = Prisma.UmkmGetPayload<{
   include: {
     Category: true;
     productCategories: {
-     include: {
-      products: { // Untuk mendapatkan produk di dalamnya
-        // Optional: Hanya ambil yang featured untuk efisiensi
-         where: { isFeatured: true },
-        take: 5, // Ambil beberapa saja
-      }};
+      include: {
+        products: {
+          // Untuk mendapatkan produk di dalamnya
+          // Optional: Hanya ambil yang featured untuk efisiensi
+          where: { isFeatured: true };
+          take: 5; // Ambil beberapa saja
+        };
+      };
     };
   };
 }>;
@@ -40,47 +42,43 @@ type UmkmCardProps = {
 
 export default function UmkmCard({ umkm }: UmkmCardProps) {
   // Support both shapes: API may return ProductCategory (capitalized) or productCategories
-  const rawProductCats = (umkm as any).productCategories ?? (umkm as any).ProductCategory;
+  const rawProductCats =
+    (umkm as any).productCategories ?? (umkm as any).ProductCategory;
   const productCats = rawProductCats as ProductCategoryData[] | undefined;
-  const allProducts = productCats?.flatMap((cat: ProductCategoryData) => cat.products ?? []) ?? [];
+  const allProducts =
+    productCats?.flatMap((cat: any) => {
+      // Support both Product (capitalized) and products (lowercase)
+      const products = cat.products ?? cat.Product ?? [];
+      return Array.isArray(products) ? products : [];
+    }) ?? [];
 
-  const displayPhoto = (allProducts.find(
-    (p: ProductData) => p.isFeatured && p.photo
-  )?.photo) || umkm.photos?.[0] || '/images/placeholder-umkm.jpg';
+  const displayPhoto =
+    allProducts.find((p: ProductData) => p.isFeatured && p.photo)?.photo ||
+    umkm.photos?.[0] ||
+    "/images/placeholder-umkm.jpg";
 
-  // --- LOGIKA BARU UNTUK FEATURED PRODUCTS ---
-  let featuredProductNames: string[] = allProducts
-    .filter((p) => p.isFeatured) // 1. Ambil yang featured
-    .map((p) => p.name);
-
-  // 2. Jika tidak ada yang featured, ambil 2 produk pertama
-  if (featuredProductNames.length === 0 && allProducts.length > 0) {
-    featuredProductNames = allProducts.slice(0, 2).map((p) => p.name);
-  } else {
-    // 3. Jika ada yang featured, batasi maksimal 2
-    featuredProductNames = featuredProductNames.slice(0, 2);
-  }
-  const featuredProductsString = featuredProductNames.join(', ');
-  const hasMoreFeatured = allProducts.filter(p => p.isFeatured).length > 2 || (featuredProductNames.length === 0 && allProducts.length > 2);
-  // --- AKHIR LOGIKA BARU ---
-  
+  // --- LOGIKA UNTUK FEATURED PRODUCTS ---
   const featuredList = allProducts
     .filter((p: ProductData) => !!p.isFeatured)
     .map((p: ProductData) => p.name);
 
   // If there are no explicitly featured items, fall back to first products
-  const candidateList = featuredList.length > 0 ? featuredList : allProducts.map((p: ProductData) => p.name);
-  const featuredProducts = candidateList.slice(0, 2).join(', ');
-  // const hasMoreFeatured = candidateList.length > 2;
- 
+  const candidateList =
+    featuredList.length > 0
+      ? featuredList
+      : allProducts.map((p: ProductData) => p.name);
+
+  const featuredProducts = candidateList.slice(0, 3).join(", ");
+  const hasMoreFeatured = candidateList.length > 3;
+
   const rating = umkm.rating ? Number(umkm.rating) : 0;
   const hasRating = umkm.rating !== null && umkm.rating !== undefined;
-  const umkmIdAsNumber = typeof umkm.id === 'string' ? parseInt(umkm.id, 10) : umkm.id;
+  const umkmIdAsNumber =
+    typeof umkm.id === "string" ? parseInt(umkm.id, 10) : umkm.id;
 
   return (
     <Link href={`/umkm/${umkm.slug}`} className="group block h-full">
       <div className="flex lg:block bg-card rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 relative border border-border h-full">
-
         {/* Bagian Gambar */}
         <div className="relative w-2/5 sm:w-1/3 lg:w-full h-auto min-h-[140px] sm:min-h-[160px] lg:h-48 flex-shrink-0">
           <Image
@@ -90,22 +88,27 @@ export default function UmkmCard({ umkm }: UmkmCardProps) {
             className="object-cover"
             sizes="(max-width: 640px) 40vw, (max-width: 1024px) 33vw, 25vw"
           />
-          
+
           {/* Tombol Favorit - Desktop (di kanan atas gambar) */}
           <div className="absolute top-2 right-2 z-10 hidden lg:block">
             <ClientHydrator>
-              <FavoriteToggleButton umkmId={umkmIdAsNumber} umkmName={umkm.name} />
+              <FavoriteToggleButton
+                umkmId={umkmIdAsNumber}
+                umkmName={umkm.name}
+              />
             </ClientHydrator>
           </div>
         </div>
 
         {/* Bagian Konten Teks */}
         <div className="p-2.5 sm:p-3 lg:p-4 flex flex-col justify-between lg:justify-start w-3/5 sm:w-2/3 lg:w-full relative">
-          
           {/* Tombol Favorit - Mobile/Tablet (di pojok kanan atas konten) */}
           <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 z-10 lg:hidden">
             <ClientHydrator>
-              <FavoriteToggleButton umkmId={umkmIdAsNumber} umkmName={umkm.name} />
+              <FavoriteToggleButton
+                umkmId={umkmIdAsNumber}
+                umkmName={umkm.name}
+              />
             </ClientHydrator>
           </div>
 
@@ -113,7 +116,10 @@ export default function UmkmCard({ umkm }: UmkmCardProps) {
             {/* Nama & Kategori */}
             <div className="mb-1 pr-7 sm:pr-8 lg:pr-0">
               {/* Kategori hanya tampil di desktop */}
-              <Badge variant="secondary" className="mb-1 text-[10px] sm:text-xs hidden lg:inline-block">
+              <Badge
+                variant="secondary"
+                className="mb-1 text-[10px] sm:text-xs hidden lg:inline-block"
+              >
                 {umkm.Category.name}
               </Badge>
               <h3 className="font-semibold text-xs sm:text-sm md:text-base lg:text-lg line-clamp-2 lg:line-clamp-2 text-card-foreground group-hover:text-primary transition-colors leading-tight">
@@ -135,19 +141,19 @@ export default function UmkmCard({ umkm }: UmkmCardProps) {
               <p className="text-muted-foreground text-[10px] sm:text-xs line-clamp-2 lg:line-clamp-2 leading-tight">
                 {umkm.address}
               </p>
-              
-           
             </div>
 
             {/* Menu Unggulan - Selalu tampil di semua device */}
-            {featuredProducts && (
+            {featuredProducts && featuredProducts.length > 0 && (
               <>
                 {/* Separator hanya tampil di desktop */}
                 <Separator className="my-2 hidden lg:block" />
                 <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1 mt-1 lg:mt-0 leading-tight">
                   <span className="font-medium">Menu:</span> {featuredProducts}
                   {hasMoreFeatured && (
-                    <span className="text-muted-foreground ml-1">…selengkapnya</span>
+                    <span className="text-muted-foreground ml-1">
+                      …selengkapnya
+                    </span>
                   )}
                 </p>
               </>

@@ -1,8 +1,8 @@
 // File: src/app/_components/user-auth.tsx
-'use client';
+"use client";
 
-import { useSession, signIn, signOut } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
+import { useSession, signIn, signOut } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,76 +10,62 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogIn, LogOut, User, Store, LayoutDashboard, PlusCircle, Home, Palette, Sun, Moon } from 'lucide-react';
-import Link from 'next/link';
-import { ThemeToggle } from './theme-toggle';
-import { useTheme } from 'next-themes';
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  LogIn,
+  LogOut,
+  User,
+  Store,
+  LayoutDashboard,
+  PlusCircle,
+  Home,
+} from "lucide-react";
+import Link from "next/link";
 
 export default function UserAuth() {
   const { data: session, status } = useSession();
-  const { theme, setTheme } = useTheme();
 
-  const renderThemeIcon = () => {
-    switch (theme) {
-      case 'light':
-        return <Sun className="h-4 w-4" />;
-      case 'theme-rose':
-        return <Palette className="h-4 w-4" />;
-      case 'theme-ocean':
-        return <Moon className="h-4 w-4" />;
-      default:
-        return <Sun className="h-4 w-4" />;
-    }
-  };
-
-  if (status === 'loading') {
+  if (status === "loading") {
     return <div className="h-10 w-24 rounded-md bg-gray-200 animate-pulse" />;
   }
 
   if (!session) {
     return (
-      <div className="flex items-center gap-2">
-        <ThemeToggle />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <LogIn className="mr-2 h-4 w-4" />
-              Masuk / Daftar
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Masuk sebagai</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signIn()}>
-               <User className="mr-2 h-4 w-4" />
-               <span>Pelanggan</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => signIn()}>
-              <Store className="mr-2 h-4 w-4" />
-              <span>Pengusaha UMKM</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      );
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="px-3">
+            <LogIn className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Masuk / Daftar</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Masuk sebagai</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => signIn()}>
+            <User className="mr-2 h-4 w-4" />
+            <span>Pelanggan</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => signIn()}>
+            <Store className="mr-2 h-4 w-4" />
+            <span>Pengusaha UMKM</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   }
 
   const user = session.user;
   // @ts-ignore
-  const isPengusaha = user?.role === 'PENGUSAHA';
-  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : '?';
+  const isPengusaha = user?.role === "PENGUSAHA";
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "?";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.image ?? ''} alt={user?.name ?? ''} />
+            <AvatarImage src={user?.image ?? ""} alt={user?.name ?? ""} />
             <AvatarFallback>{userInitial}</AvatarFallback>
           </Avatar>
         </Button>
@@ -126,30 +112,6 @@ export default function UserAuth() {
             <span>Profil</span>
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        
-        {/* Theme Selector - Nested Dropdown */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            {renderThemeIcon()}
-            <span className="ml-2">Tema</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuItem onClick={() => setTheme('light')}>
-              <Sun className="mr-2 h-4 w-4" />
-              <span>Light</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme('theme-rose')}>
-              <Palette className="mr-2 h-4 w-4" />
-              <span>Rose</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme('theme-ocean')}>
-              <Moon className="mr-2 h-4 w-4" />
-              <span>Ocean</span>
-            </DropdownMenuItem>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut()}>
           <LogOut className="mr-2 h-4 w-4" />

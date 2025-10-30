@@ -11,6 +11,7 @@ import PageTransitionWrapper from "./page-transition-wrapper";
 import AuthProvider from "./auth-provider";
 import { ThemeProvider } from "./theme-provider";
 import FloatingCartButton from "./_components/floating-cart-button";
+import FavoritesProvider from "./_components/favorites-provider";
 import ClientHydrator from "@/components/client-hydrator";
 import WelcomeModal from "./_components/welcome-modal";
 import { Toaster } from "react-hot-toast";
@@ -42,25 +43,27 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <ClientHydrator>
-              <WelcomeModal />
-            </ClientHydrator>
+            <FavoritesProvider>
+              <ClientHydrator>
+                <WelcomeModal />
+              </ClientHydrator>
 
-            <div className="relative flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-1">
-                <PageTransitionWrapper>{children}</PageTransitionWrapper>
-              </main>
-              <Footer />
-            </div>
+              <div className="relative flex min-h-screen flex-col">
+                <Header />
+                <main className="flex-1">
+                  <PageTransitionWrapper>{children}</PageTransitionWrapper>
+                </main>
+                <Footer />
+              </div>
 
-            <FloatingCartButton />
-            <Toaster
-              position="top-center"
-              toastOptions={{
-                duration: 2000,
-              }}
-            />
+              <FloatingCartButton />
+              <Toaster
+                position="top-center"
+                toastOptions={{
+                  duration: 2000,
+                }}
+              />
+            </FavoritesProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>
