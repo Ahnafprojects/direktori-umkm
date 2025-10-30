@@ -1,36 +1,220 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏪 Direktori UMKM LokalKeren
 
-## Getting Started
+Aplikasi web untuk menemukan dan mendukung UMKM (Usaha Mikro Kecil Menengah) lokal di sekitar Anda. Dibangun dengan Next.js, TypeScript, Prisma, dan PostgreSQL.
 
-First, run the development server:
+## ✨ Fitur Utama
+
+- 🔍 **Pencarian UMKM** - Cari berdasarkan nama atau kategori
+- 📍 **Peta Interaktif** - Lihat lokasi UMKM dengan marker yang informatif
+- 🧭 **Cari Terdekat** - Temukan UMKM terdekat berdasarkan lokasi Anda
+- ⭐ **Sistem Review** - Baca dan tulis ulasan untuk UMKM
+- 🛍️ **Katalog Produk** - Jelajahi produk dan layanan setiap UMKM
+- 🌓 **Mode Gelap/Terang** - UI yang nyaman di mata
+- 📱 **Responsive Design** - Optimal di desktop dan mobile
+- 🔐 **Autentikasi** - Login sebagai pelanggan atau pengusaha
+- 🤖 **Rekomendasi AI** - Saran UMKM berdasarkan preferensi
+- ⏰ **Filter Buka Sekarang** - Tampilkan hanya UMKM yang sedang buka
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Database**: PostgreSQL
+- **Auth**: NextAuth.js
+- **Maps**: Leaflet, OpenStreetMap
+- **AI**: Groq API
+- **UI Components**: shadcn/ui, Radix UI
+
+## 📋 Prerequisite
+
+Pastikan sudah terinstall:
+
+- **Node.js** (v18 atau lebih baru)
+- **npm** atau **yarn**
+- **PostgreSQL** (lokal atau cloud)
+
+## ⚙️ Instalasi & Setup
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/Ahnafprojects/direktori-umkm.git
+cd direktori-umkm
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Konfigurasi Environment Variables
+
+Buat file `.env` di root project:
+
+```env
+# Database PostgreSQL
+DATABASE_URL="postgresql://[user]:[password]@[host]:[port]/[database]"
+
+# NextAuth Secret (generate dengan: openssl rand -base64 32)
+NEXTAUTH_SECRET="string-rahasia-yang-panjang-dan-aman"
+NEXTAUTH_URL="http://localhost:3000"
+
+# Groq API Key untuk fitur AI (opsional)
+GROQ_API_KEY="gsk_your_groq_api_key_here"
+```
+
+### 4. Setup Database
+
+```bash
+# Generate Prisma Client
+npx prisma generate
+
+# Jalankan migrasi database
+npx prisma migrate dev
+
+# Seed database dengan data contoh
+npx prisma db seed
+```
+
+### 5. Jalankan Aplikasi
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Aplikasi akan berjalan di `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📊 Database Schema
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Models Utama:
 
-## Learn More
+- **User** - Data pengguna (pelanggan & pengusaha)
+- **Category** - Kategori UMKM (Makanan, Minuman, Jasa)
+- **Umkm** - Data UMKM dengan lokasi dan informasi lengkap
+- **Product** - Produk/layanan yang ditawarkan UMKM
+- **Review** - Ulasan pengguna untuk UMKM
 
-To learn more about Next.js, take a look at the following resources:
+## 🔑 Akun Testing
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Setelah menjalankan seed, Anda dapat login dengan:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Akun Pelanggan:
 
-## Deploy on Vercel
+- **Email**: `mock-user@example.com`
+- **Password**: `mockpassword123`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Akun Pengusaha:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Email**: `elmyra-ice-tea_owner@example.com`
+- **Password**: `elmyra-ice-tea`
+
+## 🗺️ Fitur Peta
+
+- **Marker Kustom** - Ikon berbeda untuk setiap kategori UMKM
+- **Info Popup** - Gambar, nama, kategori, dan link detail
+- **Navigasi** - Zoom, pan, dan kontrol peta lengkap
+
+## 🎨 Tema
+
+Aplikasi mendukung beberapa tema:
+
+- Light (default)
+- Dark
+- Theme Rose
+- Theme Ocean
+
+## 📱 Responsive Design
+
+- **Mobile First** - Dioptimalkan untuk penggunaan mobile
+- **Tablet Support** - Layout yang baik di tablet
+- **Desktop** - Grid dan layout yang luas di desktop
+
+## 🚀 Scripts
+
+```bash
+# Development
+npm run dev
+
+# Build untuk production
+npm run build
+
+# Start production server
+npm start
+
+# Lint code
+npm run lint
+
+# Database commands
+npx prisma studio        # GUI database
+npx prisma migrate reset # Reset database
+npx prisma db push       # Push schema tanpa migrasi
+```
+
+## 📂 Struktur Project
+
+```
+src/
+├── app/                 # Next.js App Router
+│   ├── api/            # API Routes
+│   ├── _components/    # Komponen khusus halaman
+│   └── [pages]/        # Halaman aplikasi
+├── components/         # Komponen reusable
+│   └── ui/            # UI components (shadcn)
+├── lib/               # Utilitas dan konfigurasi
+├── store/             # State management (Zustand)
+└── types/             # TypeScript types
+
+prisma/
+├── schema.prisma      # Database schema
+├── seed.ts           # Data seeding
+└── migrations/       # Database migrations
+
+public/
+└── images/           # Static images
+    └── umkm/        # UMKM photos
+```
+
+## 🤝 Contributing
+
+1. Fork repository
+2. Buat branch feature (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push ke branch (`git push origin feature/amazing-feature`)
+5. Buat Pull Request
+
+## 📝 License
+
+Project ini menggunakan MIT License.
+
+## 🎯 Roadmap
+
+- [ ] Sistem booking/pemesanan online
+- [ ] Notifikasi push
+- [ ] Export data UMKM
+- [ ] Dashboard analytics untuk pengusaha
+- [ ] Integrasi payment gateway
+- [ ] Multi-language support
+
+## ⚠️ Troubleshooting
+
+### Database Connection Error
+
+- Pastikan PostgreSQL berjalan
+- Cek konfigurasi `DATABASE_URL` di `.env`
+- Jalankan `npx prisma migrate reset` jika perlu
+
+### NextAuth Error
+
+- Generate `NEXTAUTH_SECRET` baru: `openssl rand -base64 32`
+- Pastikan `NEXTAUTH_URL` sesuai dengan domain Anda
+
+### Build Error
+
+- Jalankan `npm run lint` untuk cek error
+- Pastikan semua dependencies ter-install
+- Clear `.next` folder dan build ulang
+
+---
+
+💡 **Tips**: Gunakan `npx prisma studio` untuk melihat dan mengedit data database melalui GUI yang user-friendly.

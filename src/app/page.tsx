@@ -1,17 +1,15 @@
 // src/app/page.tsx
 import { getCategories, getUmkms } from "@/lib/actions";
-import AutocompleteSearch from "./_components/autocomplete-search"; // <-- 1. GANTI INI
+import AutocompleteSearch from "./_components/autocomplete-search";
 import CategoryFilter from "./_components/category-filter";
 import UmkmCard from "@/components/umkm-card";
 import { Suspense } from "react";
 import UmkmGridSkeleton from "./loading";
-import FindNearestButton from "@/components/find-nearest-button";
 import AnimatedGrid from "@/components/animated-grid";
 import AnimatedGridItem from "@/components/animated-grid-item";
-import ViewToggle from "./_components/view-toggle"; // <-- 1. IMPORT
-import OpenNowToggle from "./_components/open-now-toggle"; // <-- IMPORT OPEN NOW TOGGLE
-import AiRecommendationCarousel from "./_components/ai-recommendation-carousel"; // <-- 1. IMPORT
-import ClientHydrator from "@/components/client-hydrator"; // <-- 2. IMPORT
+import AiRecommendationCarousel from "./_components/ai-recommendation-carousel";
+import ClientHydrator from "@/components/client-hydrator";
+import FeatureButtons from "./_components/feature-buttons";
 
 // Ini adalah tipe untuk searchParams
 type HomePageProps = {
@@ -41,13 +39,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <AiRecommendationCarousel />
       </ClientHydrator>
 
-      {/* Area Filter dan Search */}
-      <div className="flex flex-col md:flex-row gap-4 mb-4">
-        <AutocompleteSearch /> {/* <-- 2. GANTI INI */}
-        <FindNearestButton />
-        <OpenNowToggle /> {/* <-- TAMBAH OPEN NOW TOGGLE */}
-        <ViewToggle /> {/* <-- 2. TAMBAHKAN DI SINI */}
+      {/* Fitur Buttons dengan Logo */}
+      <ClientHydrator>
+        <FeatureButtons />
+      </ClientHydrator>
+
+      {/* Area Search */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <AutocompleteSearch />
       </div>
+      
+      {/* Category Filter dengan Logo */}
       <div className="mb-8">
         <CategoryFilter categories={categories} />
       </div>
