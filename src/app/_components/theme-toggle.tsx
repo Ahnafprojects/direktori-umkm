@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Moon, Sun, Palette } from 'lucide-react';
+import { Moon, Sun, Palette, Leaf } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 import { Button } from '@/components/ui/button';
@@ -32,12 +32,15 @@ export function ThemeToggle() {
     }
     
     if (theme === 'light') {
-      return <Sun className="h-[1.2rem] w-[1.2rem]" />;
+      return <Leaf className="h-[1.2rem] w-[1.2rem] text-emerald-600" />;
     }
     if (theme === 'theme-ocean') {
-      return <Moon className="h-[1.2rem] w-[1.2rem]" />;
+      return <Moon className="h-[1.2rem] w-[1.2rem] text-blue-500" />;
     }
-    // Jika temanya 'rose' atau lainnya
+    if (theme === 'theme-rose') {
+      return <Palette className="h-[1.2rem] w-[1.2rem] text-pink-500" />;
+    }
+    // Default
     return <Palette className="h-[1.2rem] w-[1.2rem]" />;
   };
 
@@ -55,8 +58,8 @@ export function ThemeToggle() {
           onClick={() => setTheme('light')}
           className="cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50"
         >
-          <Sun className="mr-2 h-4 w-4 text-amber-500" />
-          <span className="font-medium">Terang</span>
+          <Leaf className="mr-2 h-4 w-4 text-emerald-600" />
+          <span className="font-medium">Hijau <span className="text-sm text-muted-foreground">(Putih-Ijo)</span></span>
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />

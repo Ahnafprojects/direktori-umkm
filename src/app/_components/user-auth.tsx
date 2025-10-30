@@ -10,22 +10,41 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-// 1. IMPORT IKON BARU (Home)
-import { LogIn, LogOut, User, Store, LayoutDashboard, PlusCircle, Home } from 'lucide-react';
+import { LogIn, LogOut, User, Store, LayoutDashboard, PlusCircle, Home, Palette, Sun, Moon } from 'lucide-react';
 import Link from 'next/link';
+import { ThemeToggle } from './theme-toggle';
+import { useTheme } from 'next-themes';
 
 export default function UserAuth() {
   const { data: session, status } = useSession();
+  const { theme, setTheme } = useTheme();
+
+  const renderThemeIcon = () => {
+    switch (theme) {
+      case 'light':
+        return <Sun className="h-4 w-4" />;
+      case 'theme-rose':
+        return <Palette className="h-4 w-4" />;
+      case 'theme-ocean':
+        return <Moon className="h-4 w-4" />;
+      default:
+        return <Sun className="h-4 w-4" />;
+    }
+  };
 
   if (status === 'loading') {
     return <div className="h-10 w-24 rounded-md bg-gray-200 animate-pulse" />;
   }
 
   if (!session) {
-    // ... (kode untuk kondisi belum login tidak berubah)
     return (
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
@@ -46,6 +65,7 @@ export default function UserAuth() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
       );
   }
 
@@ -106,6 +126,30 @@ export default function UserAuth() {
             <span>Profil</span>
           </Link>
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        
+        {/* Theme Selector - Nested Dropdown */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            {renderThemeIcon()}
+            <span className="ml-2">Tema</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuItem onClick={() => setTheme('light')}>
+              <Sun className="mr-2 h-4 w-4" />
+              <span>Light</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme('theme-rose')}>
+              <Palette className="mr-2 h-4 w-4" />
+              <span>Rose</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme('theme-ocean')}>
+              <Moon className="mr-2 h-4 w-4" />
+              <span>Ocean</span>
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut()}>
           <LogOut className="mr-2 h-4 w-4" />

@@ -6,7 +6,8 @@ import { db } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
 export const authOptions: AuthOptions = {
-  adapter: PrismaAdapter(db),
+  // @ts-ignore - Adapter type compatibility
+  adapter: PrismaAdapter(db), 
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -49,12 +50,19 @@ export const authOptions: AuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         // @ts-ignore
         token.role = user.role;
+        token.name = user.name;
       }
+      
+      // Handle session update (untuk update nama dari profil)
+      if (trigger === 'update' && session?.name) {
+        token.name = session.name;
+      }
+      
       return token;
     },
     async session({ session, token }) {
@@ -63,6 +71,7 @@ export const authOptions: AuthOptions = {
         session.user.id = token.id as string;
         // @ts-ignore
         session.user.role = token.role;
+        session.user.name = token.name as string;
       }
       return session;
     },
