@@ -5,18 +5,51 @@ import { v2 as cloudinary } from "cloudinary";
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: "396972229362362",
-  api_secret: "vKVMsS7sUd83oHCKgdA-iKaFnww",
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Cloudinary is configured
+    if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+      console.error("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is not set");
+      return NextResponse.json(
+        { error: "Cloudinary tidak dikonfigurasi dengan benar." },
+        { status: 500 }
+      );
+    }
+
+    if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.error("CLOUDINARY_API_KEY or CLOUDINARY_API_SECRET is not set");
+      return NextResponse.json(
+        { error: "Cloudinary credentials tidak lengkap." },
+        { status: 500 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
     if (!file) {
       return NextResponse.json(
         { error: "Tidak ada file yang diupload." },
+        { status: 400 }
+      );
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      return NextResponse.json(
+        { error: "File harus berupa gambar." },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "Ukuran file maksimal 5MB." },
         { status: 400 }
       );
     }
