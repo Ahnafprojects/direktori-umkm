@@ -6,20 +6,14 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useEffect } from 'react';
 
-// Path ke ikon di folder public
-const iconUrl = '/leaflet/marker-icon.png';
-const iconRetinaUrl = '/leaflet/marker-icon-2x.png';
-const shadowUrl = '/leaflet/marker-shadow.png';
 
 const customIcon = new L.Icon({
-    iconUrl,
-    iconRetinaUrl,
-    shadowUrl,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
+    iconUrl: '/images/icon/marker3d.svg', 
+    shadowUrl: undefined, 
+    iconSize: [35, 35],  
+    iconAnchor: [17.5, 35],
 });
+
 
 type Position = { lat: number; lng: number };
 
@@ -28,7 +22,7 @@ interface LocationPickerMapCoreProps {
   onLocationChange: (position: Position) => void;
 }
 
-// Komponen helper untuk menangani klik
+// Komponen helper tidak ada perubahan
 function MapClickHandler({ onLocationChange }: { onLocationChange: (position: Position) => void }) {
   useMapEvents({
     click(e) {
@@ -38,23 +32,18 @@ function MapClickHandler({ onLocationChange }: { onLocationChange: (position: Po
   return null;
 }
 
-// =================================================================
-// KOMPONEN HELPER BARU UNTUK MENGGERAKKAN PETA
-// =================================================================
 function MapUpdater({ position }: { position: Position | null }) {
-    const map = useMap(); // Dapatkan instance peta
+    const map = useMap();
     useEffect(() => {
         if (position) {
-            // Gunakan flyTo untuk animasi yang mulus ke posisi baru
-            map.flyTo([position.lat, position.lng], 15); // Zoom level 15
+            map.flyTo([position.lat, position.lng], 15);
         }
     }, [position, map]);
-
     return null;
 }
 
 export default function LocationPickerMapCore({ position, onLocationChange }: LocationPickerMapCoreProps) {
-  const defaultPosition: Position = { lat: -7.2820, lng: 112.7944 }; // Default di area ITS Surabaya
+  const defaultPosition: Position = { lat: -7.2820, lng: 112.7944 };
 
   return (
     <MapContainer 
@@ -68,10 +57,12 @@ export default function LocationPickerMapCore({ position, onLocationChange }: Lo
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       
+      {/* === PERUBAHAN DI SINI ===
+        Tambahkan kembali prop 'icon' dan berikan 'customIcon' yang baru kita buat.
+      */}
       {position && <Marker position={position} icon={customIcon}></Marker>}
       
       <MapClickHandler onLocationChange={onLocationChange} />
-      {/* Tambahkan komponen updater di sini */}
       <MapUpdater position={position} />
     </MapContainer>
   );
