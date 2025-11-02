@@ -1,7 +1,9 @@
 import { db } from "@/lib/prisma";
+// PERUBAHAN 1: Impor komponen dengan nama baru 'UmkmForm' dari file baru
 import UmkmForm from "@/app/_components/umkm-registration-form";
 
 export default async function DaftarUmkmPage() {
+    // Ambil semua kategori dari database untuk ditampilkan di form
     const categories = await db.category.findMany();
 
     return (
