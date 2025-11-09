@@ -11,10 +11,10 @@ type Props = {
 
 // Mapping category slug ke logo
 const categoryLogos: Record<string, string> = {
-  'makanan': '/images/category/makanan.jpg',
-  'minuman': '/images/category/minuman.jpg',
-  'belanja': '/images/category/belanja.jpg',
-  'jasa': '/images/category/jasa.jpg',
+  makanan: "/images/category/makanan.jpg",
+  minuman: "/images/category/minuman.jpg",
+  belanja: "/images/category/belanja.jpg",
+  jasa: "/images/category/jasa.jpg",
 };
 
 export default function CategoryFilter({ categories }: Props) {
@@ -34,7 +34,7 @@ export default function CategoryFilter({ categories }: Props) {
 
   return (
     <div className="w-full">
-      <h3 className="text-base sm:text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
+      <h3 className="text-base sm:text-lg font-semibold mb-3 text-foreground">
         Kategori
       </h3>
       <div className="flex gap-4 sm:gap-6 overflow-x-auto py-3 px-2 scrollbar-hide">
@@ -43,11 +43,13 @@ export default function CategoryFilter({ categories }: Props) {
           onClick={() => handleFilter("all")}
           className="group relative flex flex-col items-center gap-2 flex-shrink-0"
         >
-          <div className={`relative w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full overflow-hidden transition-all duration-300 group-hover:scale-110 ${
-            activeCategory === "all"
-              ? "ring-4 ring-green-500 ring-offset-2 dark:ring-offset-gray-900"
-              : "ring-2 ring-gray-200 dark:ring-gray-700"
-          }`}>
+          <div
+            className={`relative w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full overflow-hidden transition-all duration-300 group-hover:scale-110 ${
+              activeCategory === "all"
+                ? "ring-4 ring-green-500 ring-offset-2 dark:ring-offset-gray-900"
+                : "ring-2 ring-gray-200 dark:ring-gray-700"
+            }`}
+          >
             <Image
               src="/images/category/semua.jpg"
               alt="Semua Kategori"
@@ -55,7 +57,7 @@ export default function CategoryFilter({ categories }: Props) {
               className="object-cover"
             />
           </div>
-          <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-center text-gray-800 dark:text-gray-200 whitespace-nowrap">
+          <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-center text-foreground whitespace-nowrap">
             Semua
           </span>
           {activeCategory === "all" && (
@@ -70,11 +72,13 @@ export default function CategoryFilter({ categories }: Props) {
             onClick={() => handleFilter(cat.slug)}
             className="group relative flex flex-col items-center gap-2 flex-shrink-0"
           >
-            <div className={`relative w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full overflow-hidden transition-all duration-300 group-hover:scale-110 ${
-              activeCategory === cat.slug
-                ? "ring-4 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900"
-                : "ring-2 ring-gray-200 dark:ring-gray-700"
-            }`}>
+            <div
+              className={`relative w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full overflow-hidden transition-all duration-300 group-hover:scale-110 ${
+                activeCategory === cat.slug
+                  ? "ring-4 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900"
+                  : "ring-2 ring-gray-200 dark:ring-gray-700"
+              }`}
+            >
               {categoryLogos[cat.slug] ? (
                 <Image
                   src={categoryLogos[cat.slug]}
@@ -88,7 +92,7 @@ export default function CategoryFilter({ categories }: Props) {
                 </div>
               )}
             </div>
-            <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-center text-gray-800 dark:text-gray-200 whitespace-nowrap max-w-[70px] sm:max-w-[80px]">
+            <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-center text-foreground whitespace-nowrap max-w-[70px] sm:max-w-[80px]">
               {cat.name}
             </span>
             {activeCategory === cat.slug && (

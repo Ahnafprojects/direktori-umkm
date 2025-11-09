@@ -56,7 +56,9 @@
   --secondary: oklch(0.94 0.05 150); /* Hijau muda untuk secondary */
   --secondary-foreground: oklch(0.145 0 0); /* Hitam untuk teks secondary */
   --muted: oklch(0.97 0 0); /* Abu-abu muda - TIDAK HIJAU */
-  --muted-foreground: oklch(0.556 0 0); /* Abu-abu untuk muted text - TIDAK HIJAU */
+  --muted-foreground: oklch(
+    0.556 0 0
+  ); /* Abu-abu untuk muted text - TIDAK HIJAU */
   --accent: oklch(0.92 0.06 150); /* Hijau lembut untuk accent */
   --accent-foreground: oklch(0.145 0 0); /* Hitam untuk teks accent */
   --destructive: oklch(0.577 0.245 27.325);
@@ -173,37 +175,37 @@
 .theme-rose {
   --radius: 0.625rem;
   --background: oklch(0.97 0.05 350); /* Pink sangat muda */
-  --foreground: oklch(0.20 0.08 350); /* Dark pink */
+  --foreground: oklch(0.2 0.08 350); /* Dark pink */
   --card: oklch(0.99 0.02 350);
-  --card-foreground: oklch(0.20 0.08 350);
+  --card-foreground: oklch(0.2 0.08 350);
   --popover: oklch(0.99 0.02 350);
-  --popover-foreground: oklch(0.20 0.08 350);
-  --primary: oklch(0.45 0.20 350); /* Rose primary yang kuat */
+  --popover-foreground: oklch(0.2 0.08 350);
+  --primary: oklch(0.45 0.2 350); /* Rose primary yang kuat */
   --primary-foreground: oklch(0.99 0.02 350);
-  --secondary: oklch(0.90 0.08 350); /* Rose secondary */
-  --secondary-foreground: oklch(0.20 0.08 350);
+  --secondary: oklch(0.9 0.08 350); /* Rose secondary */
+  --secondary-foreground: oklch(0.2 0.08 350);
   --muted: oklch(0.93 0.06 350);
   --muted-foreground: oklch(0.45 0.08 350);
-  --accent: oklch(0.90 0.08 350);
-  --accent-foreground: oklch(0.20 0.08 350);
+  --accent: oklch(0.9 0.08 350);
+  --accent-foreground: oklch(0.2 0.08 350);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.85 0.06 350); /* Pink border */
   --input: oklch(0.85 0.06 350);
-  --ring: oklch(0.45 0.20 350);
+  --ring: oklch(0.45 0.2 350);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.99 0.02 350);
-  --sidebar-foreground: oklch(0.20 0.08 350);
-  --sidebar-primary: oklch(0.45 0.20 350);
+  --sidebar-foreground: oklch(0.2 0.08 350);
+  --sidebar-primary: oklch(0.45 0.2 350);
   --sidebar-primary-foreground: oklch(0.99 0.02 350);
-  --sidebar-accent: oklch(0.90 0.08 350);
-  --sidebar-accent-foreground: oklch(0.20 0.08 350);
+  --sidebar-accent: oklch(0.9 0.08 350);
+  --sidebar-accent-foreground: oklch(0.2 0.08 350);
   --sidebar-border: oklch(0.85 0.06 350);
-  --sidebar-ring: oklch(0.45 0.20 350);
+  --sidebar-ring: oklch(0.45 0.2 350);
 }
 
 /* --- TEMA 2: "Ocean" (Dark Theme) --- */
@@ -215,7 +217,7 @@
   --card-foreground: oklch(0.98 0.02 210);
   --popover: oklch(0.17 0.02 216);
   --popover-foreground: oklch(0.98 0.02 210);
-  --primary: oklch(0.60 0.15 217);
+  --primary: oklch(0.6 0.15 217);
   --primary-foreground: oklch(0.98 0.02 210);
   --secondary: oklch(0.27 0.02 216);
   --secondary-foreground: oklch(0.98 0.02 210);
@@ -227,7 +229,7 @@
   --destructive-foreground: oklch(0.98 0.02 210);
   --border: oklch(0.27 0.02 216);
   --input: oklch(0.27 0.02 216);
-  --ring: oklch(0.60 0.15 217);
+  --ring: oklch(0.6 0.15 217);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -235,19 +237,19 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.22 0.02 216);
   --sidebar-foreground: oklch(0.98 0.02 210);
-  --sidebar-primary: oklch(0.60 0.15 217);
+  --sidebar-primary: oklch(0.6 0.15 217);
   --sidebar-primary-foreground: oklch(0.98 0.02 210);
   --sidebar-accent: oklch(0.27 0.02 216);
   --sidebar-accent-foreground: oklch(0.98 0.02 210);
   --sidebar-border: oklch(0.27 0.02 216);
-  --sidebar-ring: oklch(0.60 0.15 217);
+  --sidebar-ring: oklch(0.6 0.15 217);
 }
 
 /* Custom scrollbar hide utility */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* Internet Explorer 10+ */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
 }
-.scrollbar-hide::-webkit-scrollbar { 
-  display: none;  /* Safari and Chrome */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
 }

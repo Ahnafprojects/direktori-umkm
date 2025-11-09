@@ -22,6 +22,7 @@ import {
   Home,
 } from "lucide-react";
 import Link from "next/link";
+import ThemeSelector from "./theme-selector";
 
 export default function UserAuth() {
   const { data: session, status } = useSession();
@@ -113,6 +114,11 @@ export default function UserAuth() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+
+        {/* Compact theme selector (no nested dropdown) inside profile popup */}
+        <div className="px-2 py-1">
+          <ThemeSelector showLabels={false} />
+        </div>
         <DropdownMenuItem onClick={() => signOut()}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Keluar</span>

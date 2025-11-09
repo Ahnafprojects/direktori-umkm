@@ -25,12 +25,7 @@ export default async function Header() {
           {/* Hanya tampilkan tombol history jika user sudah login */}
           {session && (
             <div>
-              <Button
-                asChild
-                variant="ghost"
-                size="icon"
-                className="hidden xs:flex sm:flex"
-              >
+              <Button asChild variant="ghost" size="icon" className="flex">
                 <Link href="/history" aria-label="Riwayat Pesanan">
                   <ScrollText className="h-5 w-5" />
                 </Link>
@@ -38,7 +33,8 @@ export default async function Header() {
             </div>
           )}
           <FavoriteNavButton />
-          <ThemeToggle />
+          {/* Show theme toggle in header only when user is NOT logged in.  When logged in, theme toggle will be inside profile popup */}
+          {!session && <ThemeToggle />}
           <UserAuth />
         </nav>
       </div>

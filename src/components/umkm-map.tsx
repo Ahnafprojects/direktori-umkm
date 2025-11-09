@@ -5,7 +5,6 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 
-// --- Perbaikan untuk ikon default Leaflet ---
 // Ini memperbaiki masalah umum di React di mana ikon marker tidak muncul
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
@@ -14,7 +13,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: iconUrl.src,
   shadowUrl: iconShadow.src,
 });
-// --- Akhir Perbaikan Ikon ---
 
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
@@ -50,16 +48,26 @@ export default function UmkmMap({
         // Fix leaflet default icon issue
         delete (L.Icon.Default.prototype as any)._getIconUrl;
         L.Icon.Default.mergeOptions({
-          iconRetinaUrl: "/images/icon/loc_icon.png",
-          iconUrl: "/images/icon/loc_icon.png",
-          shadowUrl: "",
+          iconRetinaUrl:
+            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+          iconUrl:
+            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+          shadowUrl:
+            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
         });
 
+        // Custom icon untuk lokasi UMKM (merah/biru yang jelas)
         const customIcon = new L.Icon({
-          iconUrl: "/images/icon/loc_icon.png",
-          iconSize: [40, 40],
-          iconAnchor: [20, 40],
-          popupAnchor: [0, -40],
+          iconUrl:
+            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+          iconRetinaUrl:
+            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+          shadowUrl:
+            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41],
         });
 
         const userIcon = new L.Icon({
