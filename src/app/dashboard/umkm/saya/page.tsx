@@ -1,7 +1,7 @@
 // File: src/app/dashboard/umkm/saya/page.tsx
 
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/prisma";
 import MyUmkmList from "@/app/_components/my-umkm-list";

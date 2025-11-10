@@ -1,7 +1,7 @@
 // src/app/api/favorites/sync/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 import { db } from "@/lib/prisma";
 
 // POST - Sinkronisasi favorites dari localStorage ke database

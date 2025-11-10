@@ -25,7 +25,7 @@ import ReviewSummarizer from "@/app/_components/review-summarizer";
 import AddReviewForm from "@/app/_components/add-review-form";
 import OwnerReplyForm from "@/app/_components/owner-reply-form";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 
 // Tipe data baru yang MENCERMINKAN DATABASE BARU KITA
 type UmkmWithDetails = Prisma.UmkmGetPayload<{

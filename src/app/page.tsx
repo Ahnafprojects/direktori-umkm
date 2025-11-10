@@ -11,7 +11,7 @@ import AiRecommendationCarousel from "./_components/ai-recommendation-carousel";
 import ClientHydrator from "@/components/client-hydrator";
 import FeatureButtons from "./_components/feature-buttons";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";

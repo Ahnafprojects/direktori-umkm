@@ -5,7 +5,7 @@
 import { db } from "./prisma";
 import { isUmkmOpen } from "./time-helper"; // <-- 1. IMPORT HELPER
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 import { revalidatePath } from "next/cache";
 
 // ... (semua fungsi 'get' kamu tidak berubah, jadi saya salin langsung)
