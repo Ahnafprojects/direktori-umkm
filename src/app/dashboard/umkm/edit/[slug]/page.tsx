@@ -8,9 +8,9 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 type EditUmkmPageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
 export default async function EditUmkmPage({ params }: EditUmkmPageProps) {

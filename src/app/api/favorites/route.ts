@@ -1,7 +1,7 @@
 // src/app/api/favorites/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 import { db } from "@/lib/prisma";
 
 // GET - Ambil semua favorites user
