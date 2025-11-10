@@ -102,7 +102,8 @@ model Product {
   id                Int      @id @default(autoincrement())
   name              String   @db.VarChar(255)
   description       String?
-  price             Int?
+  price             Int?     // Harga Jual (untuk customer)
+  costPrice         Int?     // Harga Beli/Modal (untuk analytics profit)
   photo             String?  @db.VarChar(255)
   isFeatured        Boolean? @default(false)
   productCategoryId Int

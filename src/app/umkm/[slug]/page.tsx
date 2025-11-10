@@ -307,20 +307,22 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
           )}
         </div>
 
-        {/* --- FORM TAMBAH ULASAN / REPLY REVIEW --- */}
+        {/* --- FORM TAMBAH ULASAN / ANALYTICS OWNER --- */}
         <ClientHydrator>
           {userId ? (
             // Cek apakah user yang login adalah pemilik UMKM
             userId === umkm.ownerId ? (
-              // PEMILIK UMKM: Tampilkan info bahwa tidak bisa review sendiri
-              <div className="p-6 border rounded-lg bg-muted/50 text-center space-y-3">
-                <h4 className="text-lg font-semibold text-muted-foreground">👤 Anda Pemilik UMKM Ini</h4>
-                <p className="text-sm text-muted-foreground">
-                  Sebagai pemilik, Anda tidak dapat memberikan rating pada UMKM sendiri.
+              // PEMILIK UMKM: Redirect ke Dashboard
+              <div className="p-6 border rounded-lg bg-blue-50 border-blue-200 text-center">
+                <h4 className="text-lg font-bold text-blue-800 mb-2">👨‍💼 Selamat Datang, Pemilik UMKM!</h4>
+                <p className="text-sm text-blue-600 mb-4">
+                  Kelola bisnis Anda di dashboard khusus owner
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  💡 <strong>Tips:</strong> Anda bisa membalas review pelanggan untuk meningkatkan engagement!
-                </p>
+                <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                  <Link href="/dashboard">
+                    � Buka Dashboard Analytics
+                  </Link>
+                </Button>
               </div>
             ) : (
               // CUSTOMER: Tampilkan form review normal

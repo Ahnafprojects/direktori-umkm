@@ -246,6 +246,7 @@ export async function getUmkmForEdit(slug: string) {
         name: p.name,
         description: p.description || "",
         price: p.price ? String(p.price) : "",
+        costPrice: p.costPrice ? String(p.costPrice) : "",
         photo: p.photo || "", // Tambahkan field photo
       })) || [];
 
@@ -335,6 +336,7 @@ export async function createUmkm(data: any) {
             name: p.name,
             description: p.description,
             price: parseInt(p.price, 10),
+            costPrice: p.costPrice ? parseInt(p.costPrice, 10) : null,
             photo: p.photo || null, // Tambahkan field photo
             productCategoryId: productCategory.id,
           })),
@@ -410,6 +412,7 @@ export async function updateUmkm(umkmId: number, data: any) {
             name: incomingProducts[i].name,
             description: incomingProducts[i].description || "",
             price: parseInt(incomingProducts[i].price, 10),
+            costPrice: incomingProducts[i].costPrice ? parseInt(incomingProducts[i].costPrice, 10) : null,
             photo: incomingProducts[i].photo || null,
             productCategoryId: productCategory.id,
           };

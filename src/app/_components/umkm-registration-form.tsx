@@ -26,6 +26,7 @@ type ProductInput = {
   name: string;
   description: string;
   price: string;
+  costPrice: string; // Harga beli/modal
   photo?: string; // Tambahkan field photo
 };
 type Position = { lat: number; lng: number };
@@ -45,6 +46,7 @@ type UmkmInitialData = {
     name: string;
     description: string | null;
     price: number | string;
+    costPrice?: number | string; // Harga beli/modal
     photo?: string | null; // Tambahkan field photo di initial data
   }[];
 };
@@ -90,9 +92,10 @@ export default function UmkmRegistrationForm({
           name: p.name,
           description: p.description || "",
           price: formatRupiah(String(p.price)),
+          costPrice: formatRupiah(String(p.costPrice || 0)),
           photo: p.photo || "", // Tambahkan photo dari initial data
         }))
-      : [{ name: "", description: "", price: "", photo: "" }]
+      : [{ name: "", description: "", price: "", costPrice: "", photo: "" }]
   );
   const [location, setLocation] = useState<Position | null>(
     initialData?.latitude && initialData?.longitude
@@ -110,7 +113,7 @@ export default function UmkmRegistrationForm({
   ) => {
     const { name, value } = event.target;
     const values = [...products];
-    if (name === "price") {
+    if (name === "price" || name === "costPrice") {
       values[index][name as keyof ProductInput] = formatRupiah(value);
     } else {
       values[index][name as keyof ProductInput] = value;
@@ -121,7 +124,7 @@ export default function UmkmRegistrationForm({
   const handleAddProduct = () => {
     setProducts([
       ...products,
-      { name: "", description: "", price: "", photo: "" },
+      { name: "", description: "", price: "", costPrice: "", photo: "" },
     ]);
   };
 
@@ -230,6 +233,7 @@ export default function UmkmRegistrationForm({
       .map((p) => ({
         ...p,
         price: unformatRupiah(p.price),
+        costPrice: p.costPrice ? unformatRupiah(p.costPrice) : null,
       }));
 
     const finalData = {
@@ -464,7 +468,7 @@ export default function UmkmRegistrationForm({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor={`product-name-${index}`}>Nama Produk</Label>
                 <Input
@@ -476,18 +480,43 @@ export default function UmkmRegistrationForm({
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor={`product-price-${index}`}>Harga</Label>
-                <Input
-                  id={`product-price-${index}`}
-                  name="price"
-                  type="text"
-                  inputMode="numeric"
-                  value={product.price}
-                  onChange={(e) => handleProductChange(index, e)}
-                  placeholder="25.000"
-                  required
-                />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor={`product-price-${index}`}>
+                    Harga Jual <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id={`product-price-${index}`}
+                    name="price"
+                    type="text"
+                    inputMode="numeric"
+                    value={product.price}
+                    onChange={(e) => handleProductChange(index, e)}
+                    placeholder="25.000"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Harga yang dilihat customer
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`product-costPrice-${index}`}>
+                    Harga Beli/Modal
+                  </Label>
+                  <Input
+                    id={`product-costPrice-${index}`}
+                    name="costPrice"
+                    type="text"
+                    inputMode="numeric"
+                    value={product.costPrice}
+                    onChange={(e) => handleProductChange(index, e)}
+                    placeholder="15.000"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Untuk analisis profit (opsional)
+                  </p>
+                </div>
               </div>
             </div>
             <div className="space-y-2">

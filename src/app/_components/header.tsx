@@ -22,19 +22,10 @@ export default function Header() {
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-2 md:gap-4 ml-auto">
-          {/* Dashboard untuk UMKM Owner */}
-          {session?.user?.role === 'UMKM_OWNER' && (
+          {/* Tampilkan transaksi hanya untuk pengusaha UMKM yang membeli dari UMKM lain */}
+          {session && session.user.role === 'PENGUSAHA' && (
             <Button asChild variant="ghost" size="icon" className="flex">
-              <Link href="/dashboard" aria-label="Dashboard UMKM">
-                <BarChart3 className="h-5 w-5" />
-              </Link>
-            </Button>
-          )}
-          
-          {/* History untuk customer */}
-          {session?.user?.role === 'CUSTOMER' && (
-            <Button asChild variant="ghost" size="icon" className="flex">
-              <Link href="/history" aria-label="Riwayat Pesanan">
+              <Link href="/history" aria-label="Transaksi Pembelian">
                 <ScrollText className="h-5 w-5" />
               </Link>
             </Button>
