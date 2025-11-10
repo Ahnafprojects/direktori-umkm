@@ -23,6 +23,7 @@ import ProductCard from "@/components/product-card"; // Kita pakai ulang kompone
 import MapWrapper from "@/components/map-wrapper"; // Gunakan MapWrapper yang sudah ada
 import ReviewSummarizer from "@/app/_components/review-summarizer";
 import AddReviewForm from "@/app/_components/add-review-form";
+import OwnerReplyForm from "@/app/_components/owner-reply-form";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
@@ -30,7 +31,22 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 type UmkmWithDetails = Prisma.UmkmGetPayload<{
   include: {
     Category: true;
-    Review: true;
+    Review: {
+      include: {
+        user: {
+          select: { 
+            id: true;
+            name: true;
+          };
+        };
+        replier: {
+          select: { 
+            id: true;
+            name: true;
+          };
+        };
+      };
+    };
     ProductCategory: {
       include: {
         Product: true;
@@ -82,7 +98,7 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <ClientHydrator>
               <FavoriteToggleButton umkmId={umkm.id} umkmName={umkm.name} />
             </ClientHydrator>
@@ -223,40 +239,70 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
         <div className="space-y-8">
           {umkm.Review.length > 0 ? (
             umkm.Review.map((review: any) => (
-              <div key={review.id} className="flex gap-4">
-                <Avatar>
-                  <AvatarFallback>
-                    {review.user?.name
-                      ? review.user.name.substring(0, 2).toUpperCase()
-                      : "AN"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="flex justify-between items-center">
-                    <p className="font-semibold">
-                      {review.user?.name || "Anonymous"}
-                    </p>
-                    <span className="text-sm text-muted-foreground">
-                      {new Date(review.createdAt).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </span>
+              <div key={review.id} className="space-y-4">
+                {/* Customer Review */}
+                <div className="flex gap-4">
+                  <Avatar>
+                    <AvatarFallback>
+                      {review.user?.name
+                        ? review.user.name.substring(0, 2).toUpperCase()
+                        : "AN"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center">
+                      <p className="font-semibold">
+                        {review.user?.name || "Anonymous"}
+                      </p>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(review.createdAt).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex gap-0.5 mt-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < review.rating
+                              ? "text-yellow-500 fill-yellow-500"
+                              : "text-gray-400 dark:text-gray-500"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-muted-foreground mt-2">{review.comment}</p>
+
+                    {/* Owner Reply (jika ada) */}
+                    {review.ownerReply && (
+                      <div className="mt-4 ml-4 p-4 bg-muted/50 border-l-4 border-primary rounded-r-lg">
+                        <div className="flex justify-between items-center mb-2">
+                          <p className="font-semibold text-sm flex items-center gap-2">
+                            <span className="text-primary">👨‍💼</span>
+                            Balasan Pemilik UMKM
+                          </p>
+                          <span className="text-xs text-muted-foreground">
+                            {review.ownerReplyAt && new Date(review.ownerReplyAt).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{review.ownerReply}</p>
+                      </div>
+                    )}
+
+                    {/* Owner Reply Form - hanya tampil untuk owner dan belum ada reply */}
+                    <ClientHydrator>
+                      {userId && userId === umkm.ownerId && !review.ownerReply && (
+                        <OwnerReplyForm reviewId={review.id} />
+                      )}
+                    </ClientHydrator>
                   </div>
-                  <div className="flex gap-0.5 mt-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 ${
-                          i < review.rating
-                            ? "text-yellow-500 fill-yellow-500"
-                            : "text-gray-400 dark:text-gray-500"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground mt-2">{review.comment}</p>
                 </div>
               </div>
             ))
@@ -267,10 +313,27 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
           )}
         </div>
 
-        {/* --- FORM TAMBAH ULASAN (Hanya tampil jika user login) --- */}
+        {/* --- FORM TAMBAH ULASAN / ANALYTICS OWNER --- */}
         <ClientHydrator>
           {userId ? (
-            <AddReviewForm umkmId={umkm.id} userId={userId} />
+            // Cek apakah user yang login adalah pemilik UMKM
+            userId === umkm.ownerId ? (
+              // PEMILIK UMKM: Redirect ke Dashboard
+              <div className="p-6 border rounded-lg bg-blue-50 border-blue-200 text-center">
+                <h4 className="text-lg font-bold text-blue-800 mb-2">👨‍💼 Selamat Datang, Pemilik UMKM!</h4>
+                <p className="text-sm text-blue-600 mb-4">
+                  Kelola bisnis Anda di dashboard khusus owner
+                </p>
+                <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                  <Link href="/dashboard">
+                    � Buka Dashboard Analytics
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              // CUSTOMER: Tampilkan form review normal
+              <AddReviewForm umkmId={umkm.id} userId={userId} />
+            )
           ) : (
             <div className="p-4 border rounded-lg text-center">
               <p className="text-muted-foreground mb-4">

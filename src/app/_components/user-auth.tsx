@@ -91,20 +91,12 @@ export default function UserAuth() {
         </DropdownMenuItem>
 
         {isPengusaha && (
-          <>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/umkm/baru">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                <span>Daftarkan UMKM</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/umkm/saya">
-                <LayoutDashboard className="mr-2 h-4 w-4" />
-                <span>Produk Saya</span>
-              </Link>
-            </DropdownMenuItem>
-          </>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard">
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              <span>Dashboard UMKM</span>
+            </Link>
+          </DropdownMenuItem>
         )}
 
         <DropdownMenuItem asChild>

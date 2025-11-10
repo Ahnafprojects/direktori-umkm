@@ -37,11 +37,11 @@ export async function GET() {
     });
 
     // Return hanya array umkmId untuk kompatibilitas dengan store
-    const favoriteIds = favorites.map((fav) => fav.umkmId);
+    const favoriteIds = favorites.map((fav: any) => fav.umkmId);
 
     return NextResponse.json({
       favoriteIds,
-      favorites: favorites.map((fav) => ({
+      favorites: favorites.map((fav: any) => ({
         umkmId: fav.umkmId,
         createdAt: fav.createdAt,
         umkm: fav.umkm,

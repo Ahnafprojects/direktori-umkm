@@ -14,7 +14,7 @@ type EditUmkmPageProps = {
 };
 
 export default async function EditUmkmPage({ params }: EditUmkmPageProps) {
-  const { slug } = params;
+  const { slug } = await params;
 
   // Ambil data UMKM dan data kategori secara bersamaan
   const [umkmData, categories] = await Promise.all([

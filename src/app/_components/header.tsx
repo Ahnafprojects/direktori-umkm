@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, ScrollText } from "lucide-react";
+import { Building2, ScrollText, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FavoriteNavButton from "./favorite-nav-button";
 import UserAuth from "./user-auth";
@@ -22,15 +22,13 @@ export default function Header() {
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-2 md:gap-4 ml-auto">
-          {/* Hanya tampilkan tombol history jika user sudah login */}
-          {session && (
-            <div>
-              <Button asChild variant="ghost" size="icon" className="flex">
-                <Link href="/history" aria-label="Riwayat Pesanan">
-                  <ScrollText className="h-5 w-5" />
-                </Link>
-              </Button>
-            </div>
+          {/* Tampilkan transaksi hanya untuk pengusaha UMKM yang membeli dari UMKM lain */}
+          {session && session.user.role === 'PENGUSAHA' && (
+            <Button asChild variant="ghost" size="icon" className="flex">
+              <Link href="/history" aria-label="Transaksi Pembelian">
+                <ScrollText className="h-5 w-5" />
+              </Link>
+            </Button>
           )}
           <FavoriteNavButton />
           {/* Show theme toggle in header only when user is NOT logged in.  When logged in, theme toggle will be inside profile popup */}

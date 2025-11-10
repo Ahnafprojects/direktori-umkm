@@ -112,19 +112,25 @@ export default function HistoryPage() {
       return;
     }
 
+    // Hanya untuk pengusaha UMKM
+    if (session?.user?.role !== 'PENGUSAHA') {
+      router.push('/');
+      return;
+    }
+
     const fetchOrders = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/orders');
+        const response = await fetch('/api/orders/my-purchases');
         
         if (!response.ok) {
-          throw new Error('Gagal mengambil riwayat pesanan');
+          throw new Error('Gagal mengambil riwayat pembelian');
         }
         
         const data = await response.json();
         setOrders(data);
       } catch (err) {
-        console.error('Error fetching orders:', err);
+        console.error('Error fetching purchases:', err);
         setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
       } finally {
         setIsLoading(false);
@@ -132,13 +138,13 @@ export default function HistoryPage() {
     };
 
     fetchOrders();
-  }, [status, router]);
+  }, [status, router, session]);
 
   // Loading state
   if (status === 'loading' || isLoading) {
     return (
       <main className="container mx-auto p-4 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-6">Riwayat Pesanan</h1>
+        <h1 className="text-3xl font-bold mb-6">🛒 Transaksi Pembelian</h1>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <Card key={i}>
@@ -173,17 +179,13 @@ export default function HistoryPage() {
     return (
       <div className="container mx-auto p-4 text-center">
         <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-        <h1 className="text-2xl font-bold">Riwayat Pesanan Kosong</h1>
+        <h1 className="text-2xl font-bold">Belum Ada Transaksi</h1>
         <p className="text-muted-foreground">
-          {/* @ts-ignore */}
-          {session?.user?.role === 'PENGUSAHA' 
-            ? 'Belum ada pesanan masuk ke UMKM Anda.'
-            : 'Kamu belum pernah memesan apapun.'}
+          Anda belum pernah membeli dari UMKM lain.
         </p>
         <Button asChild className="mt-4">
-          <Link href="/">
-            {/* @ts-ignore */}
-            {session?.user?.role === 'PENGUSAHA' ? 'Kelola UMKM' : 'Mulai Belanja'}
+          <Link href="/?bypass=true">
+            Mulai Belanja
           </Link>
         </Button>
       </div>
@@ -193,13 +195,10 @@ export default function HistoryPage() {
   return (
     <main className="container mx-auto p-4 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Riwayat Pesanan</h1>
-        {/* @ts-ignore */}
-        {session?.user?.role === 'PENGUSAHA' && (
-          <Badge variant="outline" className="text-sm">
-            Mode Pengusaha
-          </Badge>
-        )}
+        <h1 className="text-3xl font-bold">🛒 Transaksi Pembelian</h1>
+        <Badge variant="outline" className="text-sm">
+          Pembelian Anda dari UMKM Lain
+        </Badge>
       </div>
       
       <div className="space-y-6">
@@ -233,18 +232,7 @@ export default function HistoryPage() {
                 </div>
               </div>
               
-              {/* Info customer untuk pengusaha */}
-              {/* @ts-ignore */}
-              {session?.user?.role === 'PENGUSAHA' && order.user && (
-                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    👤 Pelanggan: {order.user.name}
-                  </p>
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
-                    {order.user.email}
-                  </p>
-                </div>
-              )}
+              {/* Tidak perlu tampilkan info customer karena ini pembelian kita */}
               
               {/* Alamat pengiriman */}
               {order.deliveryAddress && (

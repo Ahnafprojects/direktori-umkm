@@ -120,7 +120,20 @@ export async function getUmkmBySlug(slug: string) {
         Category: true,
         Review: {
           orderBy: { createdAt: "desc" },
-          include: { user: true },
+          include: { 
+            user: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            replier: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
         },
         ProductCategory: {
           orderBy: { id: "asc" },
@@ -242,10 +255,11 @@ export async function getUmkmForEdit(slug: string) {
     if (!umkm) return null;
 
     const products =
-      umkm.ProductCategory[0]?.Product.map((p) => ({
+      umkm.ProductCategory[0]?.Product.map((p: any) => ({
         name: p.name,
         description: p.description || "",
         price: p.price ? String(p.price) : "",
+        costPrice: p.costPrice ? String(p.costPrice) : "",
         photo: p.photo || "", // Tambahkan field photo
       })) || [];
 
@@ -310,7 +324,7 @@ export async function createUmkm(data: any) {
 
   try {
     const slug = createSlug(validatedData.name);
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: any) => {
       const newUmkm = await tx.umkm.create({
         data: {
           name: validatedData.name,
@@ -335,6 +349,7 @@ export async function createUmkm(data: any) {
             name: p.name,
             description: p.description,
             price: parseInt(p.price, 10),
+            costPrice: p.costPrice ? parseInt(p.costPrice, 10) : null,
             photo: p.photo || null, // Tambahkan field photo
             productCategoryId: productCategory.id,
           })),
@@ -376,7 +391,7 @@ export async function updateUmkm(umkmId: number, data: any) {
   const validatedData = data;
 
   try {
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: any) => {
       await tx.umkm.update({
         where: { id: umkmId },
         data: {
@@ -410,6 +425,7 @@ export async function updateUmkm(umkmId: number, data: any) {
             name: incomingProducts[i].name,
             description: incomingProducts[i].description || "",
             price: parseInt(incomingProducts[i].price, 10),
+            costPrice: incomingProducts[i].costPrice ? parseInt(incomingProducts[i].costPrice, 10) : null,
             photo: incomingProducts[i].photo || null,
             productCategoryId: productCategory.id,
           };

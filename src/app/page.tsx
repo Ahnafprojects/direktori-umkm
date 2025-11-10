@@ -10,6 +10,11 @@ import AnimatedGridItem from "@/components/animated-grid-item";
 import AiRecommendationCarousel from "./_components/ai-recommendation-carousel";
 import ClientHydrator from "@/components/client-hydrator";
 import FeatureButtons from "./_components/feature-buttons";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 // Ini adalah tipe untuk searchParams
 type HomePageProps = {
@@ -19,11 +24,20 @@ type HomePageProps = {
     lat?: string; // <-- TAMBAH INI
     long?: string; // <-- TAMBAH INI
     openNow?: string; // <-- TAMBAH PARAMETER OPEN NOW
+    bypass?: string; // <-- TAMBAH bypass untuk pengusaha yang ingin akses homepage
   }>;
 };
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const { search, category, lat, long, openNow } = await searchParams; // <-- AMBIL lat, long, dan openNow
+  const { search, category, lat, long, openNow, bypass } = await searchParams; // <-- AMBIL semua parameter
+
+  // Check session untuk pengusaha
+  const session = await getServerSession(authOptions);
+  
+  // Jika pengusaha dan TIDAK ada bypass parameter, redirect ke dashboard
+  if (session?.user?.role === 'PENGUSAHA' && !bypass) {
+    redirect('/dashboard');
+  }
 
   // 1. Ambil data kategori (untuk tombol filter)
   const categories = await getCategories();
@@ -31,9 +45,30 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     // Kita bungkus dengan 'relative' agar dropdown tidak terpotong
     <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 relative">
+      
+      {/* Notifikasi khusus untuk pengusaha */}
+      {session?.user?.role === 'PENGUSAHA' && bypass && (
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-blue-800 dark:text-blue-200 font-semibold">👨‍💼 Mode Penjelajah Pengusaha</h3>
+              <p className="text-blue-600 dark:text-blue-300 text-sm">
+                Anda sedang melihat UMKM lain untuk inspirasi bisnis
+              </p>
+            </div>
+            <Button asChild variant="default" size="sm">
+              <Link href="/dashboard">📊 Kembali ke Dashboard</Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
       <h1 className="text-3xl font-bold mb-4">Direktori UMKM Lokal</h1>
       <p className="text-muted-foreground mb-6">
-        Temukan dan dukung bisnis lokal di sekitarmu!
+        {session?.user?.role === 'PENGUSAHA' 
+          ? "Jelajahi UMKM lain untuk inspirasi dan benchmark bisnis Anda"
+          : "Temukan dan dukung bisnis lokal di sekitarmu!"
+        }
       </p>
       <ClientHydrator>
         <AiRecommendationCarousel />

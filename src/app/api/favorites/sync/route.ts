@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       select: { id: true },
     });
 
-    const validIds = validUmkmIds.map((umkm) => umkm.id);
+    const validIds = validUmkmIds.map((umkm: any) => umkm.id);
 
     // Ambil favorites yang sudah ada di database untuk user ini
     const existingFavorites = await db.favorite.findMany({
@@ -40,13 +40,13 @@ export async function POST(request: NextRequest) {
       select: { umkmId: true },
     });
 
-    const existingIds = existingFavorites.map((fav) => fav.umkmId);
+    const existingIds = existingFavorites.map((fav: any) => fav.umkmId);
 
     // Tentukan yang perlu ditambah (ada di localStorage tapi belum di database)
-    const toAdd = validIds.filter((id) => !existingIds.includes(id));
+    const toAdd = validIds.filter((id: any) => !existingIds.includes(id));
 
     // Tentukan yang perlu dihapus (ada di database tapi tidak di localStorage)
-    const toRemove = existingIds.filter((id) => !validIds.includes(id));
+    const toRemove = existingIds.filter((id: any) => !validIds.includes(id));
 
     // Batch operations
     const operations = [];
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     if (toAdd.length > 0) {
       operations.push(
         db.favorite.createMany({
-          data: toAdd.map((umkmId) => ({
+          data: toAdd.map((umkmId: any) => ({
             userId: session.user.id,
             umkmId: umkmId,
           })),
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Favorites synchronized successfully",
-      favoriteIds: finalFavorites.map((fav) => fav.umkmId),
+      favoriteIds: finalFavorites.map((fav: any) => fav.umkmId),
       stats: {
         added: toAdd.length,
         removed: toRemove.length,

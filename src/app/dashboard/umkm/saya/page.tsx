@@ -6,7 +6,6 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/prisma";
 import MyUmkmList from "@/app/_components/my-umkm-list";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
 import Link from "next/link";
 
 export default async function ProdukSayaPage() {
@@ -41,13 +40,13 @@ export default async function ProdukSayaPage() {
   });
 
   // PERBAIKAN #2: "Sucikan" data sebelum dikirim ke Client Component
-  const plainUmkms = myUmkms.map((umkm) => ({
+  const plainUmkms = myUmkms.map((umkm: any) => ({
     ...umkm,
     // Ubah Decimal menjadi number
     rating: umkm.rating ? Number(umkm.rating) : null,
-    ProductCategory: umkm.ProductCategory.map((pc) => ({
+    ProductCategory: umkm.ProductCategory.map((pc: any) => ({
       ...pc,
-      Product: pc.Product.map((p) => ({
+      Product: pc.Product.map((p: any) => ({
         ...p,
         // Ubah Int/Decimal menjadi number (jaga-jaga)
         price: p.price ? Number(p.price) : null,
@@ -59,7 +58,7 @@ export default async function ProdukSayaPage() {
   return (
     <div className="container mx-auto py-4 sm:py-6 lg:py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header dengan tombol tambah UMKM */}
+        {/* Header dengan tombol kembali */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">UMKM Saya</h1>
@@ -67,10 +66,9 @@ export default async function ProdukSayaPage() {
               Kelola bisnis UMKM Anda
             </p>
           </div>
-          <Button asChild className="w-full sm:w-auto">
-            <Link href="/dashboard/umkm/baru">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Tambah UMKM Baru
+          <Button asChild variant="outline" className="w-full sm:w-auto">
+            <Link href="/dashboard">
+              ← Kembali ke Dashboard
             </Link>
           </Button>
         </div>
