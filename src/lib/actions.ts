@@ -246,6 +246,7 @@ export async function getUmkmForEdit(slug: string) {
         name: p.name,
         description: p.description || "",
         price: p.price ? String(p.price) : "",
+        photo: p.photo || "", // Tambahkan field photo
       })) || [];
 
     return {
@@ -334,6 +335,7 @@ export async function createUmkm(data: any) {
             name: p.name,
             description: p.description,
             price: parseInt(p.price, 10),
+            photo: p.photo || null, // Tambahkan field photo
             productCategoryId: productCategory.id,
           })),
         });
@@ -391,20 +393,61 @@ export async function updateUmkm(umkmId: number, data: any) {
       });
       const productCategory = await tx.productCategory.findFirst({
         where: { umkmId: umkmId },
+        include: {
+          Product: {
+            orderBy: { id: "asc" },
+          },
+        },
       });
+
       if (productCategory) {
-        await tx.product.deleteMany({
-          where: { productCategoryId: productCategory.id },
-        });
-        if (validatedData.products && validatedData.products.length > 0) {
-          await tx.product.createMany({
-            data: validatedData.products.map((p: any) => ({
-              name: p.name,
-              description: p.description || "",
-              price: parseInt(p.price, 10),
-              productCategoryId: productCategory.id,
-            })),
-          });
+        const existingProducts = productCategory.Product;
+        const incomingProducts = validatedData.products || [];
+
+        // Update atau create produk berdasarkan index
+        for (let i = 0; i < incomingProducts.length; i++) {
+          const productData = {
+            name: incomingProducts[i].name,
+            description: incomingProducts[i].description || "",
+            price: parseInt(incomingProducts[i].price, 10),
+            photo: incomingProducts[i].photo || null,
+            productCategoryId: productCategory.id,
+          };
+
+          if (existingProducts[i]) {
+            // Update produk yang sudah ada
+            await tx.product.update({
+              where: { id: existingProducts[i].id },
+              data: productData,
+            });
+          } else {
+            // Create produk baru jika tidak ada
+            await tx.product.create({
+              data: productData,
+            });
+          }
+        }
+
+        // Hapus produk yang berlebih (jika incoming products lebih sedikit)
+        // HANYA hapus produk yang TIDAK pernah dipesan
+        if (existingProducts.length > incomingProducts.length) {
+          const productsToDelete = existingProducts.slice(
+            incomingProducts.length
+          );
+          for (const product of productsToDelete) {
+            // Cek apakah produk pernah dipesan
+            const hasOrders = await tx.orderItem.findFirst({
+              where: { productId: product.id },
+            });
+
+            if (!hasOrders) {
+              // Aman untuk dihapus karena tidak ada order
+              await tx.product.delete({
+                where: { id: product.id },
+              });
+            }
+            // Jika ada orders, biarkan produk tetap ada (tidak dihapus)
+          }
         }
       }
     });

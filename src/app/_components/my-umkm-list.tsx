@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 // Ganti FilePenLine dengan Pencil agar lebih konsisten
-import { PlusCircle, Trash2, X, Pencil } from "lucide-react";
+import { Trash2, X, Pencil } from "lucide-react";
 import UmkmCard from "@/components/umkm-card";
 import { toast } from "react-hot-toast";
 import { deleteUmkm } from "@/lib/actions";
@@ -99,44 +99,46 @@ export default function MyUmkmList({ initialUmkms }: { initialUmkms: Umkm[] }) {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">UMKM Saya</h1>
-        <div className="flex items-center gap-2">
-          {/* PERBAIKAN URUTAN TOMBOL */}
-          <Button
-            variant={isDeleteMode ? "destructive" : "outline"}
-            size="icon"
-            onClick={() => toggleMode("delete")}
-            aria-label={isDeleteMode ? "Batal Hapus" : "Masuk Mode Hapus"}
-          >
-            {isDeleteMode ? (
-              <X className="h-4 w-4" />
-            ) : (
-              <Trash2 className="h-4 w-4" />
-            )}
-          </Button>
+    <>
+      {/* Kontrol Mode Edit/Delete */}
+      <div className="flex items-center gap-2 mb-6">
+        <Button
+          variant={isDeleteMode ? "destructive" : "outline"}
+          size="sm"
+          onClick={() => toggleMode("delete")}
+          aria-label={isDeleteMode ? "Batal Hapus" : "Masuk Mode Hapus"}
+        >
+          {isDeleteMode ? (
+            <>
+              <X className="h-4 w-4 mr-2" />
+              Batal
+            </>
+          ) : (
+            <>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Hapus UMKM
+            </>
+          )}
+        </Button>
 
-          <Button
-            variant={isEditMode ? "default" : "outline"}
-            size="icon"
-            onClick={() => toggleMode("edit")}
-            aria-label={isEditMode ? "Batal Edit" : "Masuk Mode Edit"}
-          >
-            {isEditMode ? (
-              <X className="h-4 w-4" />
-            ) : (
-              <Pencil className="h-4 w-4" />
-            )}
-          </Button>
-
-          <Button asChild>
-            <Link href="/dashboard/umkm/baru">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Daftarkan UMKM Baru
-            </Link>
-          </Button>
-        </div>
+        <Button
+          variant={isEditMode ? "default" : "outline"}
+          size="sm"
+          onClick={() => toggleMode("edit")}
+          aria-label={isEditMode ? "Batal Edit" : "Masuk Mode Edit"}
+        >
+          {isEditMode ? (
+            <>
+              <X className="h-4 w-4 mr-2" />
+              Batal
+            </>
+          ) : (
+            <>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit UMKM
+            </>
+          )}
+        </Button>
       </div>
 
       {/* Notifikasi Mode */}
@@ -224,6 +226,6 @@ export default function MyUmkmList({ initialUmkms }: { initialUmkms: Umkm[] }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }

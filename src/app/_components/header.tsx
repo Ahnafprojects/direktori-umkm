@@ -1,4 +1,5 @@
 // File: src/app/_components/header.tsx
+"use client";
 
 import Link from "next/link";
 import { Building2, ScrollText } from "lucide-react";
@@ -6,11 +7,10 @@ import { Button } from "@/components/ui/button";
 import FavoriteNavButton from "./favorite-nav-button";
 import UserAuth from "./user-auth";
 import { ThemeToggle } from "./theme-toggle";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../api/auth/[...nextauth]/route";
+import { useSession } from "next-auth/react";
 
-export default async function Header() {
-  const session = await getServerSession(authOptions);
+export default function Header() {
+  const { data: session } = useSession();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

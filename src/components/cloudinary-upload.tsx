@@ -1,7 +1,7 @@
 // src/components/cloudinary-upload.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Loader2 } from "lucide-react";
 import { CldImage } from "next-cloudinary";
@@ -21,6 +21,7 @@ export default function CloudinaryUpload({
 }: CloudinaryUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const uniqueId = useId(); // Generate unique ID untuk setiap instance
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
@@ -153,12 +154,12 @@ export default function CloudinaryUpload({
               accept="image/*"
               onChange={handleFileSelect}
               className="hidden"
-              id="file-upload"
+              id={uniqueId}
             />
             <Button
               type="button"
               variant="outline"
-              onClick={() => document.getElementById("file-upload")?.click()}
+              onClick={() => document.getElementById(uniqueId)?.click()}
             >
               Select Image
             </Button>
