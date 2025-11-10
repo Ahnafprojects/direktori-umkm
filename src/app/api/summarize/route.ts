@@ -42,17 +42,20 @@ export async function POST(req: Request) {
     const reviewTexts = reviews.map((r: any) => `- Rating ${r.rating}/5: "${r.comment}"`).join('\n');
     console.log('Review texts:', reviewTexts);
 
-    // 3. Buat Prompt
+    // 3. Buat Prompt yang lebih spesifik
     const prompt = `
-      Anda adalah seorang analis ulasan kuliner yang netral dan cerdas.
-      Berikut adalah daftar ulasan mentah untuk sebuah UMKM bernama "${umkmName}":
+      Analisis ulasan berikut untuk UMKM "${umkmName}":
       ${reviewTexts}
 
-      Tugas Anda:
-      1. Analisis semua ulasan tersebut.
-      2. Berikan ringkasan dalam 2 kalimat singkat (maksimal 30 kata).
-      3. Fokus pada sentimen utama: apa yang paling disukai (kelebihan) dan apa yang paling dikeluhkan (kekurangan).
-      4. Kembalikan HANYA teks ringkasannya saja. JANGAN tambahkan "Tentu," atau "Berikut ringkasannya:".
+      Buat ringkasan 2 kalimat yang SPESIFIK tentang:
+      1. Apa yang DIPUJI customer (enak/tidak, aspek tertentu)
+      2. Apa yang DIKRITIK atau bisa diperbaiki (jika ada)
+      
+      Contoh bagus: "Bumbu pecelnya sangat enak dan porsinya besar. Hanya saja tempatnya agak sempit dan pelayanannya lambat."
+      
+      Jangan gunakan kata umum seperti "kualitas dan layanan". Sebutkan hal spesifik seperti rasa, harga, porsi, kebersihan.
+      
+      Jawab LANGSUNG tanpa pembuka:
     `;
 
     console.log('Sending request to Groq...');
@@ -64,14 +67,16 @@ export async function POST(req: Request) {
     try {
       const chatCompletion = await groq.chat.completions.create({
         messages: [
-          { role: 'system', content: 'Anda adalah asisten yang meringkas ulasan kuliner.' },
+          { 
+            role: 'system', 
+            content: 'Anda adalah food critic profesional yang membuat ringkasan ulasan spesifik dan berguna untuk customer.' 
+          },
           { role: 'user', content: prompt },
         ],
-        // Ganti model yang telah dinonaktifkan dengan model umum yang lebih kecil/tersedia.
-        // Jika Anda memiliki rekomendasi model dari Groq, gunakan nilai itu. Saya memakai "gpt-4o-mini"
-        // sebagai model pengganti yang biasanya tersedia.
-        model: 'gpt-4o-mini',
-        temperature: 0.5,
+        // Gunakan model Groq yang masih tersedia
+        model: 'llama3-70b-8192', // Model terbaru yang available
+        temperature: 0.3, // Lebih konsisten
+        max_tokens: 100, // Ringkas tapi cukup
       });
 
       console.log('Groq response:', chatCompletion);
@@ -85,41 +90,82 @@ export async function POST(req: Request) {
       summary = undefined;
     }
 
-    // Jika Groq gagal atau tidak mengembalikan ringkasan, gunakan fallback ringan.
+    // Jika Groq gagal, buat ringkasan manual yang SPESIFIK
     if (!summary) {
-      // Fallback: buat ringkasan sederhana berbasis statistik ulasan.
       const avgRating = (
         reviews.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0) /
         Math.max(1, reviews.length)
       ).toFixed(1);
 
-      // Hitung kata paling sering (sangat sederhana) untuk menangkap tema umum.
-      const stopwords = new Set([
-        'dan', 'yang', 'di', 'ke', 'untuk', 'sangat', 'dengan', 'ga', 'tidak', 'ini', 'itu', 'sudah', 'ada', 'apa', 'pas'
-      ]);
+      // Analisis aspek spesifik yang dipuji/dikritik
+      const aspectKeywords = {
+        bumbu: ['bumbu', 'sambel', 'sambal', 'pedas', 'gurih', 'asin', 'manis'],
+        lauk: ['lauk', 'ayam', 'tempe', 'tahu', 'sayur', 'kerupuk', 'rempeyek'],
+        rasa: ['enak', 'lezat', 'mantap', 'segar', 'hambar', 'tawar', 'keasinan'],
+        porsi: ['porsi', 'banyak', 'sedikit', 'besar', 'kecil', 'kenyang'],
+        harga: ['murah', 'mahal', 'terjangkau', 'hemat', 'worth', 'sebanding'],
+        pelayanan: ['ramah', 'cepat', 'lambat', 'lama', 'baik', 'buruk'],
+        tempat: ['bersih', 'kotor', 'nyaman', 'sempit', 'luas', 'panas', 'sejuk']
+      };
 
-      const wordCounts: Record<string, number> = {};
-      for (const r of reviews) {
-        const text = String(r.comment || '');
-        text
-          .toLowerCase()
-          .replace(/["'.,!?:;()\[\]]/g, ' ')
-          .split(/\s+/)
-          .forEach((w) => {
-            if (!w || stopwords.has(w) || w.length <= 2) return;
-            wordCounts[w] = (wordCounts[w] || 0) + 1;
+      let foundAspects: { [key: string]: string[] } = {};
+
+      // Analisis setiap aspek
+      Object.entries(aspectKeywords).forEach(([aspect, keywords]) => {
+        foundAspects[aspect] = [];
+        reviews.forEach((r: any) => {
+          const comment = String(r.comment || '').toLowerCase();
+          keywords.forEach(keyword => {
+            if (comment.includes(keyword) && !foundAspects[aspect].includes(keyword)) {
+              foundAspects[aspect].push(keyword);
+            }
           });
+        });
+      });
+
+      // Buat ringkasan berdasarkan aspek yang ditemukan
+      let sentence1 = '';
+      let sentence2 = '';
+
+      // Cari aspek yang paling sering dipuji
+      const praisedAspects: string[] = [];
+      const criticizedAspects: string[] = [];
+
+      // Analisis aspek yang dipuji vs dikritik
+      Object.entries(foundAspects).forEach(([aspect, keywords]) => {
+        if (keywords.length === 0) return;
+        
+        const positiveKeywords = keywords.filter(k => 
+          ['enak', 'lezat', 'mantap', 'segar', 'murah', 'bersih', 'ramah', 'cepat', 'banyak', 'besar', 'terjangkau', 'nyaman'].includes(k)
+        );
+        const negativeKeywords = keywords.filter(k => 
+          ['hambar', 'mahal', 'kotor', 'lambat', 'sedikit', 'kecil', 'sempit', 'lama', 'buruk'].includes(k)
+        );
+
+        if (positiveKeywords.length > negativeKeywords.length) {
+          praisedAspects.push(`${aspect}nya ${positiveKeywords[0]}`);
+        } else if (negativeKeywords.length > 0) {
+          criticizedAspects.push(`${aspect}nya ${negativeKeywords[0]}`);
+        }
+      });
+
+      // Buat kalimat pertama
+      if (praisedAspects.length > 0) {
+        sentence1 = `Customer memuji ${praisedAspects.slice(0, 2).join(' dan ')} dengan rating ${avgRating}/5.`;
+      } else {
+        sentence1 = `Mendapat rating rata-rata ${avgRating}/5 dari ${reviews.length} ulasan.`;
       }
 
-      const topWords = Object.entries(wordCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 2)
-        .map(([w]) => w);
+      // Buat kalimat kedua
+      if (criticizedAspects.length > 0) {
+        sentence2 = `Ada keluhan tentang ${criticizedAspects.slice(0, 2).join(' dan ')}.`;
+      } else if (praisedAspects.length > 2) {
+        sentence2 = `Juga dipuji ${praisedAspects.slice(2, 4).join(' dan ')}.`;
+      } else {
+        sentence2 = `Umumnya mendapat respon positif dari pengunjung.`;
+      }
 
-      const theme = topWords.length ? `menyebut ${topWords.join(' dan ')}` : 'tidak menyebut tema khusus';
-
-      // Jaga agar ringkasan singkat (2 kalimat, < ~30 kata)
-      summary = `Rata-rata rating ${avgRating}/5; ulasan ${theme}. Banyak ulasan melihat kualitas dan layanan.`;
+      summary = `${sentence1} ${sentence2}`;
     }
 
     // 5. Kembalikan sebagai JSON

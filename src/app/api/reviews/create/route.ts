@@ -32,7 +32,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Komentar tidak boleh kosong.' }, { status: 400 });
     }
 
-    // 4. Buat Ulasan Baru di Database
+    // 4. PENTING: Cek apakah user adalah pemilik UMKM (tidak boleh review sendiri)
+    const umkm = await db.umkm.findUnique({
+      where: { id: umkmId },
+      select: { ownerId: true, name: true }
+    });
+
+    if (!umkm) {
+      return NextResponse.json({ error: 'UMKM tidak ditemukan.' }, { status: 404 });
+    }
+
+    if (umkm.ownerId === userId) {
+      return NextResponse.json({ 
+        error: 'Pemilik UMKM tidak dapat memberikan review pada UMKM sendiri.' 
+      }, { status: 403 });
+    }
+
+    // 5. Buat Ulasan Baru di Database
     const newReview = await db.review.create({
       data: {
         rating: rating,
@@ -42,7 +58,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 5. HITUNG ULANG RATING RATA-RATA UMKM
+    // 6. HITUNG ULANG RATING RATA-RATA UMKM
     // Ambil semua rating untuk UMKM ini
     const reviews = await db.review.findMany({
       where: { umkmId: umkmId },
@@ -50,7 +66,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Hitung rata-rata
-    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const totalRating = reviews.reduce((sum: number, review: any) => sum + review.rating, 0);
     const averageRating = reviews.length > 0 ? totalRating / reviews.length : 0;
 
     // Update rating di tabel UMKM (bulatkan ke 1 desimal)
@@ -59,7 +75,7 @@ export async function POST(req: NextRequest) {
       data: { rating: parseFloat(averageRating.toFixed(1)) },
     });
 
-    // 6. Kirim respon sukses
+    // 7. Kirim respon sukses
     return NextResponse.json(newReview, { status: 201 });
 
   } catch (error) {

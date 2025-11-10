@@ -14,6 +14,7 @@ import FloatingCartButton from "./_components/floating-cart-button";
 import FavoritesProvider from "./_components/favorites-provider";
 import ClientHydrator from "@/components/client-hydrator";
 import WelcomeModal from "./_components/welcome-modal";
+import AiAssistantWrapper from "./_components/ai-assistant-wrapper";
 import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -46,6 +47,7 @@ export default function RootLayout({
             <FavoritesProvider>
               <ClientHydrator>
                 <WelcomeModal />
+                <AiAssistantWrapper />
               </ClientHydrator>
 
               <div className="relative flex min-h-screen flex-col">

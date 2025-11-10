@@ -32,10 +32,11 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relasi
-  umkms     Umkm[]     // UMKM yang dimiliki user (jika role PENGUSAHA)
-  reviews   Review[]   // Review yang dibuat user
-  orders    Order[]    // Pesanan yang dibuat user (BARU DITAMBAHKAN)
-  favorites Favorite[] // UMKM yang difavoritkan user
+  umkms        Umkm[]     // UMKM yang dimiliki user (jika role PENGUSAHA)
+  reviews      Review[]   // Review yang dibuat user
+  reviewReplies Review[] @relation("ReviewReplies") // Reply yang dibuat user sebagai owner
+  orders       Order[]    // Pesanan yang dibuat user (BARU DITAMBAHKAN)
+  favorites    Favorite[] // UMKM yang difavoritkan user
 }
 
 enum UserRole {
@@ -81,13 +82,20 @@ model Review {
   createdAt DateTime @default(now())
   umkmId    Int
   userId    String
+  
+  // Owner Reply Fields
+  ownerReply    String?   // Balasan dari owner UMKM
+  ownerReplyAt  DateTime? // Waktu owner balas
+  ownerReplyBy  String?   // ID owner yang balas (untuk tracking)
 
   // Relasi
   Umkm      Umkm     @relation(fields: [umkmId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
+  replier   User?    @relation("ReviewReplies", fields: [ownerReplyBy], references: [id])
 
   @@index([umkmId])
   @@index([userId])
+  @@index([ownerReplyBy])
 }
 
 model Product {
