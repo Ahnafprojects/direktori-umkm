@@ -22,7 +22,12 @@ import { toast } from "react-hot-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import { createUmkm, updateUmkm } from "@/lib/actions";
 
-type ProductInput = { name: string; description: string; price: string };
+type ProductInput = {
+  name: string;
+  description: string;
+  price: string;
+  photo?: string; // Tambahkan field photo
+};
 type Position = { lat: number; lng: number };
 
 type UmkmInitialData = {
@@ -40,6 +45,7 @@ type UmkmInitialData = {
     name: string;
     description: string | null;
     price: number | string;
+    photo?: string | null; // Tambahkan field photo di initial data
   }[];
 };
 
@@ -84,8 +90,9 @@ export default function UmkmRegistrationForm({
           name: p.name,
           description: p.description || "",
           price: formatRupiah(String(p.price)),
+          photo: p.photo || "", // Tambahkan photo dari initial data
         }))
-      : [{ name: "", description: "", price: "" }]
+      : [{ name: "", description: "", price: "", photo: "" }]
   );
   const [location, setLocation] = useState<Position | null>(
     initialData?.latitude && initialData?.longitude
@@ -112,7 +119,10 @@ export default function UmkmRegistrationForm({
   };
 
   const handleAddProduct = () => {
-    setProducts([...products, { name: "", description: "", price: "" }]);
+    setProducts([
+      ...products,
+      { name: "", description: "", price: "", photo: "" },
+    ]);
   };
 
   const handleRemoveProduct = (index: number) => {
@@ -127,6 +137,19 @@ export default function UmkmRegistrationForm({
 
   const handleRemovePhoto = (urlToRemove: string) => {
     setPhotos(photos.filter((url) => url !== urlToRemove));
+  };
+
+  // Handler untuk upload foto produk
+  const handleProductPhotoUpload = (index: number, url: string) => {
+    const values = [...products];
+    values[index].photo = url;
+    setProducts(values);
+  };
+
+  const handleRemoveProductPhoto = (index: number) => {
+    const values = [...products];
+    values[index].photo = "";
+    setProducts(values);
   };
 
   // ... (sisa fungsi lainnya tidak berubah)
@@ -429,6 +452,18 @@ export default function UmkmRegistrationForm({
         {products.map((product, index) => (
           <div key={index} className="p-4 border rounded-md space-y-4 relative">
             <Label className="font-semibold">Produk #{index + 1}</Label>
+
+            {/* Foto Produk */}
+            <div className="space-y-2">
+              <Label>Foto Produk (Opsional)</Label>
+              <CloudinaryUpload
+                currentImage={product.photo}
+                onUpload={(url) => handleProductPhotoUpload(index, url)}
+                onRemove={() => handleRemoveProductPhoto(index)}
+                className="max-w-sm"
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor={`product-name-${index}`}>Nama Produk</Label>
