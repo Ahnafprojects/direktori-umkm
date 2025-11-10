@@ -63,9 +63,14 @@ type DetailPageProps = {
 
 export default async function UmkmDetailPage({ params }: DetailPageProps) {
   const { slug } = await params;
+  
+  console.log('Looking for UMKM with slug:', slug);
   const umkm: UmkmWithDetails | null = await getUmkmBySlug(slug);
-
+  
+  console.log('UMKM found:', umkm ? 'Yes' : 'No');
+  
   if (!umkm) {
+    console.log('UMKM not found, returning 404 for slug:', slug);
     notFound();
   }
 
