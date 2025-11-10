@@ -34,10 +34,16 @@ type UmkmWithDetails = Prisma.UmkmGetPayload<{
     Review: {
       include: {
         user: {
-          select: { name: true };
+          select: { 
+            id: true;
+            name: true;
+          };
         };
         replier: {
-          select: { name: true };
+          select: { 
+            id: true;
+            name: true;
+          };
         };
       };
     };

@@ -40,13 +40,13 @@ export default async function ProdukSayaPage() {
   });
 
   // PERBAIKAN #2: "Sucikan" data sebelum dikirim ke Client Component
-  const plainUmkms = myUmkms.map((umkm) => ({
+  const plainUmkms = myUmkms.map((umkm: any) => ({
     ...umkm,
     // Ubah Decimal menjadi number
     rating: umkm.rating ? Number(umkm.rating) : null,
-    ProductCategory: umkm.ProductCategory.map((pc) => ({
+    ProductCategory: umkm.ProductCategory.map((pc: any) => ({
       ...pc,
-      Product: pc.Product.map((p) => ({
+      Product: pc.Product.map((p: any) => ({
         ...p,
         // Ubah Int/Decimal menjadi number (jaga-jaga)
         price: p.price ? Number(p.price) : null,

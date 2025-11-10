@@ -120,7 +120,20 @@ export async function getUmkmBySlug(slug: string) {
         Category: true,
         Review: {
           orderBy: { createdAt: "desc" },
-          include: { user: true },
+          include: { 
+            user: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            replier: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
         },
         ProductCategory: {
           orderBy: { id: "asc" },
@@ -242,7 +255,7 @@ export async function getUmkmForEdit(slug: string) {
     if (!umkm) return null;
 
     const products =
-      umkm.ProductCategory[0]?.Product.map((p) => ({
+      umkm.ProductCategory[0]?.Product.map((p: any) => ({
         name: p.name,
         description: p.description || "",
         price: p.price ? String(p.price) : "",
@@ -311,7 +324,7 @@ export async function createUmkm(data: any) {
 
   try {
     const slug = createSlug(validatedData.name);
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: any) => {
       const newUmkm = await tx.umkm.create({
         data: {
           name: validatedData.name,
@@ -378,7 +391,7 @@ export async function updateUmkm(umkmId: number, data: any) {
   const validatedData = data;
 
   try {
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: any) => {
       await tx.umkm.update({
         where: { id: umkmId },
         data: {
