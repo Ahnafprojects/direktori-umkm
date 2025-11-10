@@ -114,6 +114,14 @@ export async function getUmkms(params: {
 
 export async function getUmkmBySlug(slug: string) {
   try {
+    console.log('Searching for UMKM with slug:', slug);
+    
+    // Cari semua UMKM untuk debug
+    const allUmkms = await db.umkm.findMany({
+      select: { id: true, name: true, slug: true }
+    });
+    console.log('All UMKM in database:', allUmkms.map((u: any) => ({ id: u.id, name: u.name, slug: u.slug })));
+    
     const umkm = await db.umkm.findUnique({
       where: { slug: slug },
       include: {
@@ -141,9 +149,12 @@ export async function getUmkmBySlug(slug: string) {
         },
       },
     });
+    
+    console.log('UMKM found by slug:', umkm ? `Found: ${umkm.name}` : 'Not found');
     return umkm;
   } catch (error) {
     console.error("Gagal mengambil detail UMKM:", error);
+    console.error("Database connection error:", error);
     return null;
   }
 }
