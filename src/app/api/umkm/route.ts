@@ -1,7 +1,7 @@
 // File: src/app/api/umkm/route.ts
 
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const slug = createSlug(name);
 
     // Gunakan transaction untuk memastikan konsistensi data
-    const result = await db.$transaction(async (prisma) => {
+    const result = await db.$transaction(async (prisma: any) => {
       // 1. Buat UMKM
       const newUmkm = await prisma.umkm.create({
         data: {

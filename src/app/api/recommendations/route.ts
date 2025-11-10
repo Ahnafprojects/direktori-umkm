@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
     // 5. Buat "Konteks" untuk AI (TIDAK BERUBAH)
     const umkmContext = umkmDetails
-      .map((u) => `SLUG: ${u.slug}, NAMA: ${u.name}, KATEGORI: ${u.Category.name}, DESKRIPSI: ${u.description}`)
+      .map((u: any) => `SLUG: ${u.slug}, NAMA: ${u.name}, KATEGORI: ${u.Category.name}, DESKRIPSI: ${u.description}`)
       .join('\n');
 
     // 6. BUAT PROMPT (SEDIKIT TWEAK UNTUK LLAMA)

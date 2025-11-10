@@ -2,7 +2,7 @@
 import { db } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function GET(req: NextRequest) {
   try {
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
         select: { id: true }
       });
       
-      const umkmIds = userUmkms.map(u => u.id);
+      const umkmIds = userUmkms.map((u: any) => u.id);
       
       // @ts-ignore
       orders = await db.order.findMany({
