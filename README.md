@@ -215,6 +215,30 @@ Project ini menggunakan MIT License.
 - Pastikan semua dependencies ter-install
 - Clear `.next` folder dan build ulang
 
+## 📖 Dokumentasi & Simbol
+
+Project ini memiliki beberapa file dokumentasi dengan akhiran `.md` yang menjelaskan fitur-fitur yang sudah dibuat:
+
+- `AI_ASSISTANT_ROLE_DOCUMENTATION.md` - Dokumentasi fitur AI Assistant
+- `OWNER_REPLY_DOCUMENTATION.md` - Dokumentasi fitur Owner Reply
+- `POPULAR_RECOMMENDATIONS_OPTIMIZATION.md` - Optimisasi rekomendasi populer
+- `UMKM_ANALYTICS_INTEGRATION.md` - Integrasi analytics untuk owner
+- `PENJELASAN_SIMBOL.md` - **Penjelasan arti simbol ✅ ❌ dan emoji lainnya**
+
+### Arti Simbol dalam Dokumentasi
+
+Dokumentasi menggunakan simbol emoji untuk memudahkan pemahaman:
+
+- ✅ **Checkmark** = Fitur sudah selesai dan berfungsi dengan baik
+- ❌ **X Mark** = Masalah yang sudah diperbaiki atau hal yang salah
+- 🎯 **Target** = Tujuan atau overview
+- 🔧 **Wrench** = Technical implementation
+- 🚀 **Rocket** = Ready for production
+
+**Catatan**: Simbol ❌ di dokumentasi **BUKAN error** - ini hanya menjelaskan masalah yang sudah diperbaiki atau perbandingan sebelum/sesudah.
+
+📚 Lihat file `PENJELASAN_SIMBOL.md` untuk penjelasan lengkap tentang semua simbol yang digunakan.
+
 ---
 
 💡 **Tips**: Gunakan `npx prisma studio` untuk melihat dan mengedit data database melalui GUI yang user-friendly.
