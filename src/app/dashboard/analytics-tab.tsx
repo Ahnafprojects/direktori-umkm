@@ -1,8 +1,8 @@
 // src/app/dashboard/analytics-tab.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   LineChart,
   Line,
@@ -11,12 +11,28 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-} from 'recharts'; // <-- Import Recharts
-import { DollarSign, Package, Star, Loader2, TrendingUp, PiggyBank, Calendar, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "recharts"; // <-- Import Recharts
+import {
+  DollarSign,
+  Package,
+  Star,
+  Loader2,
+  TrendingUp,
+  PiggyBank,
+  Calendar,
+  Download,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useTheme } from "next-themes";
 
 // Tipe data yang kita harapkan dari API
 type SalesData = {
@@ -46,9 +62,9 @@ type AnalyticsData = {
 
 // Helper format Rupiah (kamu bisa pindahkan ini ke lib/utils.ts)
 const formatRupiah = (number: number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
   }).format(number);
 };
@@ -57,23 +73,55 @@ export default function AnalyticsTab() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [umkmList, setUmkmList] = useState<{ id: number; name: string; slug: string }[]>([]);
+  const [umkmList, setUmkmList] = useState<
+    { id: number; name: string; slug: string }[]
+  >([]);
   const [selectedUmkmId, setSelectedUmkmId] = useState<number | null>(null);
   const [canAddMore, setCanAddMore] = useState(false);
-  
+  const { resolvedTheme } = useTheme();
+
   // Filter periode state
-  const [period, setPeriod] = useState('30days');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [period, setPeriod] = useState("30days");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  const chartColors = useMemo(() => {
+    const isDarkMode = (resolvedTheme ?? "light") === "dark";
+
+    return {
+      axis: isDarkMode ? "rgba(226, 232, 240, 0.85)" : "rgba(15, 23, 42, 0.75)",
+      grid: isDarkMode
+        ? "rgba(148, 163, 184, 0.3)"
+        : "rgba(148, 163, 184, 0.25)",
+      cursor: isDarkMode
+        ? "rgba(148, 163, 184, 0.35)"
+        : "rgba(148, 163, 184, 0.45)",
+      line: isDarkMode ? "rgb(94, 234, 212)" : "rgb(59, 130, 246)",
+      dotBorder: isDarkMode ? "#0F172A" : "#FFFFFF",
+      tooltipBg: isDarkMode
+        ? "rgba(15, 23, 42, 0.95)"
+        : "rgba(255, 255, 255, 0.97)",
+      tooltipBorder: isDarkMode
+        ? "rgba(148, 163, 184, 0.35)"
+        : "rgba(148, 163, 184, 0.4)",
+      tooltipText: isDarkMode ? "#E2E8F0" : "#0F172A",
+      gradientStart: isDarkMode
+        ? "rgba(94, 234, 212, 0.35)"
+        : "rgba(59, 130, 246, 0.35)",
+      gradientEnd: isDarkMode
+        ? "rgba(15, 118, 110, 0.05)"
+        : "rgba(59, 130, 246, 0.05)",
+    } as const;
+  }, [resolvedTheme]);
 
   // Ambil data UMKM user dan analytics
   useEffect(() => {
     async function fetchUmkmList() {
       try {
         // 1. Ambil semua UMKM milik user
-        const umkmResponse = await fetch('/api/user/umkm');
+        const umkmResponse = await fetch("/api/user/umkm");
         if (!umkmResponse.ok) {
-          throw new Error('Anda belum memiliki UMKM');
+          throw new Error("Anda belum memiliki UMKM");
         }
         const umkmData = await umkmResponse.json();
         setUmkmList(umkmData.umkmList);
@@ -94,51 +142,33 @@ export default function AnalyticsTab() {
 
     try {
       setIsLoading(true);
-      
+
       // Build query params
       const params = new URLSearchParams();
-      params.append('period', period);
-      
-      if (period === 'custom' && startDate && endDate) {
-        params.append('startDate', startDate);
-        params.append('endDate', endDate);
+      params.append("period", period);
+
+      if (period === "custom" && startDate && endDate) {
+        params.append("startDate", startDate);
+        params.append("endDate", endDate);
       }
-      
-      const analyticsResponse = await fetch(`/api/dashboard/analytics?${params.toString()}`);
+
+      const analyticsResponse = await fetch(
+        `/api/dashboard/analytics?${params.toString()}`
+      );
       if (!analyticsResponse.ok) {
-        throw new Error('Gagal mengambil data analytics');
+        throw new Error("Gagal mengambil data analytics");
       }
       const analyticsData = await analyticsResponse.json();
-        
-        // Data real dari database berdasarkan debug script
-        const realSalesData = [
-          { name: '31 Okt', Pendapatan: 18000 },
-          { name: '10 Nov', Pendapatan: 18000 }
-        ];
-        
-        // Transform data untuk match dengan interface yang diharapkan
-        const transformedData: AnalyticsData = {
-          kpi: analyticsData.kpi,
-          topProducts: analyticsData.topProducts,
-          salesData: analyticsData.salesData && analyticsData.salesData.length > 0 
-            ? analyticsData.salesData 
-            : realSalesData // Gunakan data real yang sudah diverifikasi
-        };
-        
-        console.log('Raw analytics data:', analyticsData);
-        console.log('Sales data from API:', analyticsData.salesData);
-        console.log('Using real sales data:', transformedData.salesData);
-        console.log('Transformed data:', transformedData);
-        
-        setData(transformedData);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
+
+      setData(analyticsData);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // useEffect untuk fetch analytics ketika UMKM atau period berubah
   useEffect(() => {
     fetchAnalytics();
@@ -148,44 +178,47 @@ export default function AnalyticsTab() {
   const downloadOrderHistory = async () => {
     try {
       setIsLoading(true);
-      
+
       // Build query params
       const params = new URLSearchParams();
-      params.append('period', period);
-      params.append('format', 'csv');
-      
-      if (period === 'custom' && startDate && endDate) {
-        params.append('startDate', startDate);
-        params.append('endDate', endDate);
+      params.append("period", period);
+      params.append("format", "csv");
+
+      if (period === "custom" && startDate && endDate) {
+        params.append("startDate", startDate);
+        params.append("endDate", endDate);
       }
-      
-      const response = await fetch(`/api/dashboard/orders/download?${params.toString()}`);
-      
+
+      const response = await fetch(
+        `/api/dashboard/orders/download?${params.toString()}`
+      );
+
       if (!response.ok) {
-        throw new Error('Gagal mendownload history pesanan');
+        throw new Error("Gagal mendownload history pesanan");
       }
-      
+
       // Get filename from response headers
-      const contentDisposition = response.headers.get('content-disposition');
-      const filename = contentDisposition 
-        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
-        : `history-pesanan-${new Date().toISOString().split('T')[0]}.csv`;
-      
+      const contentDisposition = response.headers.get("content-disposition");
+      const filename = contentDisposition
+        ? contentDisposition.split("filename=")[1].replace(/"/g, "")
+        : `history-pesanan-${new Date().toISOString().split("T")[0]}.csv`;
+
       // Download file
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
+      const a = document.createElement("a");
+      a.style.display = "none";
       a.href = url;
       a.download = filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
     } catch (error) {
-      console.error('Download error:', error);
-      setError(error instanceof Error ? error.message : 'Gagal mendownload history');
+      console.error("Download error:", error);
+      setError(
+        error instanceof Error ? error.message : "Gagal mendownload history"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -193,7 +226,7 @@ export default function AnalyticsTab() {
 
   // Helper untuk generate sales data
   const generateSalesData = (totalRevenue: number): SalesData[] => {
-    const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+    const days = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
     return days.map((day) => ({
       name: day,
       Pendapatan: Math.floor((totalRevenue / 7) * (0.5 + Math.random())),
@@ -214,7 +247,7 @@ export default function AnalyticsTab() {
   }
 
   return (
-        <div className="space-y-4">
+    <div className="space-y-4">
       {/* Header dengan UMKM selector */}
       {umkmList.length > 0 && (
         <div className="p-3 bg-card rounded-lg border border-border">
@@ -222,16 +255,19 @@ export default function AnalyticsTab() {
           <div className="space-y-3">
             {/* Header Text - Compact */}
             <div className="text-center sm:text-left">
-              <h2 className="text-base sm:text-lg font-bold text-card-foreground">Analytics Dashboard</h2>
+              <h2 className="text-base sm:text-lg font-bold text-card-foreground">
+                Analytics Dashboard
+              </h2>
               <p className="text-xs text-muted-foreground">
                 Dashboard bisnis untuk menganalisis performa UMKM Anda
               </p>
-            </div>            {/* UMKM Selector - Full width on mobile */}
+            </div>{" "}
+            {/* UMKM Selector - Full width on mobile */}
             {umkmList.length > 1 && (
               <div className="space-y-2">
                 <label className="text-sm font-medium block">Pilih UMKM:</label>
-                <select 
-                  value={selectedUmkmId || ''} 
+                <select
+                  value={selectedUmkmId || ""}
                   onChange={(e) => setSelectedUmkmId(Number(e.target.value))}
                   className="w-full p-2 border border-border rounded-md bg-background text-foreground"
                 >
@@ -243,11 +279,12 @@ export default function AnalyticsTab() {
                 </select>
               </div>
             )}
-
             {/* Filter Periode - Compact */}
             <div className="flex flex-wrap items-end gap-3 p-3 bg-muted/50 rounded-lg">
               <div className="flex-1 min-w-[120px]">
-                <Label htmlFor="period" className="text-xs">Periode</Label>
+                <Label htmlFor="period" className="text-xs">
+                  Periode
+                </Label>
                 <Select value={period} onValueChange={setPeriod}>
                   <SelectTrigger className="h-8">
                     <SelectValue placeholder="Pilih periode" />
@@ -263,10 +300,12 @@ export default function AnalyticsTab() {
                 </Select>
               </div>
 
-              {period === 'custom' && (
+              {period === "custom" && (
                 <>
                   <div className="min-w-[100px]">
-                    <Label htmlFor="startDate" className="text-xs">Dari</Label>
+                    <Label htmlFor="startDate" className="text-xs">
+                      Dari
+                    </Label>
                     <Input
                       id="startDate"
                       type="date"
@@ -276,7 +315,9 @@ export default function AnalyticsTab() {
                     />
                   </div>
                   <div className="min-w-[100px]">
-                    <Label htmlFor="endDate" className="text-xs">Sampai</Label>
+                    <Label htmlFor="endDate" className="text-xs">
+                      Sampai
+                    </Label>
                     <Input
                       id="endDate"
                       type="date"
@@ -288,20 +329,22 @@ export default function AnalyticsTab() {
                 </>
               )}
 
-              <Button 
-                onClick={downloadOrderHistory} 
+              <Button
+                onClick={downloadOrderHistory}
                 disabled={isLoading}
                 variant="outline"
                 size="sm"
                 className="h-8"
               >
-                {isLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Download className="h-3 w-3 mr-1" />}
+                {isLoading ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : (
+                  <Download className="h-3 w-3 mr-1" />
+                )}
                 Download
               </Button>
             </div>
           </div>
-
-
         </div>
       )}
 
@@ -323,7 +366,7 @@ export default function AnalyticsTab() {
             <DollarSign className="h-6 w-6 text-blue-500 ml-2 shrink-0" />
           </div>
         </Card>
-        
+
         <Card className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
@@ -357,14 +400,16 @@ export default function AnalyticsTab() {
             <TrendingUp className="h-6 w-6 text-green-500 ml-2 shrink-0" />
           </div>
         </Card>
-        
+
         <Card className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-muted-foreground mb-1 truncate">
                 Pesanan Selesai
               </p>
-              <div className="text-sm lg:text-lg font-bold truncate">+{data.kpi.totalOrders}</div>
+              <div className="text-sm lg:text-lg font-bold truncate">
+                +{data.kpi.totalOrders}
+              </div>
               <p className="text-xs text-muted-foreground truncate">
                 Status: DELIVERED
               </p>
@@ -372,11 +417,13 @@ export default function AnalyticsTab() {
             <Package className="h-6 w-6 text-indigo-500 ml-2 shrink-0" />
           </div>
         </Card>
-        
+
         <Card className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-muted-foreground mb-1 truncate">Rating Rata-rata</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1 truncate">
+                Rating Rata-rata
+              </p>
               <div className="text-sm lg:text-lg font-bold truncate">
                 {data.kpi.averageRating.toFixed(1)}
               </div>
@@ -393,60 +440,92 @@ export default function AnalyticsTab() {
         {/* --- 2. Grafik Penjualan --- */}
         <Card className="lg:col-span-3">
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base sm:text-lg">Pendapatan per Hari</CardTitle>
+            <CardTitle className="text-base sm:text-lg">
+              Pendapatan per Hari
+            </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 h-64 sm:h-80">
             {data.salesData && data.salesData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.salesData}>
-                  <CartesianGrid 
-                    strokeDasharray="3 3" 
-                    stroke="hsl(var(--border))" 
+                <LineChart
+                  data={data.salesData}
+                  margin={{ top: 10, left: -10, right: 10, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient
+                      id="lineGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="10%"
+                        stopColor={chartColors.gradientStart}
+                        stopOpacity={1}
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor={chartColors.gradientEnd}
+                        stopOpacity={0}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={chartColors.grid}
                   />
-                  <XAxis 
-                    dataKey="name" 
-                    fontSize={10} 
-                    stroke="hsl(var(--muted-foreground))"
-                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  <XAxis
+                    dataKey="name"
+                    fontSize={10}
+                    stroke={chartColors.axis}
+                    tick={{ fill: chartColors.axis }}
+                    tickLine={{ stroke: chartColors.axis, strokeWidth: 0.5 }}
+                    axisLine={{ stroke: chartColors.axis, strokeWidth: 0.5 }}
                   />
                   <YAxis
                     fontSize={10}
-                    stroke="hsl(var(--muted-foreground))"
-                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    stroke={chartColors.axis}
+                    tick={{ fill: chartColors.axis }}
+                    tickLine={{ stroke: chartColors.axis, strokeWidth: 0.5 }}
+                    axisLine={{ stroke: chartColors.axis, strokeWidth: 0.5 }}
                     tickFormatter={(value) =>
-                      `Rp${new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(value)}`
+                      `Rp${new Intl.NumberFormat("id-ID", {
+                        notation: "compact",
+                      }).format(value)}`
                     }
                   />
                   <Tooltip
                     formatter={(value: number) => [
                       formatRupiah(value),
-                      'Pendapatan',
+                      "Pendapatan",
                     ]}
+                    cursor={{ stroke: chartColors.cursor, strokeWidth: 1 }}
                     contentStyle={{
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                      color: 'hsl(var(--foreground))',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      backgroundColor: chartColors.tooltipBg,
+                      border: `1px solid ${chartColors.tooltipBorder}`,
+                      borderRadius: "6px",
+                      color: chartColors.tooltipText,
+                      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.18)",
                     }}
-                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    labelStyle={{ color: chartColors.tooltipText }}
                   />
                   <Line
                     type="monotone"
                     dataKey="Pendapatan"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    dot={{ 
-                      r: 4, 
-                      fill: 'hsl(var(--primary))',
-                      stroke: 'hsl(var(--background))',
-                      strokeWidth: 2
+                    stroke="url(#lineGradient)"
+                    strokeWidth={2.5}
+                    dot={{
+                      r: 4,
+                      fill: chartColors.line,
+                      stroke: chartColors.dotBorder,
+                      strokeWidth: 2,
                     }}
-                    activeDot={{ 
-                      r: 6, 
-                      fill: 'hsl(var(--primary))',
-                      stroke: 'hsl(var(--background))',
-                      strokeWidth: 2
+                    activeDot={{
+                      r: 6,
+                      fill: chartColors.line,
+                      stroke: chartColors.dotBorder,
+                      strokeWidth: 2.5,
                     }}
                   />
                 </LineChart>
@@ -455,7 +534,9 @@ export default function AnalyticsTab() {
               <div className="flex items-center justify-center h-full text-muted-foreground">
                 <div className="text-center">
                   <p className="text-sm">Tidak ada data penjualan</p>
-                  <p className="text-xs mt-1">Belum ada pesanan selesai dalam periode ini</p>
+                  <p className="text-xs mt-1">
+                    Belum ada pesanan selesai dalam periode ini
+                  </p>
                 </div>
               </div>
             )}
@@ -465,12 +546,17 @@ export default function AnalyticsTab() {
         {/* --- 3. Menu Terlaris --- */}
         <Card className="lg:col-span-2">
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base sm:text-lg">Menu Terlaris</CardTitle>
+            <CardTitle className="text-base sm:text-lg">
+              Menu Terlaris
+            </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
             <div className="space-y-3">
               {data.topProducts.map((product, index) => (
-                <div key={index} className="flex justify-between items-center py-2 border-b border-border last:border-b-0">
+                <div
+                  key={index}
+                  className="flex justify-between items-center py-2 border-b border-border last:border-b-0"
+                >
                   <span className="font-medium truncate pr-2 text-sm sm:text-base">
                     {index + 1}. {product.name}
                   </span>
@@ -480,7 +566,9 @@ export default function AnalyticsTab() {
                 </div>
               ))}
               {data.topProducts.length === 0 && (
-                <p className="text-muted-foreground text-sm text-center py-4">Belum ada data penjualan.</p>
+                <p className="text-muted-foreground text-sm text-center py-4">
+                  Belum ada data penjualan.
+                </p>
               )}
             </div>
           </CardContent>

@@ -1,13 +1,21 @@
-'use client';
+"use client";
 
-import { useSession } from 'next-auth/react';
-import AiAssistant from './ai-assistant';
+import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
+import AiAssistant from "./ai-assistant";
 
 export default function AiAssistantWrapper() {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
 
   // Loading state - jangan tampilkan apa-apa
-  if (status === 'loading') {
+  if (status === "loading") {
+    return null;
+  }
+
+  // Hide AI Assistant on login and register pages
+  const isAuthPage = pathname === "/login" || pathname === "/register";
+  if (isAuthPage) {
     return null;
   }
 
