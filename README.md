@@ -176,8 +176,8 @@ DATABASE_URL="postgresql://[user]:[password]@[host]:[port]/[database]"
 NEXTAUTH_SECRET="[openssl rand -base64 32]"
 NEXTAUTH_URL="http://localhost:3000"
 
-# Groq API Key untuk fitur AI
-GROQ_API_KEY="gsk_...[kunci_api_groq_kamu]"
+# Gemini API Key untuk fitur AI
+Gemini_API_KEY="gsk_...[kunci_api_gemini_kamu]"
 
 
 
