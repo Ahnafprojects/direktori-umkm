@@ -40,7 +40,12 @@ const formatRupiah = (number: number) => {
 export default function ProductCard({ product, umkm }: Props) {
   // 2. AMBIL AKSI DARI STORE
   const addProduct = useCartStore((state) => state.addProduct);
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+
+  // Jangan render jika session belum ready
+  if (status === "loading") {
+    return <div>Loading...</div>;
+  }
 
   // Cek apakah ini produk milik user sendiri
   const isOwnProduct = session?.user?.id && umkm?.ownerId === session.user.id;

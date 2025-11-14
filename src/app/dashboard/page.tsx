@@ -20,9 +20,50 @@ export default async function DashboardPage() {
     redirect('/login?redirect=/dashboard');
   }
 
-  // Cek apakah user adalah UMKM owner
-  if (session.user.role !== 'PENGUSAHA') {
-    redirect('/'); // Redirect ke home jika bukan owner
+  // Import prisma untuk cek role dari database
+  const { db } = await import('@/lib/prisma');
+  
+  // Cek role dari database untuk data terbaru (penting untuk user yang baru upgrade)
+  const userFromDb = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true }
+  });
+
+  // Cek role user (prioritas dari database karena lebih up-to-date)
+  const userRole = userFromDb?.role || session.user.role;
+  const isPengusaha = userRole === 'PENGUSAHA';
+  
+  // Jika user bukan PENGUSAHA, tampilkan halaman upgrade
+  if (!isPengusaha) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-6 max-w-md mx-auto p-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold">Selamat Datang di Dashboard!</h1>
+            <p className="text-muted-foreground">Untuk mengakses fitur dashboard penuh, mari upgrade akun Anda menjadi Pengusaha UMKM.</p>
+          </div>
+          
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold">Keuntungan Menjadi Pengusaha UMKM:</h2>
+            <ul className="text-sm text-muted-foreground space-y-1 text-left">
+              <li>• Daftarkan dan kelola toko Anda</li>
+              <li>• Pantau penjualan dan analytics</li>
+              <li>• Kelola produk dan inventori</li>
+              <li>• Terima dan balas review pelanggan</li>
+            </ul>
+          </div>
+          
+          <div className="space-y-2">
+            <Button asChild className="w-full">
+              <Link href="/dashboard/umkm/baru">Upgrade ke Pengusaha & Daftar UMKM</Link>
+            </Button>
+            <Button variant="outline" asChild className="w-full">
+              <Link href="/">Kembali ke Beranda</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
   
   return (

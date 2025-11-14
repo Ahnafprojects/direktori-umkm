@@ -75,15 +75,7 @@ export const authOptions: AuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Semua role (PELANGGAN dan PENGUSAHA) diarahkan ke direktori UMKM (halaman utama)
-      if (url === baseUrl || url.startsWith('/dashboard')) {
-        return baseUrl + '/'; // Redirect ke halaman utama
-      }
-      // Jika sudah di halaman utama atau ada redirect parameter, biarkan
-      if (url.startsWith(baseUrl)) {
-        return url;
-      }
-      // Default ke halaman utama
+      // SEMUA USER (PELANGGAN dan PENGUSAHA) selalu ke halaman utama setelah login
       return baseUrl + '/';
     },
   },

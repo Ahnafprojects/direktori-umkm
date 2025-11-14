@@ -55,6 +55,7 @@ type UmkmInitialData = {
 interface UmkmRegistrationFormProps {
   categories: Category[];
   initialData?: UmkmInitialData | null;
+  currentUserRole?: string;
 }
 
 const formatRupiah = (value: string) => {
@@ -70,6 +71,7 @@ const unformatRupiah = (value: string) => {
 export default function UmkmRegistrationForm({
   categories,
   initialData,
+  currentUserRole,
 }: UmkmRegistrationFormProps) {
   const { data: session, update } = useSession();
   const router = useRouter();
@@ -260,8 +262,42 @@ export default function UmkmRegistrationForm({
       ? "Menyimpan perubahan..."
       : "Mendaftarkan...";
     const toastId = toast.loading(loadingMessage);
+    let currentToastId = toastId; // Variable untuk track toast ID yang aktif
 
     try {
+      // Jika bukan edit mode dan user belum PENGUSAHA, upgrade role DULU
+      if (!isEditMode && session?.user?.role !== 'PENGUSAHA') {
+        toast.dismiss(toastId);
+        const upgradeToastId = toast.loading("Mengupgrade akun Anda...");
+        
+        try {
+          const upgradeResponse = await fetch('/api/user/upgrade-to-pengusaha', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (upgradeResponse.ok) {
+            // Update session dengan role baru - force refresh completely
+            await update();
+            
+            // Berikan waktu untuk session terupdate
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            toast.dismiss(upgradeToastId);
+            toast.success("Akun berhasil diupgrade!");
+            currentToastId = toast.loading("Mendaftarkan UMKM...");
+          }
+        } catch (error) {
+          console.log('Error upgrading role:', error);
+          throw new Error('Gagal mengupgrade role pengguna');
+        }
+      }
+
+      // Sekarang lakukan create/update UMKM
+      // currentToastId sudah diset dengan benar di atas
+      
       let responseData;
       if (isEditMode && initialData) {
         responseData = await updateUmkm(
@@ -272,7 +308,7 @@ export default function UmkmRegistrationForm({
         responseData = await createUmkm(finalData);
       }
 
-      toast.dismiss(toastId);
+      toast.dismiss(currentToastId);
 
       if (!responseData.success) {
         throw new Error(responseData.message || "Terjadi kesalahan di server.");
@@ -280,41 +316,36 @@ export default function UmkmRegistrationForm({
 
       toast.success(successMessage);
 
-      // Jika bukan edit mode dan user belum PENGUSAHA, upgrade role
-      if (!isEditMode && session?.user?.role !== 'PENGUSAHA') {
-        try {
-          const upgradeResponse = await fetch('/api/user/upgrade-to-pengusaha', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (upgradeResponse.ok) {
-            // Update session dengan role baru
-            if (session?.user) {
-              await update({
-                ...session,
-                user: {
-                  ...session.user,
-                  role: 'PENGUSAHA'
-                }
-              });
-            }
-            toast.success('Selamat! Anda sekarang menjadi Pengusaha UMKM!');
-          }
-        } catch (error) {
-          console.log('Error upgrading role:', error);
-          // Continue anyway since UMKM was created successfully
-        }
+      // Force refresh session untuk user yang baru upgrade
+      const wasUpgraded = !isEditMode && session?.user?.role !== 'PENGUSAHA';
+      
+      if (wasUpgraded) {
+        // Refresh session dengan role terbaru
+        await update();
+        toast.success("Selamat! Anda sekarang menjadi Pengusaha UMKM!");
       }
 
-      setTimeout(() => {
-        router.push("/");
+      setTimeout(async () => {
+        if (isEditMode) {
+          router.push("/");
+        } else if (wasUpgraded) {
+          // Untuk user baru yang baru upgrade, paksa reload dulu untuk refresh session
+          toast.loading("Mempersiapkan dashboard Anda...");
+          
+          // Tunggu sebentar untuk memastikan session terupdate
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Force reload untuk memastikan session benar-benar terupdate dengan parameter upgraded
+          window.location.href = "/dashboard?upgraded=true";
+          return; // Jangan lanjutkan ke router.refresh()
+        } else {
+          router.push("/");
+        }
+        
         router.refresh();
       }, 2000);
     } catch (err: any) {
-      toast.dismiss(toastId);
+      toast.dismiss(currentToastId);
       toast.error(err.message || "Oops! Terjadi kesalahan tak terduga.");
     } finally {
       setIsLoading(false);

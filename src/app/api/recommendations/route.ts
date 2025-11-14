@@ -11,6 +11,7 @@ export async function POST(req: Request) {
     const umkmDetails = await db.umkm.findMany({
       where: {
         slug: { in: allUmkms.map((u: any) => u.slug) },
+        isActive: true,
       },
       select: {
         slug: true,

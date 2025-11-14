@@ -8,7 +8,8 @@ export async function GET() {
       where: {
         favorites: {
           some: {} // Filter: hanya UMKM yang punya minimal 1 favorit
-        }
+        },
+        isActive: true
       },
       include: {
         Category: true,

@@ -45,8 +45,7 @@ export async function PUT(
       where: { id: parseInt(reviewId) },
       data: {
         comment: comment.trim(),
-        rating: parseInt(rating),
-        updatedAt: new Date()
+        rating: parseInt(rating)
       }
     });
 
