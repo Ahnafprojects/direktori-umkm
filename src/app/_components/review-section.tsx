@@ -84,17 +84,17 @@ export default function ReviewSection({
     <div className="space-y-8">
       {reviews.length > 0 ? (
         reviews.map((review) => (
-          <div key={review.id} className="space-y-4">
+          <div key={review.id} className="border-b border-border/50 pb-6 mb-6 last:border-b-0 last:pb-0 last:mb-0">
             {/* Customer Review */}
-            <div className="flex gap-4">
-              <Avatar>
-                <AvatarFallback>
+            <div className="flex gap-3 sm:gap-4">
+              <Avatar className="w-10 h-10">
+                <AvatarFallback className="text-sm font-medium">
                   {review.user?.name
                     ? review.user.name.substring(0, 2).toUpperCase()
                     : "AN"}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <EditableReview
                   review={review}
                   currentUserId={currentUserId}
@@ -104,17 +104,19 @@ export default function ReviewSection({
 
                 {/* Owner Reply (jika ada) */}
                 {review.ownerReply && (
-                  <EditableOwnerReply
-                    reviewId={review.id}
-                    reply={{
-                      ownerReply: review.ownerReply,
-                      ownerReplyAt: review.ownerReplyAt
-                    }}
-                    currentUserId={currentUserId}
-                    umkmOwnerId={umkmOwnerId}
-                    onReplyUpdate={(updatedReply) => handleReplyUpdate(review.id, updatedReply)}
-                    onReplyDelete={() => handleReplyDelete(review.id)}
-                  />
+                  <div className="mt-4 pl-4 border-l-2 border-primary/20">
+                    <EditableOwnerReply
+                      reviewId={review.id}
+                      reply={{
+                        ownerReply: review.ownerReply,
+                        ownerReplyAt: review.ownerReplyAt
+                      }}
+                      currentUserId={currentUserId}
+                      umkmOwnerId={umkmOwnerId}
+                      onReplyUpdate={(updatedReply) => handleReplyUpdate(review.id, updatedReply)}
+                      onReplyDelete={() => handleReplyDelete(review.id)}
+                    />
+                  </div>
                 )}
 
                 {/* Owner Reply Form - hanya tampil untuk owner dan belum ada reply */}

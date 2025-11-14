@@ -12,15 +12,28 @@ export default async function ProdukSayaPage() {
   const session = await getServerSession(authOptions);
 
   // @ts-ignore
-  if (!session || session.user?.role !== "PENGUSAHA") {
-    redirect("/");
+  if (!session || !session.user?.id) {
+    redirect("/login?redirect=/dashboard/umkm/saya");
+  }
+
+  // Cek role dari database untuk memastikan data terbaru
+  const userFromDb = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true }
+  });
+
+  // @ts-ignore
+  if (!userFromDb || (userFromDb.role !== "PENGUSAHA" && session.user?.role !== "PENGUSAHA")) {
+    redirect("/?needUpgrade=true");
   }
 
   // Ambil data UMKM di Server Component
+  console.log('Looking for UMKMs for user:', session.user?.id);
   const myUmkms = await db.umkm.findMany({
     where: {
       // @ts-ignore
       ownerId: session.user?.id,
+      isActive: true, // Tambahkan filter isActive untuk konsistensi
     },
     include: {
       Category: true,
@@ -38,6 +51,8 @@ export default async function ProdukSayaPage() {
       name: "asc",
     },
   });
+  
+  console.log('Found UMKMs:', myUmkms.length);
 
   // PERBAIKAN #2: "Sucikan" data sebelum dikirim ke Client Component
   const plainUmkms = myUmkms.map((umkm: any) => ({

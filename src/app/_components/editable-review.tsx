@@ -4,8 +4,24 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit2, Save, X, Trash2 } from 'lucide-react';
+import { Edit2, Save, X, Trash2, MoreHorizontal } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Review {
   id: string;
@@ -36,6 +52,7 @@ export default function EditableReview({
   const [editedComment, setEditedComment] = useState(review.comment);
   const [editedRating, setEditedRating] = useState(review.rating);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const isOwner = currentUserId === review.userId;
 
@@ -85,9 +102,6 @@ export default function EditableReview({
   };
 
   const handleDelete = async () => {
-    if (!confirm('Apakah Anda yakin ingin menghapus review ini?')) {
-      return;
-    }
 
     try {
       setIsLoading(true);
@@ -118,121 +132,145 @@ export default function EditableReview({
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <p className="font-semibold">{review.user?.name || 'Anonymous'}</p>
-            <span className="text-sm text-muted-foreground">
+    <div className="space-y-3">
+      {/* Header with name, date, and actions */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2">
+            <p className="font-semibold text-sm sm:text-base truncate">{review.user?.name || 'Anonymous'}</p>
+            <span className="text-xs sm:text-sm text-muted-foreground">
               {new Date(review.createdAt).toLocaleDateString("id-ID", {
                 day: "numeric",
-                month: "long",
+                month: "short",
                 year: "numeric",
               })}
             </span>
           </div>
-
-          {/* Rating Display/Edit */}
-          {isEditing ? (
-            <div className="flex gap-1 mb-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setEditedRating(star)}
-                  className={`w-6 h-6 ${
-                    star <= editedRating
-                      ? 'text-yellow-500 fill-yellow-500'
-                      : 'text-gray-400'
-                  }`}
-                >
-                  ★
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="flex gap-0.5 mb-2">
-              {[...Array(5)].map((_, i) => (
-                <span
-                  key={i}
-                  className={`text-lg ${
-                    i < review.rating
-                      ? 'text-yellow-500'
-                      : 'text-gray-400 dark:text-gray-500'
-                  }`}
-                >
-                  ★
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Comment Display/Edit */}
-          {isEditing ? (
-            <Textarea
-              value={editedComment}
-              onChange={(e) => setEditedComment(e.target.value)}
-              className="mb-2"
-              rows={3}
-              placeholder="Tulis review Anda..."
-            />
-          ) : (
-            <p className="text-muted-foreground mb-2">{review.comment}</p>
-          )}
         </div>
-
-        {/* Action Buttons */}
-        {isOwner && (
-          <div className="flex gap-2 ml-4">
-            {isEditing ? (
-              <>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={isLoading}
-                  className="text-xs"
-                >
-                  <Save className="w-3 h-3 mr-1" />
-                  Simpan
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                  className="text-xs"
-                >
-                  <X className="w-3 h-3 mr-1" />
-                  Batal
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsEditing(true)}
-                  disabled={isLoading}
-                  className="text-xs"
-                >
-                  <Edit2 className="w-3 h-3 mr-1" />
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleDelete}
-                  disabled={isLoading}
-                  className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="w-3 h-3 mr-1" />
-                  Hapus
-                </Button>
-              </>
-            )}
+        
+        {/* Three-dot menu for current user */}
+        {isOwner && !isEditing && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                <Edit2 className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-red-600"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Hapus
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        
+        {/* Edit mode buttons */}
+        {isOwner && isEditing && (
+          <div className="flex gap-1 sm:gap-2 shrink-0">
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={isLoading}
+              className="text-xs px-2 py-1 h-7"
+            >
+              <Save className="w-3 h-3 sm:mr-1" />
+              <span className="hidden sm:inline">Simpan</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isLoading}
+              className="text-xs px-2 py-1 h-7"
+            >
+              <X className="w-3 h-3 sm:mr-1" />
+              <span className="hidden sm:inline">Batal</span>
+            </Button>
           </div>
         )}
+
       </div>
+      
+      {/* Content area */}
+      <div>
+
+        {/* Rating Display/Edit */}
+        {isEditing ? (
+          <div className="flex gap-1 mb-3">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setEditedRating(star)}
+                className={`w-7 h-7 text-xl transition-colors ${
+                  star <= editedRating
+                    ? 'text-yellow-500'
+                    : 'text-gray-300 hover:text-yellow-300'
+                }`}
+              >
+                ★
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="flex gap-0.5 mb-3">
+            {[...Array(5)].map((_, i) => (
+              <span
+                key={i}
+                className={`text-base sm:text-lg ${
+                  i < review.rating
+                    ? 'text-yellow-500'
+                    : 'text-gray-300 dark:text-gray-600'
+                }`}
+              >
+                ★
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Comment Display/Edit */}
+        {isEditing ? (
+          <Textarea
+            value={editedComment}
+            onChange={(e) => setEditedComment(e.target.value)}
+            className="w-full resize-none"
+            rows={3}
+            placeholder="Tulis review Anda..."
+          />
+        ) : (
+          <p className="text-sm sm:text-base text-foreground leading-relaxed break-words">{review.comment}</p>
+        )}
+      </div>
+      
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Review</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus review ini? Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

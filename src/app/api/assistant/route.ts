@@ -199,6 +199,7 @@ export async function POST(req: Request) {
     try {
       // Ambil SEMUA data UMKM dengan rating, review, dan produk
       const allUmkms = await db.umkm.findMany({
+        where: { isActive: true },
         include: {
           Category: true,
           ProductCategory: {
@@ -485,6 +486,7 @@ export async function POST(req: Request) {
       ) {
         try {
           const popularUmkms = await db.umkm.findMany({
+            where: { isActive: true },
             include: {
               Category: true,
               ProductCategory: {
@@ -622,6 +624,7 @@ Semua UMKM diurutkan berdasarkan jumlah favorit dan review pengguna LokalKeren!
     let umkmData = [];
     try {
       umkmData = await db.umkm.findMany({
+        where: { isActive: true },
         select: {
           name: true,
           description: true,

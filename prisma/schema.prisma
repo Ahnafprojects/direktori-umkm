@@ -58,6 +58,7 @@ model Umkm {
   rating          Decimal? @default(4.0) @db.Decimal(2, 1)
   hasPromo        Boolean? @default(false)
   isRecommended   Boolean? @default(false)
+  isActive        Boolean? @default(true)
   categoryId      Int
 
   // Relasi ke pemilik UMKM

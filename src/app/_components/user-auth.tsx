@@ -1,6 +1,7 @@
 // File: src/app/_components/user-auth.tsx
 "use client";
 
+import React, { useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +30,54 @@ import ThemeSelector from "./theme-selector";
 import FavoriteNavButton from "./favorite-nav-button";
 
 export default function UserAuth() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
+  
+  // State untuk tracking role yang sudah terupdate
+  const [hasUpgraded, setHasUpgraded] = useState(false);
+  
+  // Pastikan semua hooks dipanggil di awal, bahkan sebelum conditional returns
+  const user = session?.user;
+  // @ts-ignore
+  const sessionRole = user?.role === "PENGUSAHA";
+  // Gunakan hasUpgraded OR sessionRole untuk isPengusaha
+  const isPengusaha = hasUpgraded || sessionRole;
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "?";
+  
+  // Debug log untuk melihat status
+  React.useEffect(() => {
+    if (session?.user) {
+      console.log('UserAuth Debug:', {
+        sessionRole,
+        hasUpgraded,
+        isPengusaha,
+        userId: session.user.id
+      });
+    }
+  }, [sessionRole, hasUpgraded, isPengusaha, session]);
+  
+  // Hook useEffect harus selalu dipanggil di setiap render
+  React.useEffect(() => {
+    // Hanya jalankan jika user sudah login dan ada session
+    if (session && typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('upgraded') === 'true') {
+        // Set state bahwa user sudah upgrade
+        setHasUpgraded(true);
+        // Refresh session untuk mendapatkan role terbaru
+        update().then(() => {
+          // Hapus parameter upgraded dari URL setelah refresh
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('upgraded');
+          window.history.replaceState({}, '', newUrl.toString());
+        });
+      }
+      
+      // Jika session sudah terupdate dengan role PENGUSAHA, sync state
+      if (sessionRole && !hasUpgraded) {
+        setHasUpgraded(true);
+      }
+    }
+  }, [session, sessionRole, hasUpgraded, update]);
 
   if (status === "loading") {
     return <div className="h-10 w-24 rounded-md bg-gray-200 animate-pulse" />;
@@ -61,11 +109,6 @@ export default function UserAuth() {
       </DropdownMenu>
     );
   }
-
-  const user = session.user;
-  // @ts-ignore
-  const isPengusaha = user?.role === "PENGUSAHA";
-  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "?";
 
   return (
     <DropdownMenu>

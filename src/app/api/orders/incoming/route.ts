@@ -18,8 +18,14 @@ export async function GET(req: NextRequest) {
     // @ts-ignore
     const userRole = session.user.role;
     
+    // Cek role dari database untuk memastikan data terbaru
+    const userFromDb = await db.user.findUnique({
+      where: { id: userId },
+      select: { role: true }
+    });
+    
     // Hanya untuk pengusaha
-    if (userRole !== 'PENGUSAHA') {
+    if (!userFromDb || (userFromDb.role !== 'PENGUSAHA' && userRole !== 'PENGUSAHA')) {
       return NextResponse.json({ error: 'Access denied - Hanya untuk pengusaha UMKM' }, { status: 403 });
     }
     

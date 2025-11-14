@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, X, Pencil } from "lucide-react";
 import UmkmCard from "@/components/umkm-card";
 import { toast } from "react-hot-toast";
-import { deleteUmkm } from "@/lib/actions";
+import { deactivateUmkm, activateUmkm } from "@/lib/actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,7 @@ type Umkm = {
   rating: number | null;
   hasPromo: boolean | null;
   isRecommended: boolean | null;
+  isActive?: boolean | null;
   categoryId: number;
   Category: { id: number; name: string; slug: string };
   ProductCategory: Array<{
@@ -56,59 +57,67 @@ export default function MyUmkmList({ initialUmkms }: { initialUmkms: Umkm[] }) {
   const [myUmkms, setMyUmkms] = useState(initialUmkms);
 
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [isManageMode, setIsManageMode] = useState(false);
 
   const [isPending, startTransition] = useTransition();
-  const [umkmToDelete, setUmkmToDelete] = useState<Umkm | null>(null);
+  const [umkmToManage, setUmkmToManage] = useState<Umkm | null>(null);
 
   // PENYEDERHANAAN: Gunakan satu fungsi untuk beralih mode
-  const toggleMode = (mode: "edit" | "delete") => {
+  const toggleMode = (mode: "edit" | "manage") => {
     if (mode === "edit") {
       setIsEditMode(!isEditMode);
-      setIsDeleteMode(false); // Otomatis nonaktifkan mode lain
-    } else if (mode === "delete") {
-      setIsDeleteMode(!isDeleteMode);
+      setIsManageMode(false); // Otomatis nonaktifkan mode lain
+    } else if (mode === "manage") {
+      setIsManageMode(!isManageMode);
       setIsEditMode(false); // Otomatis nonaktifkan mode lain
     }
   };
 
   const handleCardClick = (umkm: Umkm) => {
-    if (isDeleteMode) {
-      setUmkmToDelete(umkm);
+    if (isManageMode) {
+      setUmkmToManage(umkm);
     } else if (isEditMode) {
       // Arahkan ke halaman edit dengan slug, bukan id
       router.push(`/dashboard/umkm/edit/${umkm.slug}`);
     }
   };
 
-  const handleDelete = () => {
-    if (!umkmToDelete) return;
+  const handleToggleActive = async (activate: boolean) => {
+    if (!umkmToManage) return;
     startTransition(async () => {
-      const result = await deleteUmkm(umkmToDelete.id);
+      const result = activate 
+        ? await activateUmkm(umkmToManage.id)
+        : await deactivateUmkm(umkmToManage.id);
+      
       if (result.success) {
         toast.success(result.message);
+        // Update status isActive di state lokal
         setMyUmkms((prevUmkms) =>
-          prevUmkms.filter((u) => u.id !== umkmToDelete.id)
+          prevUmkms.map((u) => 
+            u.id === umkmToManage.id 
+              ? { ...u, isActive: activate }
+              : u
+          )
         );
       } else {
-        toast.error(result.message || "Gagal menghapus UMKM.");
+        toast.error(result.message || "Gagal mengubah status UMKM.");
       }
-      setUmkmToDelete(null);
-      setIsDeleteMode(false);
+      setUmkmToManage(null);
+      setIsManageMode(false);
     });
   };
 
   return (
     <>
-      {/* Kontrol Mode Edit/Delete */}
+      {/* Kontrol Mode Edit/Manage */}
       <div className="flex items-center gap-2 mb-6">
         <Button
-          variant={isDeleteMode ? "destructive" : "outline"}
+          variant={isManageMode ? "destructive" : "outline"}
           size="sm"
-          onClick={() => toggleMode("delete")}
-          aria-label={isDeleteMode ? "Batal Hapus" : "Masuk Mode Hapus"}
+          onClick={() => toggleMode("manage")}
+          aria-label={isManageMode ? "Batal Kelola" : "Masuk Mode Kelola"}
         >
-          {isDeleteMode ? (
+          {isManageMode ? (
             <>
               <X className="h-4 w-4 mr-2" />
               Batal
@@ -116,7 +125,7 @@ export default function MyUmkmList({ initialUmkms }: { initialUmkms: Umkm[] }) {
           ) : (
             <>
               <Trash2 className="h-4 w-4 mr-2" />
-              Hapus UMKM
+              Kelola UMKM
             </>
           )}
         </Button>
@@ -147,9 +156,9 @@ export default function MyUmkmList({ initialUmkms }: { initialUmkms: Umkm[] }) {
           Mode Edit Aktif: Klik pada UMKM yang ingin Anda ubah.
         </div>
       )}
-      {isDeleteMode && (
+      {isManageMode && (
         <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-center text-sm text-destructive font-medium">
-          Mode Hapus Aktif: Klik pada UMKM yang ingin Anda hapus.
+          Mode Kelola Aktif: Klik pada UMKM yang ingin Anda kelola (aktifkan/nonaktifkan).
         </div>
       )}
 
@@ -161,7 +170,8 @@ export default function MyUmkmList({ initialUmkms }: { initialUmkms: Umkm[] }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {myUmkms.map((umkm) => {
-            const isInteractionMode = isDeleteMode || isEditMode;
+            const isInteractionMode = isManageMode || isEditMode;
+            const isInactive = umkm.isActive === false;
             return (
               <div
                 key={umkm.id}
@@ -169,8 +179,10 @@ export default function MyUmkmList({ initialUmkms }: { initialUmkms: Umkm[] }) {
                   isInteractionMode ? () => handleCardClick(umkm) : undefined
                 }
                 className={`rounded-lg transition-all duration-200 ${
-                  isDeleteMode
-                    ? "cursor-pointer ring-2 ring-destructive hover:ring-offset-2 hover:ring-offset-background"
+                  isInactive ? "opacity-50 border-2 border-dashed border-gray-400" : ""
+                } ${
+                  isManageMode
+                    ? "cursor-pointer ring-2 ring-orange-500 hover:ring-offset-2 hover:ring-offset-background"
                     : ""
                 } ${
                   isEditMode
@@ -188,7 +200,12 @@ export default function MyUmkmList({ initialUmkms }: { initialUmkms: Umkm[] }) {
                     : undefined
                 }
               >
-                <div className={isInteractionMode ? "pointer-events-none" : ""}>
+                <div className={`relative ${isInteractionMode ? "pointer-events-none" : ""}`}>
+                  {isInactive && (
+                    <div className="absolute top-2 right-2 z-10 bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      Nonaktif
+                    </div>
+                  )}
                   <UmkmCard umkm={umkm as any} />
                 </div>
               </div>
@@ -197,32 +214,41 @@ export default function MyUmkmList({ initialUmkms }: { initialUmkms: Umkm[] }) {
         </div>
       )}
 
-      {/* Dialog Hapus */}
+      {/* Dialog Kelola */}
       <AlertDialog
-        open={!!umkmToDelete}
-        onOpenChange={() => setUmkmToDelete(null)}
+        open={!!umkmToManage}
+        onOpenChange={() => setUmkmToManage(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Anda Yakin?</AlertDialogTitle>
+            <AlertDialogTitle>Kelola UMKM</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Ini akan menghapus UMKM
-              <span className="font-bold">
-                {" "}
-                &ldquo;{umkmToDelete?.name}&rdquo;{" "}
+              UMKM: <span className="font-bold">
+                &ldquo;{umkmToManage?.name}&rdquo;
               </span>
-              secara permanen dari server.
+              <br />Status saat ini: {umkmToManage?.isActive !== false ? "Aktif" : "Nonaktif"}
+              <br />Pilih tindakan yang ingin dilakukan:
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
             <AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isPending}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {isPending ? "Menghapus..." : "Ya, Hapus"}
-            </AlertDialogAction>
+            {umkmToManage?.isActive !== false ? (
+              <AlertDialogAction
+                onClick={() => handleToggleActive(false)}
+                disabled={isPending}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                {isPending ? "Menonaktifkan..." : "Nonaktifkan"}
+              </AlertDialogAction>
+            ) : (
+              <AlertDialogAction
+                onClick={() => handleToggleActive(true)}
+                disabled={isPending}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isPending ? "Mengaktifkan..." : "Aktifkan"}
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

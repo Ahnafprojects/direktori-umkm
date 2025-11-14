@@ -16,50 +16,33 @@ export default async function DaftarUmkmPage() {
     redirect('/login');
   }
 
-  // Jika sudah PENGUSAHA, cek apakah sudah punya UMKM
-  if (session.user.role === 'PENGUSAHA') {
-    // Lanjut ke pengecekan existing UMKM di bawah
-  }
-
-  // Cek berapa UMKM yang sudah dimiliki user
-  const existingUmkmCount = await db.umkm.count({
-    where: {
-      ownerId: session.user.id
-    }
+  // Cek role dari database untuk data terbaru (case user baru upgrade)
+  const userFromDb = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true }
   });
 
-  // Jika sudah 1 UMKM, redirect dengan pesan error
-  if (existingUmkmCount >= 1) {
-    return (
-      <div className="container mx-auto py-4 sm:py-6 lg:py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <Button asChild variant="ghost" className="mb-4 -ml-2">
-            <Link href="/dashboard/umkm/saya">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Kembali ke UMKM Saya
-            </Link>
-          </Button>
+  // Cek role user (prioritas database)
+  const userRole = userFromDb?.role || session.user.role;
+  const isPengusaha = userRole === 'PENGUSAHA';
+  
+  // CATATAN: Halaman ini boleh diakses user PELANGGAN untuk upgrade ke PENGUSAHA
+  // Logika upgrade akan ditangani di UmkmForm component
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-            <AlertCircle className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-yellow-800 mb-2">
-              Anda Sudah Memiliki UMKM
-            </h2>
-            <p className="text-yellow-700 mb-4">
-              Satu akun hanya dapat memiliki satu UMKM.
-            </p>
-            <p className="text-sm text-yellow-600 mb-6">
-              Anda dapat mengelola dan mengedit UMKM yang sudah ada.
-            </p>
-            <Button asChild>
-              <Link href="/dashboard/umkm/saya">
-                Kelola UMKM Saya
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+  // Cek berapa UMKM yang sudah dimiliki user (hanya untuk PENGUSAHA)
+  let existingUmkmCount = 0;
+  if (isPengusaha) {
+    existingUmkmCount = await db.umkm.count({
+      where: {
+        ownerId: session.user.id,
+        isActive: true
+      }
+    });
+
+    // Jika sudah punya UMKM aktif, redirect ke dashboard UMKM
+    if (existingUmkmCount >= 1) {
+      redirect('/dashboard/umkm/saya');
+    }
   }
 
   // Ambil semua kategori dari database untuk ditampilkan di form
@@ -70,20 +53,23 @@ export default async function DaftarUmkmPage() {
       <div className="max-w-4xl mx-auto">
         {/* Tombol Kembali */}
         <Button asChild variant="ghost" className="mb-4 -ml-2">
-          <Link href="/dashboard/umkm/saya">
+          <Link href={isPengusaha ? "/dashboard/umkm/saya" : "/dashboard"}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Kembali ke Daftar UMKM
+            {isPengusaha ? "Kembali ke Daftar UMKM" : "Kembali ke Dashboard"}
           </Link>
         </Button>
 
         <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-          Daftarkan UMKM Anda
+          {isPengusaha ? "Daftarkan UMKM Anda" : "Upgrade ke Pengusaha & Daftar UMKM"}
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground mb-6">
-          Isi detail di bawah ini untuk menampilkan bisnis Anda di direktori.
+          {isPengusaha 
+            ? "Isi detail di bawah ini untuk menampilkan bisnis Anda di direktori."
+            : "Dengan mendaftarkan UMKM, akun Anda otomatis akan diupgrade menjadi Pengusaha UMKM dan mendapat akses penuh ke dashboard."
+          }
         </p>
 
-        <UmkmForm categories={categories} />
+        <UmkmForm categories={categories} currentUserRole={userRole} />
       </div>
     </div>
   );

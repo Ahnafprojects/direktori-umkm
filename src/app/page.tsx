@@ -25,20 +25,18 @@ type HomePageProps = {
     lat?: string; // <-- TAMBAH INI
     long?: string; // <-- TAMBAH INI
     openNow?: string; // <-- TAMBAH PARAMETER OPEN NOW
-    bypass?: string; // <-- TAMBAH bypass untuk pengusaha yang ingin akses homepage
+    needUpgrade?: string; // <-- TAMBAH PARAMETER NEED UPGRADE
   }>;
 };
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const { search, category, lat, long, openNow, bypass } = await searchParams; // <-- AMBIL semua parameter
+  const { search, category, lat, long, openNow, needUpgrade } = await searchParams; // <-- AMBIL semua parameter
 
   // Check session untuk pengusaha
   const session = await getServerSession(authOptions);
-
-  // Jika pengusaha dan TIDAK ada bypass parameter, redirect ke dashboard
-  if (session?.user?.role === "PENGUSAHA" && !bypass) {
-    redirect("/dashboard");
-  }
+  
+  // Semua user (PENGUSAHA & PELANGGAN) bisa akses halaman utama
+  // Dashboard bisa diakses via menu header
 
   // 1. Ambil data kategori (untuk tombol filter)
   const categories = await getCategories();
@@ -55,21 +53,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <GuestWelcomeModal />
         </ClientHydrator>
       )}
-
-      {/* Notifikasi khusus untuk pengusaha */}
-      {session?.user?.role === "PENGUSAHA" && bypass && (
-        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+      
+      {/* Welcome message untuk semua user */}
+      {needUpgrade && session?.user?.role !== 'PENGUSAHA' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-blue-800 dark:text-blue-200 font-semibold">
-                Mode Penjelajah Pengusaha
-              </h3>
-              <p className="text-blue-600 dark:text-blue-300 text-sm">
-                Anda sedang melihat UMKM lain untuk inspirasi bisnis
-              </p>
+              <h2 className="font-semibold text-blue-900">Upgrade ke Pengusaha UMKM</h2>
+              <p className="text-blue-700">Daftarkan UMKM Anda untuk mengakses dashboard pengusaha</p>
             </div>
-            <Button asChild variant="default" size="sm">
-              <Link href="/dashboard">📊 Kembali ke Dashboard</Link>
+            <Button asChild>
+              <Link href="/dashboard/umkm/baru">Daftar UMKM</Link>
             </Button>
           </div>
         </div>

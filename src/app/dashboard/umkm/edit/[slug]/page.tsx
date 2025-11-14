@@ -2,10 +2,13 @@
 
 import { getCategories, getUmkmForEdit } from "@/lib/actions";
 import UmkmRegistrationForm from "@/app/_components/umkm-registration-form";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+import { db } from "@/lib/prisma";
 
 type EditUmkmPageProps = {
   params: Promise<{
@@ -16,15 +19,37 @@ type EditUmkmPageProps = {
 export default async function EditUmkmPage({ params }: EditUmkmPageProps) {
   const { slug } = await params;
 
+  // Cek session dan role user
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user?.id) {
+    redirect('/login?redirect=/dashboard/umkm/saya');
+  }
+
+  // Cek role dari database untuk memastikan data terbaru
+  const userFromDb = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true }
+  });
+
+  if (!userFromDb || (userFromDb.role !== 'PENGUSAHA' && session.user.role !== 'PENGUSAHA')) {
+    redirect('/dashboard?needUpgrade=true');
+  }
+
   // Ambil data UMKM dan data kategori secara bersamaan
   const [umkmData, categories] = await Promise.all([
     getUmkmForEdit(slug),
     getCategories(),
   ]);
 
-  // Jika UMKM tidak ditemukan atau bukan milik user, tampilkan halaman 404
+  // Jika UMKM tidak ditemukan, tampilkan halaman 404
   if (!umkmData) {
     notFound();
+  }
+
+  // Cek apakah UMKM milik user yang sedang login
+  if (umkmData.ownerId !== session.user.id) {
+    notFound(); // Atau redirect('/dashboard/umkm/saya') untuk keamanan
   }
 
   // ================================================================
