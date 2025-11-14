@@ -1,29 +1,35 @@
 // File: src/app/profil/page.tsx
-'use client';
+"use client";
 
-import { useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { toast } from 'react-hot-toast';
-import { ArrowLeft, Save, User, Building2, ShoppingBag } from 'lucide-react';
-import Link from 'next/link';
-import UmkmUpgradeSection from '../_components/umkm-upgrade-section';
+import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "react-hot-toast";
+import { ArrowLeft, Save, User, Building2, ShoppingBag } from "lucide-react";
+import Link from "next/link";
+import UmkmUpgradeSection from "../_components/umkm-upgrade-section";
 
 export default function ProfilPage() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [name, setName] = useState('');
+  const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   // Get default tab from URL params (for deep linking from welcome modal)
-  const defaultTab = searchParams.get('section') || 'profile';
+  const defaultTab = searchParams.get("section") || "profile";
 
   // Sync name state with session when it loads
   useEffect(() => {
@@ -34,210 +40,239 @@ export default function ProfilPage() {
 
   // Check for role update in URL params and refresh if needed
   useEffect(() => {
-    const roleUpdated = searchParams.get('roleUpdated');
-    if (roleUpdated === 'true') {
+    const roleUpdated = searchParams.get("roleUpdated");
+    if (roleUpdated === "true") {
       // Remove the parameter from URL
-      router.replace('/profil');
+      router.replace("/profil");
       // Force session refresh
       window.location.reload();
     }
   }, [searchParams, router]);
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-8 w-32 rounded bg-gray-200 animate-pulse" />
-          <div className="h-64 rounded-lg bg-gray-200 animate-pulse" />
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto space-y-4">
+            <div className="h-8 w-32 rounded bg-muted animate-pulse" />
+            <div className="h-64 rounded-lg bg-muted animate-pulse border border-border" />
+          </div>
         </div>
       </div>
     );
   }
 
   if (!session) {
-    router.push('/login');
+    router.push("/login");
     return null;
   }
 
   const handleUpdateName = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
-      toast.error('Nama tidak boleh kosong');
+      toast.error("Nama tidak boleh kosong");
       return;
     }
 
-    console.log('[PROFIL] Updating name to:', name.trim());
+    console.log("[PROFIL] Updating name to:", name.trim());
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/user/update', {
-        method: 'PATCH',
+      const response = await fetch("/api/user/update", {
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ name: name.trim() }),
       });
 
-      console.log('[PROFIL] Response status:', response.status);
+      console.log("[PROFIL] Response status:", response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('[PROFIL] Error response:', errorData);
-        throw new Error(errorData.error || 'Gagal mengupdate profil');
+        console.error("[PROFIL] Error response:", errorData);
+        throw new Error(errorData.error || "Gagal mengupdate profil");
       }
 
       const data = await response.json();
-      console.log('[PROFIL] Success response:', data);
+      console.log("[PROFIL] Success response:", data);
 
       // Update session dengan nama baru
       await update({ name: data.user.name });
 
-      toast.success('Profil berhasil diupdate!');
-      
+      toast.success("Profil berhasil diupdate!");
+
       // Refresh page to show updated name everywhere
       setTimeout(() => {
         window.location.reload();
       }, 1000);
     } catch (error) {
-      console.error('[PROFIL] Error updating profile:', error);
-      toast.error(error instanceof Error ? error.message : 'Gagal mengupdate profil');
+      console.error("[PROFIL] Error updating profile:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Gagal mengupdate profil"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   const user = session.user;
-  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : '?';
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "?";
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Back Button */}
-        <Link href="/">
-          <Button variant="ghost" className="mb-4 gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Kembali
-          </Button>
-        </Link>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          {/* Back Button */}
+          <Link href="/">
+            <Button variant="ghost" className="mb-4 gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Kembali
+            </Button>
+          </Link>
 
-        {/* Profile Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Avatar className="h-20 w-20">
-            <AvatarImage src={user?.image ?? ''} alt={user?.name ?? ''} />
-            <AvatarFallback className="text-2xl">{userInitial}</AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-2xl font-bold">Profil Saya</h1>
-            <p className="text-muted-foreground">
-              Kelola informasi profil dan pengaturan UMKM Anda
-            </p>
+          {/* Profile Header */}
+          <div className="flex items-center gap-4 mb-6">
+            <Avatar className="h-20 w-20 border-2 border-border">
+              <AvatarImage src={user?.image ?? ""} alt={user?.name ?? ""} />
+              <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                {userInitial}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                Profil Saya
+              </h1>
+              <p className="text-muted-foreground">
+                Kelola informasi profil dan pengaturan UMKM Anda
+              </p>
+            </div>
           </div>
+
+          {/* Tabs */}
+          <Tabs defaultValue={defaultTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 bg-muted">
+              <TabsTrigger
+                value="profile"
+                className="gap-2 data-[state=active]:bg-background"
+              >
+                <User className="h-4 w-4" />
+                Profil
+              </TabsTrigger>
+              <TabsTrigger
+                value="umkm"
+                className="gap-2 data-[state=active]:bg-background"
+              >
+                <Building2 className="h-4 w-4" />
+                UMKM Saya
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Profile Tab */}
+            <TabsContent value="profile">
+              <Card className="border-border bg-card">
+                <CardHeader>
+                  <CardTitle className="text-foreground">
+                    Informasi Profil
+                  </CardTitle>
+                  <CardDescription>
+                    Kelola informasi dasar akun Anda
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleUpdateName} className="space-y-6">
+                    {/* Email (Read-only) */}
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-foreground">
+                        Email
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={user?.email || ""}
+                        disabled
+                        className="bg-muted border-border"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Email tidak dapat diubah
+                      </p>
+                    </div>
+
+                    {/* Name (Editable) */}
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-foreground">
+                        Nama
+                      </Label>
+                      <Input
+                        id="name"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Masukkan nama Anda"
+                        required
+                        className="bg-background border-border"
+                      />
+                    </div>
+
+                    {/* Role (Read-only) */}
+                    <div className="space-y-2">
+                      <Label htmlFor="role" className="text-foreground">
+                        Peran
+                      </Label>
+                      <Input
+                        id="role"
+                        type="text"
+                        // @ts-ignore
+                        value={
+                          user?.role === "PENGUSAHA"
+                            ? "Pengusaha UMKM"
+                            : "Pelanggan"
+                        }
+                        disabled
+                        className="bg-muted border-border"
+                      />
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="flex justify-end gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setName(session?.user?.name || "")}
+                        disabled={isLoading}
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={isLoading || name === session?.user?.name}
+                        className="gap-2"
+                      >
+                        {isLoading ? (
+                          <>
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            Menyimpan...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4" />
+                            Simpan Perubahan
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* UMKM Tab */}
+            <TabsContent value="umkm">
+              <UmkmUpgradeSection />
+            </TabsContent>
+          </Tabs>
         </div>
-
-        {/* Tabs */}
-        <Tabs defaultValue={defaultTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="profile" className="gap-2">
-              <User className="h-4 w-4" />
-              Profil
-            </TabsTrigger>
-            <TabsTrigger value="umkm" className="gap-2">
-              <Building2 className="h-4 w-4" />
-              UMKM Saya
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Profile Tab */}
-          <TabsContent value="profile">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informasi Profil</CardTitle>
-                <CardDescription>
-                  Kelola informasi dasar akun Anda
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleUpdateName} className="space-y-6">
-                  {/* Email (Read-only) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={user?.email || ''}
-                      disabled
-                      className="bg-muted"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Email tidak dapat diubah
-                    </p>
-                  </div>
-
-                  {/* Name (Editable) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nama</Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Masukkan nama Anda"
-                      required
-                    />
-                  </div>
-
-                  {/* Role (Read-only) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Peran</Label>
-                    <Input
-                      id="role"
-                      type="text"
-                      // @ts-ignore
-                      value={user?.role === 'PENGUSAHA' ? 'Pengusaha UMKM' : 'Pelanggan'}
-                      disabled
-                      className="bg-muted"
-                    />
-                  </div>
-
-                  {/* Submit Button */}
-                  <div className="flex justify-end gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setName(session?.user?.name || '')}
-                      disabled={isLoading}
-                    >
-                      Reset
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={isLoading || name === session?.user?.name}
-                      className="gap-2"
-                    >
-                      {isLoading ? (
-                        <>
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          Menyimpan...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4" />
-                          Simpan Perubahan
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* UMKM Tab */}
-          <TabsContent value="umkm">
-            <UmkmUpgradeSection />
-          </TabsContent>
-        </Tabs>
       </div>
     </div>
   );

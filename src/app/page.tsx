@@ -34,10 +34,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   // Check session untuk pengusaha
   const session = await getServerSession(authOptions);
-  
+
   // Jika pengusaha dan TIDAK ada bypass parameter, redirect ke dashboard
-  if (session?.user?.role === 'PENGUSAHA' && !bypass) {
-    redirect('/dashboard');
+  if (session?.user?.role === "PENGUSAHA" && !bypass) {
+    redirect("/dashboard");
   }
 
   // 1. Ambil data kategori (untuk tombol filter)
@@ -45,21 +45,25 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     // Kita bungkus dengan 'relative' agar dropdown tidak terpotong
-    <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 relative" id="umkm-directory">
-      
+    <main
+      className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 relative"
+      id="umkm-directory"
+    >
       {/* Guest Welcome Modal - hanya untuk user yang belum login */}
       {!session && (
         <ClientHydrator>
           <GuestWelcomeModal />
         </ClientHydrator>
       )}
-      
+
       {/* Notifikasi khusus untuk pengusaha */}
-      {session?.user?.role === 'PENGUSAHA' && bypass && (
+      {session?.user?.role === "PENGUSAHA" && bypass && (
         <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-blue-800 dark:text-blue-200 font-semibold">Mode Penjelajah Pengusaha</h3>
+              <h3 className="text-blue-800 dark:text-blue-200 font-semibold">
+                Mode Penjelajah Pengusaha
+              </h3>
               <p className="text-blue-600 dark:text-blue-300 text-sm">
                 Anda sedang melihat UMKM lain untuk inspirasi bisnis
               </p>
@@ -73,10 +77,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       <h1 className="text-3xl font-bold mb-4">Direktori UMKM Lokal</h1>
       <p className="text-muted-foreground mb-6">
-        {session?.user?.role === 'PENGUSAHA' 
+        {session?.user?.role === "PENGUSAHA"
           ? "Jelajahi UMKM lain untuk inspirasi dan benchmark bisnis Anda"
-          : "Temukan dan dukung bisnis lokal di sekitarmu!"
-        }
+          : "Temukan dan dukung bisnis lokal di sekitarmu!"}
       </p>
       <ClientHydrator>
         <AiRecommendationCarousel />
