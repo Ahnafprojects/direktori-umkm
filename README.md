@@ -4,6 +4,25 @@ Lebih dari sekadar direktori. Ini adalah ekosistem full-stack untuk menemukan, m
 
 Proyek ini dibangun untuk kompetisi "Web In Action 2025" dengan visi melampaui brief: dari "direktori statis" menjadi "platform e-commerce dinamis dua sisi" yang lengkap.
 
+📖 Latar Belakang & Konsep
+
+Proyek ini lahir dari sebuah masalah sederhana namun krusial yang ada di brief kompetisi:
+
+Masalah 1: Visibilitas Rendah: UMKM (kedai bakso, warung kopi) sulit ditemukan secara online. Informasi mereka tersebar, tidak lengkap, dan seringkali kedaluwarsa.
+
+Masalah 2: Direktori "Mati": Direktori yang ada saat ini bersifat statis, seperti buku telepon digital. Tidak ada interaksi, tidak ada update real-time, dan tidak membantu pengguna mengambil keputusan.
+
+Masalah 3: Kesenjangan Pengalaman (User Gap): Pengguna modern tidak hanya butuh "daftar", mereka butuh "rekomendasi cerdas", filter lokasi real-time, dan alur yang jelas untuk bertransaksi.
+
+Visi Kami: Dari Direktori Statis Menjadi Platform Dinamis
+
+Kami tidak hanya membuat daftar. Kami membangun sebuah ekosistem penuh dengan dua visi utama:
+
+Discovery Cerdas: Membantu pengguna menemukan UMKM yang tepat melalui AI, filter lokasi real-time, dan filter jam buka.
+
+Alur E-commerce Penuh: Memberikan pengalaman end-to-end (terima beres) dari melihat menu, memesan, hingga melacak pengiriman.
+
+
 ✨ Fitur Unggulan
 
 Proyek ini dibagi menjadi dua pengalaman utama: untuk Pelanggan dan untuk Pengusaha UMKM.
