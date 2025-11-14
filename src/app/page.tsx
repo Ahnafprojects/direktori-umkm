@@ -43,8 +43,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     // Kita bungkus dengan 'relative' agar dropdown tidak terpotong
-    <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 relative" id="umkm-directory">
-      
+    <main
+      className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 relative"
+      id="umkm-directory"
+    >
       {/* Guest Welcome Modal - hanya untuk user yang belum login */}
       {!session && (
         <ClientHydrator>
@@ -69,10 +71,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       <h1 className="text-3xl font-bold mb-4">Direktori UMKM Lokal</h1>
       <p className="text-muted-foreground mb-6">
-        {session?.user?.role === 'PENGUSAHA' 
+        {session?.user?.role === "PENGUSAHA"
           ? "Jelajahi UMKM lain untuk inspirasi dan benchmark bisnis Anda"
-          : "Temukan dan dukung bisnis lokal di sekitarmu!"
-        }
+          : "Temukan dan dukung bisnis lokal di sekitarmu!"}
       </p>
       <ClientHydrator>
         <AiRecommendationCarousel />

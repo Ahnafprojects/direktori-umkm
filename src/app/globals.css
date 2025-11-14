@@ -167,6 +167,84 @@
   }
 }
 
+/* Custom styles for markdown in chat */
+@layer utilities {
+  .chat-markdown {
+    @apply text-sm lg:text-base;
+  }
+
+  .chat-markdown p {
+    @apply my-2;
+  }
+
+  .chat-markdown strong {
+    @apply font-bold text-foreground;
+  }
+
+  .chat-markdown em {
+    @apply italic;
+  }
+
+  .chat-markdown h1,
+  .chat-markdown h2,
+  .chat-markdown h3 {
+    @apply font-bold my-3;
+  }
+
+  .chat-markdown h1 {
+    @apply text-xl lg:text-2xl;
+  }
+
+  .chat-markdown h2 {
+    @apply text-lg lg:text-xl;
+  }
+
+  .chat-markdown h3 {
+    @apply text-base lg:text-lg;
+  }
+
+  .chat-markdown ul,
+  .chat-markdown ol {
+    @apply my-2 pl-5;
+  }
+
+  .chat-markdown ul {
+    @apply list-disc;
+  }
+
+  .chat-markdown ol {
+    @apply list-decimal;
+  }
+
+  .chat-markdown li {
+    @apply my-0.5;
+  }
+
+  .chat-markdown code {
+    @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+
+  .chat-markdown pre {
+    @apply bg-muted p-3 rounded-lg my-2 overflow-x-auto;
+  }
+
+  .chat-markdown pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .chat-markdown blockquote {
+    @apply border-l-4 border-primary pl-4 my-2 italic;
+  }
+
+  .chat-markdown a {
+    @apply text-primary underline hover:text-primary/80;
+  }
+
+  .chat-markdown hr {
+    @apply my-4 border-border;
+  }
+}
+
 /* ================================================================= */
 /* CUSTOM THEMES - Rose (Light) & Ocean (Dark)                     */
 /* ================================================================= */
