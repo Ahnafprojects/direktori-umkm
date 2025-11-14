@@ -1,138 +1,207 @@
-# 🏪 Direktori UMKM LokalKeren
+🏪 LokalKeren: Platform Direktori & E-commerce UMKM
 
-Aplikasi web untuk menemukan dan mendukung UMKM (Usaha Mikro Kecil Menengah) lokal di sekitar Anda. Dibangun dengan Next.js, TypeScript, Prisma, dan PostgreSQL.
+Lebih dari sekadar direktori. Ini adalah ekosistem full-stack untuk menemukan, memesan, dan mengelola UMKM lokal, ditenagai oleh AI.
 
-## ✨ Fitur Utama
+Proyek ini dibangun untuk kompetisi "Web In Action 2025" dengan visi melampaui brief: dari "direktori statis" menjadi "platform e-commerce dinamis dua sisi" yang lengkap.
 
-- 🔍 **Pencarian UMKM** - Cari berdasarkan nama atau kategori
-- 📍 **Peta Interaktif** - Lihat lokasi UMKM dengan marker yang informatif
-- 🧭 **Cari Terdekat** - Temukan UMKM terdekat berdasarkan lokasi Anda
-- ⭐ **Sistem Review** - Baca dan tulis ulasan untuk UMKM
-- 🛍️ **Katalog Produk** - Jelajahi produk dan layanan setiap UMKM
-- 🌓 **Mode Gelap/Terang** - UI yang nyaman di mata
-- 📱 **Responsive Design** - Optimal di desktop dan mobile
-- 🔐 **Autentikasi** - Login sebagai pelanggan atau pengusaha
-- 🤖 **Rekomendasi AI** - Saran UMKM berdasarkan preferensi
-- ⏰ **Filter Buka Sekarang** - Tampilkan hanya UMKM yang sedang buka
+✨ Fitur Unggulan
 
-## 🛠️ Tech Stack
+Proyek ini dibagi menjadi dua pengalaman utama: untuk Pelanggan dan untuk Pengusaha UMKM.
 
-- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes, Prisma ORM
-- **Database**: PostgreSQL
-- **Auth**: NextAuth.js
-- **Maps**: Leaflet, OpenStreetMap
-- **AI**: Groq API
-- **UI Components**: shadcn/ui, Radix UI
+Untuk Pelanggan (User-Facing)
 
-## 📋 Prerequisite
+🚀 Discovery Cerdas (3x Filter):
 
-Pastikan sudah terinstall:
+Filter "Cari Terdekat": Menggunakan Geolocation API & query Haversine (PostgreSQL) untuk mengurutkan UMKM dari lokasi real-time pengguna.
 
-- **Node.js** (v18 atau lebih baru)
-- **npm** atau **yarn**
-- **PostgreSQL** (lokal atau cloud)
+Filter "Buka Sekarang": Filter timezone-aware (WIB) yang secara akurat memfilter UMKM berdasarkan jam operasional.
 
-## ⚙️ Instalasi & Setup
+Pencarian Cerdas (Autocomplete): Search bar cmdk yang memberi saran real-time saat mengetik.
 
-### 1. Clone Repository
+🤖 Integrasi AI:
 
-```bash
-git clone https://github.com/Ahnafprojects/direktori-umkm.git
-cd direktori-umkm
-```
+Rekomendasi AI: Carousel personal di Halaman Utama. AI menganalisis data Favorit pengguna untuk merekomendasikan UMKM lain.
 
-### 2. Install Dependencies
+Ringkasan Ulasan AI: Tombol on-demand di Halaman Detail untuk meringkas puluhan ulasan menjadi 2 kalimat sentimen (pro & kontra).
 
-```bash
+Asisten AI Kontekstual: Chatbot floating yang "sudah membaca" seluruh data UMKM dan "tahu" cara kerja website (RAG).
+
+🛒 Alur E-commerce Penuh (Full-Stack):
+
+Keranjang (Zustand): Keranjang belanja client-side yang persisten.
+
+Checkout Cerdas: Alur checkout dengan opsi "Ambil Sendiri" atau "Dianterin" (dengan auto-deteksi lokasi via Geolocation & simulasi peta).
+
+Transaksi Database (Real): Pesanan disimpan di tabel Order & OrderItem di PostgreSQL, bukan localStorage.
+
+📍 Peta & Pelacakan Lanjutan:
+
+Mode "Map View": Halaman /map yang menampilkan semua pin UMKM di peta Leaflet untuk eksplorasi visual.
+
+Rute Google Maps: Integrasi tombol "Dapatkan Rute" ke Google Maps.
+
+Simulasi Live Tracking: Halaman /status yang menampilkan simulasi pergerakan driver di peta setelah checkout.
+
+👥 Fitur Pengguna (Full-Stack):
+
+Sistem Favorit (Hybrid): Sistem canggih yang menyimpan favorit di localStorage (untuk guest) dan otomatis sinkronisasi ke Database (UserFavoriteUmkm) saat login.
+
+Ulasan Nyata (Full-Stack): Pengguna login bisa menulis ulasan. Rating rata-rata UMKM akan otomatis ter-update di database.
+
+Histori Transaksi (Database): Halaman /history yang mengambil riwayat pesanan nyata dari database (bukan localStorage).
+
+🎨 UX Premium:
+
+Pusat Notifikasi Real-Time: Ikon lonceng di header dengan notifikasi real-time dari database untuk balasan ulasan dan update status pesanan (misal: "Pesanan Tiba!").
+
+Notifikasi Toast: Umpan balik instan (via react-hot-toast) untuk aksi pengguna seperti "Tambah ke Keranjang" atau "Error".
+
+Multi-Tema: Kustomisasi tema (Light, Rose, Ocean).
+
+Animasi (Framer Motion): Transisi halaman dan animasi grid stagger yang smooth.
+
+Desain Responsif: Kartu horizontal di HP, kartu vertikal di Desktop.
+
+Onboarding: Pop-up sambutan & CTA "Buka Toko" (hanya muncul sekali).
+
+Untuk Pengusaha (UMKM-Facing)
+
+🔐 Autentikasi Terpadu:
+
+Satu alur registrasi (role: PELANGGAN).
+
+Pengguna bisa "Upgrade Akun" melalui halaman /buka-toko untuk menjadi PENGUSAHA.
+
+Backend db.$transaction menjamin pembuatan UMKM dan update role user terjadi bersamaan.
+
+📊 Dashboard UMKM (/dashboard):
+
+Pusat Notifikasi Real-Time: Notifikasi instan di header saat ada Pesanan Baru Masuk atau Ulasan Baru dari pelanggan.
+
+Manajemen Pesanan (Real-Time): Melihat daftar pesanan yang masuk (PAID, PREPARING, SHIPPING) dan mengubah statusnya.
+
+Manajemen Produk (CRUD): Mengelola Kategori Produk dan Produk (tambah, edit, hapus, ubah harga, tandai habis).
+
+Dashboard Analytics (Business Intelligence):
+
+KPI: Kartu Total Pendapatan, MModal/HPP, Profit Bersih, Pesanan Selesai, dan Rating Rata-rata.
+
+Grafik Penjualan: Grafik garis (Recharts) pendapatan per hari (via query GROUP BY DATE).
+
+Produk Terlaris: Daftar 5 produk terlaris (via query GROUP BY & SUM(quantity)).
+
+🛠️ Tech Stack
+
+Framework: Next.js 14 (App Router)
+
+Frontend: React, TypeScript, Tailwind CSS
+
+UI Components: shadcn/ui, Recharts, Framer Motion
+
+Backend: Next.js API Routes, Prisma ORM
+
+Database: PostgreSQL
+
+AI: Gemini
+
+State: Zustand (Hybrid: Keranjang, Favorit Tamu)
+
+Peta: Leaflet.js
+
+📊 Database Schema (Prisma)
+
+User: Menyimpan data pelanggan & pengusaha (PELANGGAN/PENGUSAHA). Memiliki relasi ke Umkm, Review (dan ReviewReplies), Order, dan Favorite.
+
+Category: Kategori utama UMKM (Makanan, Jasa, Fashion, Kerajinan, dll).
+
+Umkm: Data inti toko, terhubung ke User (sebagai owner).
+
+ProductCategory: Kategori menu di dalam satu UMKM (misal: "Menu Sate", "Minuman").
+
+Product: Detail produk/menu, terhubung ke ProductCategory. Memiliki price (jual) dan costPrice (modal).
+
+Review: Ulasan, terhubung ke User dan Umkm. Memiliki field ownerReply untuk balasan.
+
+Order: "Kuitansi" pesanan, terhubung ke User dan Umkm. Memiliki paymentMethod.
+
+OrderItem: Detail barang di dalam Order, terhubung ke Product.
+
+Favorite: Tabel penghubung untuk User yang memfavoritkan Umkm (menggantikan UserFavoriteUmkm).
+
+Notification: (Tambahan Sesuai Fitur) Menyimpan notifikasi (pesan, status dibaca, link) untuk User dan UMKM.
+
+⚙️ Instalasi & Setup
+
+1. Clone Repository
+
+git clone [https://github.com/](https://github.com/)[username-kamu]/[repo-kamu].git
+cd [repo-kamu]
+
+
+
+2. Install Dependencies
+
 npm install
-```
 
-### 3. Konfigurasi Environment Variables
 
-Buat file `.env` di root project:
 
-```env
+3. Konfigurasi Environment Variables
+
+Buat file .env.local di root proyek:
+
 # Database PostgreSQL
 DATABASE_URL="postgresql://[user]:[password]@[host]:[port]/[database]"
 
-# NextAuth Secret (generate dengan: openssl rand -base64 32)
-NEXTAUTH_SECRET="string-rahasia-yang-panjang-dan-aman"
+# Kunci Rahasia Auth (sesuaikan dengan library-mu)
+# Contoh untuk NextAuth:
+NEXTAUTH_SECRET="[openssl rand -base64 32]"
 NEXTAUTH_URL="http://localhost:3000"
 
-# Groq API Key untuk fitur AI (opsional)
-GROQ_API_KEY="gsk_your_groq_api_key_here"
-```
+# Groq API Key untuk fitur AI
+GROQ_API_KEY="gsk_...[kunci_api_groq_kamu]"
 
-### 4. Setup Database
 
-```bash
+
+4. Setup Database
+
 # Generate Prisma Client
 npx prisma generate
 
 # Jalankan migrasi database
 npx prisma migrate dev
 
-# Seed database dengan data contoh
+# Seed database dengan data contoh (termasuk user & UMKM dummy)
 npx prisma db seed
-```
 
-### 5. Jalankan Aplikasi
 
-```bash
+
+5. Jalankan Aplikasi
+
 npm run dev
-```
 
-Aplikasi akan berjalan di `http://localhost:3000`
 
-## 📊 Database Schema
 
-### Models Utama:
+Aplikasi akan berjalan di http://localhost:3000
 
-- **User** - Data pengguna (pelanggan & pengusaha)
-- **Category** - Kategori UMKM (Makanan, Minuman, Jasa)
-- **Umkm** - Data UMKM dengan lokasi dan informasi lengkap
-- **Product** - Produk/layanan yang ditawarkan UMKM
-- **Review** - Ulasan pengguna untuk UMKM
-
-## 🔑 Akun Testing
+🔑 Akun Testing
 
 Setelah menjalankan seed, Anda dapat login dengan:
 
-### Akun Pelanggan:
+Akun Pelanggan:
 
-- **Email**: `mock-user@example.com`
-- **Password**: `mockpassword123`
+Email: mock-user@example.com
 
-### Akun Pengusaha:
+Password: mockpassword123
 
-- **Email**: `elmyra-ice-tea_owner@example.com`
-- **Password**: `elmyra-ice-tea`
+Akun Pengusaha:
 
-## 🗺️ Fitur Peta
+Email: elmyra-ice-tea_owner@example.com
 
-- **Marker Kustom** - Ikon berbeda untuk setiap kategori UMKM
-- **Info Popup** - Gambar, nama, kategori, dan link detail
-- **Navigasi** - Zoom, pan, dan kontrol peta lengkap
+Password: elmyra-ice-tea
+(Akun ini sudah memiliki UMKM yang terhubung, siap untuk tes Dashboard)
 
-## 🎨 Tema
+🚀 Scripts
 
-Aplikasi mendukung beberapa tema:
-
-- Light (default)
-- Dark
-- Theme Rose
-- Theme Ocean
-
-## 📱 Responsive Design
-
-- **Mobile First** - Dioptimalkan untuk penggunaan mobile
-- **Tablet Support** - Layout yang baik di tablet
-- **Desktop** - Grid dan layout yang luas di desktop
-
-## 🚀 Scripts
-
-```bash
 # Development
 npm run dev
 
@@ -146,75 +215,6 @@ npm start
 npm run lint
 
 # Database commands
-npx prisma studio        # GUI database
-npx prisma migrate reset # Reset database
-npx prisma db push       # Push schema tanpa migrasi
-```
+npx prisma studio       # GUI database di browser
+npx prisma migrate reset # Reset database jika bermasalah
 
-## 📂 Struktur Project
-
-```
-src/
-├── app/                 # Next.js App Router
-│   ├── api/            # API Routes
-│   ├── _components/    # Komponen khusus halaman
-│   └── [pages]/        # Halaman aplikasi
-├── components/         # Komponen reusable
-│   └── ui/            # UI components (shadcn)
-├── lib/               # Utilitas dan konfigurasi
-├── store/             # State management (Zustand)
-└── types/             # TypeScript types
-
-prisma/
-├── schema.prisma      # Database schema
-├── seed.ts           # Data seeding
-└── migrations/       # Database migrations
-
-public/
-└── images/           # Static images
-    └── umkm/        # UMKM photos
-```
-
-## 🤝 Contributing
-
-1. Fork repository
-2. Buat branch feature (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push ke branch (`git push origin feature/amazing-feature`)
-5. Buat Pull Request
-
-## 📝 License
-
-Project ini menggunakan MIT License.
-
-## 🎯 Roadmap
-
-- [ ] Sistem booking/pemesanan online
-- [ ] Notifikasi push
-- [ ] Export data UMKM
-- [ ] Dashboard analytics untuk pengusaha
-- [ ] Integrasi payment gateway
-- [ ] Multi-language support
-
-## ⚠️ Troubleshooting
-
-### Database Connection Error
-
-- Pastikan PostgreSQL berjalan
-- Cek konfigurasi `DATABASE_URL` di `.env`
-- Jalankan `npx prisma migrate reset` jika perlu
-
-### NextAuth Error
-
-- Generate `NEXTAUTH_SECRET` baru: `openssl rand -base64 32`
-- Pastikan `NEXTAUTH_URL` sesuai dengan domain Anda
-
-### Build Error
-
-- Jalankan `npm run lint` untuk cek error
-- Pastikan semua dependencies ter-install
-- Clear `.next` folder dan build ulang
-
----
-
-💡 **Tips**: Gunakan `npx prisma studio` untuk melihat dan mengedit data database melalui GUI yang user-friendly.
