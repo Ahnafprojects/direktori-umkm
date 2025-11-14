@@ -145,7 +145,11 @@ export async function getUmkmBySlug(slug: string) {
         },
         ProductCategory: {
           orderBy: { id: "asc" },
-          include: { Product: { orderBy: { isFeatured: "desc" } } },
+          include: { 
+            Product: { 
+              orderBy: { isFeatured: "desc" }
+            } 
+          },
         },
       },
     });

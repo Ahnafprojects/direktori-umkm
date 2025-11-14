@@ -4,10 +4,10 @@
 import Link from "next/link";
 import { Building2, ScrollText, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import FavoriteNavButton from "./favorite-nav-button";
 import UserAuth from "./user-auth";
 import { ThemeToggle } from "./theme-toggle";
 import { useSession } from "next-auth/react";
+import HeaderNotifications from "./header-notifications";
 
 export default function Header() {
   const { data: session } = useSession();
@@ -22,15 +22,11 @@ export default function Header() {
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-2 md:gap-4 ml-auto">
-          {/* Tampilkan transaksi hanya untuk pengusaha UMKM yang membeli dari UMKM lain */}
-          {session && session.user.role === 'PENGUSAHA' && (
-            <Button asChild variant="ghost" size="icon" className="flex">
-              <Link href="/history" aria-label="Transaksi Pembelian">
-                <ScrollText className="h-5 w-5" />
-              </Link>
-            </Button>
+          {/* Notifikasi bell untuk semua user yang login */}
+          {session && (
+            <HeaderNotifications />
           )}
-          <FavoriteNavButton />
+          
           {/* Show theme toggle in header only when user is NOT logged in.  When logged in, theme toggle will be inside profile popup */}
           {!session && <ThemeToggle />}
           <UserAuth />

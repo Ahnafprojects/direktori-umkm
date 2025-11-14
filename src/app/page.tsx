@@ -15,6 +15,7 @@ import { authOptions } from "@/lib/authOptions";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import GuestWelcomeModal from "./_components/guest-welcome-modal";
 
 // Ini adalah tipe untuk searchParams
 type HomePageProps = {
@@ -44,14 +45,21 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     // Kita bungkus dengan 'relative' agar dropdown tidak terpotong
-    <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 relative">
+    <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 relative" id="umkm-directory">
+      
+      {/* Guest Welcome Modal - hanya untuk user yang belum login */}
+      {!session && (
+        <ClientHydrator>
+          <GuestWelcomeModal />
+        </ClientHydrator>
+      )}
       
       {/* Notifikasi khusus untuk pengusaha */}
       {session?.user?.role === 'PENGUSAHA' && bypass && (
         <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-blue-800 dark:text-blue-200 font-semibold">👨‍💼 Mode Penjelajah Pengusaha</h3>
+              <h3 className="text-blue-800 dark:text-blue-200 font-semibold">Mode Penjelajah Pengusaha</h3>
               <p className="text-blue-600 dark:text-blue-300 text-sm">
                 Anda sedang melihat UMKM lain untuk inspirasi bisnis
               </p>

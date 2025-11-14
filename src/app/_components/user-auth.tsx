@@ -20,9 +20,13 @@ import {
   LayoutDashboard,
   PlusCircle,
   Home,
+  Menu,
+  Heart,
+  ScrollText,
 } from "lucide-react";
 import Link from "next/link";
 import ThemeSelector from "./theme-selector";
+import FavoriteNavButton from "./favorite-nav-button";
 
 export default function UserAuth() {
   const { data: session, status } = useSession();
@@ -41,15 +45,17 @@ export default function UserAuth() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Masuk sebagai</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => signIn()}>
-            <User className="mr-2 h-4 w-4" />
-            <span>Pelanggan</span>
+          <DropdownMenuItem asChild>
+            <Link href="/login">
+              <LogIn className="mr-2 h-4 w-4" />
+              <span>Masuk</span>
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => signIn()}>
-            <Store className="mr-2 h-4 w-4" />
-            <span>Pengusaha UMKM</span>
+          <DropdownMenuItem asChild>
+            <Link href="/register">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              <span>Daftar</span>
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -64,29 +70,48 @@ export default function UserAuth() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.image ?? ""} alt={user?.name ?? ""} />
-            <AvatarFallback>{userInitial}</AvatarFallback>
-          </Avatar>
+        <Button variant="outline" size="icon">
+          <Menu className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user?.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user?.email}
-            </p>
+          <div className="flex items-center space-x-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user?.image ?? ""} alt={user?.name ?? ""} />
+              <AvatarFallback>{userInitial}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{user?.name}</p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {user?.email}
+              </p>
+            </div>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
         {/* 2. TAMBAHKAN MENU "BERANDA" DI SINI */}
         <DropdownMenuItem asChild>
-          <Link href="/">
+          <Link href="/?section=directory">
             <Home className="mr-2 h-4 w-4" />
             <span>Beranda</span>
+          </Link>
+        </DropdownMenuItem>
+
+        {/* Tombol Favorit */}
+        <DropdownMenuItem asChild>
+          <Link href="/favorites">
+            <Heart className="mr-2 h-4 w-4" />
+            <span>UMKM Favorit</span>
+          </Link>
+        </DropdownMenuItem>
+
+        {/* Menu Transaksi - untuk semua user */}
+        <DropdownMenuItem asChild>
+          <Link href="/history">
+            <ScrollText className="mr-2 h-4 w-4" />
+            <span>Riwayat Transaksi</span>
           </Link>
         </DropdownMenuItem>
 

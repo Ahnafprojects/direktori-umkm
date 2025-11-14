@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,6 +71,7 @@ export default function UmkmRegistrationForm({
   categories,
   initialData,
 }: UmkmRegistrationFormProps) {
+  const { data: session, update } = useSession();
   const router = useRouter();
   const isEditMode = !!initialData;
 
@@ -135,7 +137,9 @@ export default function UmkmRegistrationForm({
   };
 
   const handlePhotoUpload = (url: string) => {
-    setPhotos((prevPhotos) => [...prevPhotos, url]);
+    if (photos.length < 5) {
+      setPhotos((prevPhotos) => [...prevPhotos, url]);
+    }
   };
 
   const handleRemovePhoto = (urlToRemove: string) => {
@@ -276,10 +280,39 @@ export default function UmkmRegistrationForm({
 
       toast.success(successMessage);
 
+      // Jika bukan edit mode dan user belum PENGUSAHA, upgrade role
+      if (!isEditMode && session?.user?.role !== 'PENGUSAHA') {
+        try {
+          const upgradeResponse = await fetch('/api/user/upgrade-to-pengusaha', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (upgradeResponse.ok) {
+            // Update session dengan role baru
+            if (session?.user) {
+              await update({
+                ...session,
+                user: {
+                  ...session.user,
+                  role: 'PENGUSAHA'
+                }
+              });
+            }
+            toast.success('Selamat! Anda sekarang menjadi Pengusaha UMKM!');
+          }
+        } catch (error) {
+          console.log('Error upgrading role:', error);
+          // Continue anyway since UMKM was created successfully
+        }
+      }
+
       setTimeout(() => {
-        router.push("/dashboard/umkm/saya");
+        router.push("/");
         router.refresh();
-      }, 1500);
+      }, 2000);
     } catch (err: any) {
       toast.dismiss(toastId);
       toast.error(err.message || "Oops! Terjadi kesalahan tak terduga.");
@@ -320,29 +353,41 @@ export default function UmkmRegistrationForm({
 
         <div className="space-y-2">
           <Label>Foto UMKM (Maks. 5 foto)</Label>
+          
+          {/* Area upload - hanya tampil jika belum maksimal */}
           {photos.length < 5 && (
-            <CloudinaryUpload onUpload={handlePhotoUpload} className="mb-4" />
+            <CloudinaryUpload 
+              onUpload={handlePhotoUpload}
+              className="mb-4" 
+            />
           )}
+          
+          {/* Tampilkan foto yang sudah diupload */}
           {photos.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-4">
               {photos.map((url, index) => (
-                <CloudinaryUpload
-                  key={url}
-                  currentImage={url}
-                  onUpload={(newUrl) => {
-                    const newPhotos = [...photos];
-                    newPhotos[index] = newUrl;
-                    setPhotos(newPhotos);
-                  }}
-                  onRemove={() => handleRemovePhoto(url)}
-                  className="aspect-square"
-                />
+                <div key={url} className="relative group">
+                  <img 
+                    src={url} 
+                    alt={`Foto UMKM ${index + 1}`}
+                    className="w-full aspect-square object-cover rounded-lg border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(url)}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               ))}
             </div>
           )}
+          
           <p className="text-sm text-muted-foreground">
-            Foto pertama akan menjadi foto utama. Klik pada foto untuk
-            menggantinya.
+            Upload hingga 5 foto UMKM. Foto pertama akan menjadi foto utama.
           </p>
         </div>
 

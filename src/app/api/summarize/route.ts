@@ -1,11 +1,5 @@
 // src/app/api/summarize/route.ts
-import { Groq } from 'groq-sdk';
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || '',
-});
-
-export const runtime = 'edge';
+// TEMPORARILY DISABLED - groq-sdk removed from dependencies
 
 export async function POST(req: Request) {
   try {
@@ -29,14 +23,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // Check if API key is available
-    if (!process.env.GROQ_API_KEY) {
-      console.error('GROQ_API_KEY not found in environment variables');
-      return new Response(JSON.stringify({ error: 'API key not configured' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    // AI summarization temporarily disabled - using fallback
 
     // 2. Ubah array ulasan menjadi satu string
     const reviewTexts = reviews.map((r: any) => `- Rating ${r.rating}/5: "${r.comment}"`).join('\n');
@@ -58,39 +45,13 @@ export async function POST(req: Request) {
       Jawab LANGSUNG tanpa pembuka:
     `;
 
-    console.log('Sending request to Groq...');
-
-    // 4. Panggil API GROQ — gunakan model yang masih didukung.
-    // Jika Groq mengembalikan error (mis. model decommissioned), kita fallback ke summarizer sederhana.
+    // 4. Use local summarization (AI temporarily disabled)
     let summary: string | undefined;
+    
+    // Skip AI and go directly to local summarizer
+    summary = undefined;
 
-    try {
-      const chatCompletion = await groq.chat.completions.create({
-        messages: [
-          { 
-            role: 'system', 
-            content: 'Anda adalah food critic profesional yang membuat ringkasan ulasan spesifik dan berguna untuk customer.' 
-          },
-          { role: 'user', content: prompt },
-        ],
-        // Gunakan model Groq yang masih tersedia
-        model: 'llama3-70b-8192', // Model terbaru yang available
-        temperature: 0.3, // Lebih konsisten
-        max_tokens: 100, // Ringkas tapi cukup
-      });
-
-      console.log('Groq response:', chatCompletion);
-  // Normalize potential null to undefined for TypeScript
-  summary = chatCompletion.choices?.[0]?.message?.content ?? undefined;
-    } catch (err: any) {
-      console.error('Groq API call failed, falling back to local summarizer:', err);
-      // Periksa apakah pesan error menyebutkan model decommissioned
-      const message = err?.message || String(err || 'Unknown error');
-      // Jika ada 'model_decommissioned' atau sejenis, lakukan fallback lokal.
-      summary = undefined;
-    }
-
-    // Jika Groq gagal, buat ringkasan manual yang SPESIFIK
+    // Buat ringkasan manual yang SPESIFIK
     if (!summary) {
       const avgRating = (
         reviews.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0) /

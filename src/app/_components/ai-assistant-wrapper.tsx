@@ -11,24 +11,7 @@ export default function AiAssistantWrapper() {
     return null;
   }
 
-  // User belum login (guest) - tampilkan AI Assistant
-  if (!session) {
-    return <AiAssistant />;
-  }
-
-  // User sudah login - cek role
-  if (session.user) {
-    // Jika user adalah owner UMKM - jangan tampilkan AI Assistant
-    if (session.user.role === 'UMKM_OWNER') {
-      return null;
-    }
-
-    // Jika user adalah customer biasa - tampilkan AI Assistant
-    if (session.user.role === 'CUSTOMER') {
-      return <AiAssistant />;
-    }
-  }
-
-  // Default: jangan tampilkan
-  return null;
+  // AI Assistant sekarang tersedia untuk semua role (guest, customer, umkm owner)
+  // Sebagai sumber informasi website dan panduan penggunaan
+  return <AiAssistant />;
 }

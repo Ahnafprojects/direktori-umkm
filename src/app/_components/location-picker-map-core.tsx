@@ -5,21 +5,9 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useEffect } from 'react';
+import { blueLocationIcon } from '@/lib/map-icons';
 
-// Path ke ikon di folder public
-const iconUrl = '/leaflet/marker-icon.png';
-const iconRetinaUrl = '/leaflet/marker-icon-2x.png';
-const shadowUrl = '/leaflet/marker-shadow.png';
-
-const customIcon = new L.Icon({
-    iconUrl,
-    iconRetinaUrl,
-    shadowUrl,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-});
+// Menggunakan custom blue location icon
 
 type Position = { lat: number; lng: number };
 
@@ -68,7 +56,7 @@ export default function LocationPickerMapCore({ position, onLocationChange }: Lo
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       
-      {position && <Marker position={position} icon={customIcon}></Marker>}
+      {position && <Marker position={position} icon={blueLocationIcon}></Marker>}
       
       <MapClickHandler onLocationChange={onLocationChange} />
       {/* Tambahkan komponen updater di sini */}

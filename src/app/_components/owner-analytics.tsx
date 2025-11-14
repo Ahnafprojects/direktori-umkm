@@ -94,7 +94,7 @@ export default function OwnerAnalytics({ umkmId }: Props) {
     return (
       <div className="p-4 border rounded-lg bg-yellow-50 border-yellow-200">
         <p className="text-yellow-800">
-          📊 Analytics akan tersedia setelah ada transaksi masuk
+          Analytics akan tersedia setelah ada transaksi masuk
         </p>
       </div>
     );

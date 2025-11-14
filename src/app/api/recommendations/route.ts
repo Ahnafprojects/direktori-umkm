@@ -1,13 +1,6 @@
 // src/app/api/recommendations/route.ts
-import { Groq } from 'groq-sdk'; // <-- 1. GANTI IMPORT
+// TEMPORARILY DISABLED - groq-sdk removed from dependencies
 import { db } from '@/lib/prisma';
-
-// 2. INISIALISASI GROQ
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || '',
-});
-
-export const runtime = 'edge'; // Groq SDK v2 sangat cepat & support edge
 
 export async function POST(req: Request) {
   try {
@@ -47,28 +40,49 @@ export async function POST(req: Request) {
       Format: [{\"slug\": \"slug-umkm\", \"reason\": \"Alasan singkat...\"}]
     `;
 
-    // 7. PANGGIL API GROQ
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content: 'Kamu adalah asisten ahli yang HANYA merespon dengan format JSON array yang valid, tanpa teks lain.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      model: 'llama3-8b-8192', // Model Llama 3 8B (Super Cepat)
-      temperature: 0.7,
+    // 7. FALLBACK IMPLEMENTATION (AI temporarily disabled)
+    // Simple recommendation based on category matching
+    const favoriteCategories = new Set<string>();
+    
+    // Get categories from user's favorites
+    const favoriteUmkms = await db.umkm.findMany({
+      where: { name: { in: favoriteNames } },
+      include: { Category: true }
     });
-
-    // 8. Ambil responnya
-    const jsonResponse = chatCompletion.choices[0].message.content;
-
-    if (!jsonResponse) {
-      throw new Error("AI tidak memberikan respon.");
+    
+    favoriteUmkms.forEach((umkm: any) => {
+      if (umkm.Category) favoriteCategories.add(umkm.Category.name);
+    });
+    
+    // Find similar UMKMs by category
+    const similarUmkms = umkmDetails
+      .filter((umkm: any) => 
+        favoriteCategories.has(umkm.Category.name) && 
+        !favoriteNames.includes(umkm.name)
+      )
+      .slice(0, 3)
+      .map((umkm: any) => ({
+        slug: umkm.slug,
+        reason: `Kategori ${umkm.Category.name} seperti favorit Anda`
+      }));
+    
+    // If not enough, add random ones
+    if (similarUmkms.length < 3) {
+      const remaining = umkmDetails
+        .filter((umkm: any) => 
+          !favoriteNames.includes(umkm.name) && 
+          !similarUmkms.some((s: any) => s.slug === umkm.slug)
+        )
+        .slice(0, 3 - similarUmkms.length)
+        .map((umkm: any) => ({
+          slug: umkm.slug,
+          reason: `UMKM populer di area Anda`
+        }));
+      
+      similarUmkms.push(...remaining);
     }
+    
+    const jsonResponse = JSON.stringify(similarUmkms);
 
     // 9. Kembalikan JSON ke front-end (TIDAK BERUBAH)
     return new Response(jsonResponse, {

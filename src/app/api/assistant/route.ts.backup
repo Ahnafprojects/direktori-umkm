@@ -1,0 +1,692 @@
+// src/app/api/assistant/route.ts
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
+import { db } from '@/lib/prisma';
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || '',
+});
+
+export const runtime = 'nodejs';
+
+// --- PENGETAHUAN STATIS TENTANG WEBSITE KITA ---
+const STATIC_KNOWLEDGE = `
+Tentang Website LokalKeren:
+Website LokalKeren dibuat oleh Tim IT Cihuy yang beranggotakan:
+- Sayyidhina Rakha Maulana
+- Muhammad Ahnaf 
+- Septareno Nugroho Aji
+
+Fitur-Fitur Website LokalKeren:
+- PETA UMKM: Di halaman utama ada 3 fitur utama: "Buka Sekarang", "Lokasi Terdekat", dan "Lihat Peta UMKM". Pengguna bisa melihat semua UMKM di peta interaktif.
+- PENCARIAN DI PETA: Pengguna bisa mencari UMKM langsung di peta dengan filter kategori (Makanan, Minuman, Jasa, Belanja, Fashion, Kerajinan).
+- LIVE TRACKING: Fitur navigasi real-time ke lokasi UMKM dengan estimasi waktu dan jarak.
+- FAVORIT: Pengguna bisa menyimpan UMKM dengan mengklik ikon hati. Data tersimpan di akun (jika login) atau browser.
+- CHECKOUT & PAYMENT: Pembayaran 100% simulasi. Setelah checkout, pesanan dianggap berhasil.
+- STATUS TRACKING: Setelah bayar, pengguna masuk ke halaman /status untuk melihat simulasi driver.
+- RIWAYAT PESANAN: Semua transaksi tersimpan di halaman /history.
+- REKOMENDASI AI: Sistem AI mempelajari preferensi dari UMKM favorit pengguna.
+- REVIEW & RATING: Pengguna login bisa menulis ulasan di halaman detail UMKM.
+- RINGKASAN AI: Tombol AI untuk meringkas semua review UMKM.
+- REGISTRASI UMKM: Pemilik bisa daftar UMKM melalui profil → UMKM Saya → Daftarkan UMKM.
+
+Kategori UMKM yang Tersedia:
+- Makanan (restaurant, warung, cafe)
+- Minuman (kedai kopi, juice, teh)
+- Jasa (laundry, service, reparasi)
+- Belanja (toko, retail, marketplace lokal)
+- Fashion (pakaian, aksesoris, sepatu)  
+- Kerajinan (handicraft, souvenir, art)
+`;
+// ---------------------------------------------
+
+export async function POST(req: Request) {
+  try {
+    // 1. Ambil histori chat & pertanyaan baru dari user
+    const { messages } = await req.json(); // messages adalah array [{ role: 'user', content: '...' }]
+
+    // 2. Cek apakah ada pertanyaan user terakhir
+    const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
+    
+    // 3. Fallback responses untuk pertanyaan umum (tanpa perlu DB)
+    // Cek pertanyaan tentang daftar/buat akun UMKM
+    if (lastUserMessage.includes('daftar umkm') || lastUserMessage.includes('buat akun umkm') || lastUserMessage.includes('bikin akun umkm') || lastUserMessage.includes('cara buka toko') || lastUserMessage.includes('cara bikin umkm')) {
+      return new Response(JSON.stringify({ 
+        response: "Cara Mendaftar sebagai Pemilik UMKM di LokalKeren:\n\n1. Login ke akun Anda terlebih dahulu\n2. Setelah login, cari tombol \"Daftar UMKM\" di halaman utama\n3. Pilih \"Daftar UMKM\" atau \"Buat UMKM Baru\" \n4. Isi formulir pendaftaran dengan lengkap:\n   • Nama UMKM\n   • Kategori usaha (Makanan, Minuman, Kerajinan, dll)\n   • Alamat lengkap\n   • Jam operasional\n   • Deskripsi usaha\n   • Upload foto UMKM (maksimal 5 foto)\n5. Klik \"Daftar UMKM\" untuk menyelesaikan\n\nSetelah berhasil mendaftar, Anda bisa:\n• Mengelola profil UMKM\n• Menambah kategori dan produk\n• Melihat pesanan masuk\n• Membalas ulasan pelanggan\n\nSudah punya akun dan tinggal daftar UMKM? Silakan cari tombol daftar UMKM di halaman utama!" 
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (lastUserMessage.includes('terdekat') || lastUserMessage.includes('lokasi') || lastUserMessage.includes('dekat saya')) {
+      return new Response(JSON.stringify({ 
+        response: "Cara Mencari UMKM Terdekat:\n\n• Klik tombol \"Find Nearest\" di halaman utama\n• Izinkan akses lokasi di browser\n• Website akan otomatis urutkan UMKM berdasarkan jarak\n\nLihat di Peta:\n• Klik tab \"Map\" untuk melihat semua UMKM di peta\n• Zoom in/out untuk area yang diinginkan\n• Klik marker untuk detail UMKM\n\nTips:\n• Pastikan GPS aktif untuk akurasi terbaik\n• Filter berdasarkan kategori sambil pakai lokasi\n• Cek jam buka sebelum berkunjung\n\nSemua UMKM menampilkan alamat lengkap dan estimasi jarak!" 
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (lastUserMessage.includes('jam') || (lastUserMessage.includes('buka') && !lastUserMessage.includes('cara buka')) || lastUserMessage.includes('tutup')) {
+      return new Response(JSON.stringify({ 
+        response: "Jam Operasional UMKM:\n\nUmumnya UMKM di LokalKeren buka dari jam 10:00 - 21:00.\n\nUntuk jam buka spesifik:\n• Cek detail setiap UMKM di halaman utama\n• Informasi jam buka ada di kartu UMKM\n• Beberapa warung buka lebih pagi (08:00)\n• Ada yang tutup lebih malam (22:00-23:00)\n\nTips: Selalu cek jam buka sebelum pesan, terutama saat weekend atau hari libur!" 
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (lastUserMessage.includes('cara kerja') || (lastUserMessage.includes('gimana cara') && !lastUserMessage.includes('daftar') && !lastUserMessage.includes('bikin') && !lastUserMessage.includes('buat')) || lastUserMessage.includes('cara website')) {
+      return new Response(JSON.stringify({ 
+        response: "Cara Kerja Website LokalKeren:\n\nJelajahi UMKM:\n• Lihat daftar UMKM di halaman utama\n• Filter berdasarkan kategori & lokasi\n• Baca review dari pengguna lain\n\nCara Pesan:\n• Klik UMKM yang diinginkan\n• Pilih produk → Tambah ke keranjang\n• Checkout → Isi data pengiriman\n• Pilih metode pembayaran\n\nPembayaran & Status:\n• Pembayaran 100% SIMULASI\n• Setelah checkout → Lihat status pesanan\n• Tracking driver di halaman /status\n\nFitur Lainnya:\n• Simpan UMKM favorit\n• Tulis review setelah pesan\n• Lihat riwayat pesanan\n• Chat dengan AI (ini!) untuk rekomendasi\n\nSemua transaksi adalah demo untuk showcase!" 
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (lastUserMessage.includes('cara') && (lastUserMessage.includes('pesan') || lastUserMessage.includes('checkout'))) {
+      return new Response(JSON.stringify({ 
+        response: "Cara Pesan di LokalKeren:\n\n1. Pilih UMKM yang menarik dari daftar\n2. Tambahkan produk ke keranjang belanja\n3. Klik ikon keranjang (pojok kanan atas)\n4. Isi data pengiriman lengkap\n5. Pilih metode pembayaran (QRIS, E-wallet, dll)\n6. Klik Checkout untuk menyelesaikan\n\nOpsi Pengiriman:\n• Pickup - Ambil sendiri di lokasi UMKM\n• Delivery - Diantar ke alamat Anda\n\nCatatan: Pembayaan di website ini adalah simulasi, jadi pesanan langsung berhasil dan masuk ke tracking!" 
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // SMART AI - Bisa baca semua data UMKM dengan rating dan review
+    try {
+      // Ambil SEMUA data UMKM dengan rating, review, dan produk
+      const allUmkms = await db.umkm.findMany({
+        include: {
+          Category: true,
+          ProductCategory: {
+            include: {
+              Product: true // Ambil semua produk, bukan cuma featured
+            }
+          },
+          Review: {
+            select: {
+              rating: true,
+              comment: true,
+              user: { select: { name: true } }
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 10 // Ambil 10 review terbaru untuk context
+          },
+          _count: {
+            select: {
+              favorites: true,
+              Review: true
+            }
+          }
+        }
+      });
+
+      // Hitung rata-rata rating untuk setiap UMKM
+      const umkmsWithRating = allUmkms.map((umkm: any) => ({
+        ...umkm,
+        avgRating: umkm.Review.length > 0 
+          ? (umkm.Review.reduce((sum: number, review: any) => sum + review.rating, 0) / umkm.Review.length).toFixed(1)
+          : 0,
+        allProducts: umkm.ProductCategory.flatMap((pc: any) => pc.Product)
+      }));
+
+      // Deteksi berbagai jenis pertanyaan - makanan & aktivitas
+      const searchKeywords: Record<string, {keywords: string[], category?: string, description: string}> = {
+        // Makanan spesifik
+        'pecel': {keywords: ['pecel'], description: 'Pecel Enak'},
+        'kebab': {keywords: ['kebab'], description: 'Kebab Lezat'},  
+        'pizza': {keywords: ['pizza'], description: 'Pizza Favorit'},
+        'nasi': {keywords: ['nasi', 'rice'], description: 'Nasi & Lauk'},
+        'bakso': {keywords: ['bakso', 'baso'], description: 'Bakso Mantap'},
+        'ayam': {keywords: ['ayam', 'chicken'], description: 'Ayam Crispy'},
+        'sate': {keywords: ['sate', 'satay'], description: 'Sate Bakar'},
+        'burger': {keywords: ['burger'], description: 'Burger Juicy'},
+        'kopi': {keywords: ['kopi', 'coffee'], category: 'Minuman', description: 'Kopi Nikmat'},
+        'teh': {keywords: ['teh', 'tea'], category: 'Minuman', description: 'Teh Segar'},
+        
+        // Aktivitas & suasana
+        'nongkrong': {keywords: ['nongkrong', 'hangout', 'santai', 'bersantai'], category: 'Minuman', description: 'Tempat Nongkrong Asik'},
+        'nugas': {keywords: ['nugas', 'tugaskuliah', 'belajar', 'study', 'ngerjain tugas'], category: 'Minuman', description: 'Tempat Buat Nugas'},
+        'kerja': {keywords: ['kerja', 'work', 'freelance', 'meeting'], category: 'Minuman', description: 'Tempat Kerja Nyaman'},
+        'wifi': {keywords: ['wifi', 'internet', 'online'], category: 'Minuman', description: 'Tempat dengan WiFi'},
+        'coworking': {keywords: ['coworking', 'workspace', 'kantor'], category: 'Minuman', description: 'Coworking Space'},
+        
+        // Suasana
+        'tenang': {keywords: ['tenang', 'sepi', 'quiet'], description: 'Tempat Tenang'},
+        'ramai': {keywords: ['ramai', 'rame', 'crowded', 'lively'], description: 'Tempat Ramai & Seru'},
+        'romantis': {keywords: ['romantis', 'date', 'pacaran'], description: 'Tempat Romantis'},
+        'keluarga': {keywords: ['keluarga', 'family', 'anak'], description: 'Tempat Family Friendly'}
+      };
+
+      let searchResults: any[] = [];
+      let searchFood = '';
+      let searchCategory = '';
+
+      // Cari berdasarkan kata kunci yang diperluas
+      for (const [type, config] of Object.entries(searchKeywords)) {
+        if (config.keywords.some((keyword: string) => lastUserMessage.includes(keyword))) {
+          searchFood = config.description;
+          searchCategory = config.category || '';
+          
+          // Filter UMKM berdasarkan kategori atau kata kunci
+          searchResults = umkmsWithRating.filter((umkm: any) => {
+            // Jika ada kategori spesifik, filter berdasarkan kategori
+            if (searchCategory && umkm.Category.name.toLowerCase().includes(searchCategory.toLowerCase())) {
+              return true;
+            }
+            
+            // Cek nama UMKM
+            if (umkm.name.toLowerCase().includes(type.toLowerCase())) return true;
+            
+            // Cek nama produk
+            const hasProductMatch = umkm.allProducts.some((product: any) => 
+              config.keywords.some((keyword: string) => 
+                product.name.toLowerCase().includes(keyword.toLowerCase())
+              )
+            );
+            if (hasProductMatch) return true;
+            
+            // Cek deskripsi UMKM  
+            if (umkm.description && config.keywords.some((keyword: string) => 
+              umkm.description.toLowerCase().includes(keyword.toLowerCase())
+            )) return true;
+            
+            return false;
+          });
+          break;
+        }
+      }
+
+      // Jika tidak ada makanan spesifik, cari yang populer
+      if (searchResults.length === 0 && (lastUserMessage.includes('rekomendasi') || lastUserMessage.includes('enak'))) {
+        searchResults = umkmsWithRating.slice(0, 5);
+        searchFood = 'UMKM populer';
+      }
+
+      if (searchResults.length > 0) {
+        // Sort berdasarkan rating tertinggi, lalu favorit terbanyak
+        searchResults.sort((a: any, b: any) => {
+          if (parseFloat(b.avgRating) !== parseFloat(a.avgRating)) {
+            return parseFloat(b.avgRating) - parseFloat(a.avgRating);
+          }
+          return b._count.favorites - a._count.favorites;
+        });
+
+        const topResults = searchResults.slice(0, 3);
+        
+        // Respons yang lebih kontekstual
+        let responseIntro = '';
+        if (searchFood.includes('Nongkrong') || searchFood.includes('Nugas') || searchFood.includes('Kerja')) {
+          responseIntro = `☕ ${searchFood} - Rekomendasi Tempat Asik:\n\n`;
+        } else if (searchFood.includes('Tenang') || searchFood.includes('WiFi')) {
+          responseIntro = `${searchFood} - Tempat yang Cocok:\n\n`;
+        } else {
+          responseIntro = `${searchFood} - Hasil Pencarian:\n\n`;
+        }
+        
+        let response = responseIntro;
+        
+        topResults.forEach((umkm: any, index: number) => {
+          // Ambil produk yang relevan dengan pencarian
+          const relevantProducts = umkm.allProducts.filter((product: any) => {
+            // Jika pencarian umum, tampilkan semua produk
+            if (searchFood.includes('populer') || searchFood.includes('Populer')) return true;
+            
+            // Cari produk yang cocok dengan kata kunci pencarian
+            const searchType = Object.entries(searchKeywords).find(([_, config]) => 
+              config.description === searchFood
+            );
+            
+            if (searchType) {
+              return searchType[1].keywords.some((keyword: string) => 
+                product.name.toLowerCase().includes(keyword.toLowerCase())
+              );
+            }
+            
+            return true; // Default tampilkan semua
+          }).slice(0, 3);
+
+          const recentReview = umkm.Review[0];
+          
+          response += `${index + 1}. ${umkm.name} • Rating: ${umkm.avgRating}/5\n`;
+          response += `   Alamat: ${umkm.address}\n`;
+          response += `   ❤️ ${umkm._count.favorites} favorit • 📝 ${umkm._count.Review} review\n`;
+          response += `   🏷️ ${umkm.Category.name}\n`;
+          
+          if (relevantProducts.length > 0) {
+            response += `   🍽️ Menu: ${relevantProducts.map((p: any) => p.name).join(', ')}\n`;
+          }
+          
+          if (recentReview) {
+            response += `   Review: "${recentReview.comment}" - ${recentReview.user.name}\n`;
+          }
+          
+          response += '\n';
+        });
+
+        // Tips kontekstual berdasarkan jenis pencarian
+        if (searchFood.includes('Nongkrong')) {
+          response += 'Tips Nongkrong: Cari tempat dengan suasana santai, harga terjangkau, dan WiFi stabil!';
+        } else if (searchFood.includes('Nugas')) {
+          response += 'Tips Nugas: Pilih tempat tenang dengan colokan listrik dan WiFi kenceng. Jangan lupa beli minuman biar betah!';
+        } else if (searchFood.includes('Kerja')) {
+          response += 'Tips Kerja: Cari tempat dengan WiFi stabil, tidak terlalu berisik, dan nyaman untuk laptop!';
+        } else {
+          response += 'Rekomendasi berdasarkan rating tertinggi dan review terbanyak!';
+        }
+
+        return new Response(JSON.stringify({ response }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+    } catch (error) {
+      console.error('Smart AI error:', error);
+      
+      // FALLBACK: Query database langsung untuk rekomendasi
+      if (lastUserMessage.includes('rekomendasi') || lastUserMessage.includes('enak') || lastUserMessage.includes('bagus')) {
+        try {
+          const popularUmkms = await db.umkm.findMany({
+            include: {
+              Category: true,
+              ProductCategory: {
+                include: { Product: true }
+              },
+              _count: { select: { favorites: true } }
+            },
+            orderBy: {
+              favorites: { _count: 'desc' }
+            },
+            take: 10
+          });
+          
+          if (popularUmkms.length > 0) {
+            
+            // Deteksi makanan yang dicari
+            let searchFood = 'UMKM terpopuler';
+            let filteredResults = popularUmkms;
+            
+            if (lastUserMessage.includes('pecel')) {
+              searchFood = 'Pecel';
+              filteredResults = popularUmkms.filter((u: any) => 
+                u.name.toLowerCase().includes('pecel') ||
+                (u.ProductCategory && u.ProductCategory.some((pc: any) => 
+                  pc.Product.some((p: any) => p.name.toLowerCase().includes('pecel'))
+                ))
+              );
+            } else if (lastUserMessage.includes('kebab')) {
+              searchFood = 'Kebab';
+              filteredResults = popularUmkms.filter((u: any) => 
+                u.name.toLowerCase().includes('kebab') ||
+                (u.ProductCategory && u.ProductCategory.some((pc: any) => 
+                  pc.Product.some((p: any) => p.name.toLowerCase().includes('kebab'))
+                ))
+              );
+            } else if (lastUserMessage.includes('pizza')) {
+              searchFood = 'Pizza';
+              filteredResults = popularUmkms.filter((u: any) => 
+                u.name.toLowerCase().includes('pizza') ||
+                (u.ProductCategory && u.ProductCategory.some((pc: any) => 
+                  pc.Product.some((p: any) => p.name.toLowerCase().includes('pizza'))
+                ))
+              );
+            } else if (lastUserMessage.includes('nasi')) {
+              searchFood = 'Nasi';
+              filteredResults = popularUmkms.filter((u: any) => 
+                u.name.toLowerCase().includes('nasi') ||
+                (u.ProductCategory && u.ProductCategory.some((pc: any) => 
+                  pc.Product.some((p: any) => p.name.toLowerCase().includes('nasi'))
+                ))
+              );
+            }
+            
+            if (filteredResults.length > 0) {
+              let responseText = `${searchFood} Terbaik berdasarkan popularitas:\n\n`;
+              
+              filteredResults.slice(0, 3).forEach((umkm: any, index: number) => {
+                responseText += `${index + 1}. ${umkm.name}\n`;
+                responseText += `Alamat: ${umkm.address}\n`;
+                responseText += `Favorit: ${umkm._count?.favorites || 0} orang\n`;
+                responseText += `Kategori: ${umkm.Category?.name || 'Makanan'}\n\n`;
+              });
+              
+              responseText += `Data diambil dari database LokalKeren berdasarkan jumlah favorit pengguna!`;
+              
+              return new Response(JSON.stringify({ response: responseText }), {
+                headers: { 'Content-Type': 'application/json' },
+              });
+            }
+          }
+        } catch (dbError) {
+          console.error('Database fallback failed:', dbError);
+        }
+      }
+    }
+
+    // Final fallback untuk rekomendasi umum
+    if (lastUserMessage.includes('rekomendasi') || lastUserMessage.includes('enak') || lastUserMessage.includes('bagus') || 
+        lastUserMessage.includes('pecel') || lastUserMessage.includes('kebab') || lastUserMessage.includes('pizza') || lastUserMessage.includes('nasi')) {
+      
+      const foodRequested = lastUserMessage.includes('pecel') ? 'pecel' : 
+                           lastUserMessage.includes('kebab') ? 'kebab' : 
+                           lastUserMessage.includes('pizza') ? 'pizza' : 
+                           lastUserMessage.includes('nasi') ? 'nasi' : 'makanan enak';
+      
+      return new Response(JSON.stringify({ 
+        response: `Maaf, saya sedang mengalami kendala dalam mengakses database untuk mencari ${foodRequested} yang enak.
+
+Sementara ini, silakan coba:
+• Buka halaman utama dan lihat 'Rekomendasi Terpopuler'
+• Gunakan fitur pencarian dengan kata kunci "${foodRequested}"
+• Filter berdasarkan kategori makanan
+• Cek UMKM terdekat dari lokasi Anda
+
+Semua UMKM diurutkan berdasarkan jumlah favorit dan review pengguna LokalKeren! 
+
+Coba tanya lagi nanti, sistem sedang diperbaiki.` 
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 4. Coba ambil data UMKM dari DB (jika berhasil, lanjut ke AI)
+    let umkmData = [];
+    try {
+      umkmData = await db.umkm.findMany({
+        select: {
+          name: true,
+          description: true,
+          address: true,
+          openingHours: true,
+               Category: { select: { name: true } },
+          ProductCategory: {
+            select: {
+              name: true,
+              Product: { select: { name: true, price: true } },
+            },
+          },
+        },
+        take: 20 // Batasi untuk performance
+      });
+    } catch (dbError) {
+      console.error('Database error, using fallback response:', dbError);
+      
+      // Fallback response jika database error
+      return new Response(JSON.stringify({ 
+        response: "Maaf, sistem sedang mengalami gangguan database. Tapi saya tetap bisa membantu!\n\n• Silakan jelajahi UMKM di halaman utama\n• Cek bagian rekomendasi populer\n• Gunakan fitur pencarian untuk menemukan UMKM\n\nAda yang bisa saya bantu lainnya?" 
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 5. Format data DB menjadi teks sederhana (jika ada data)
+    const dynamicContext = umkmData.length > 0 ? umkmData
+      .map(
+        (umkm: any) =>
+          `UMKM: ${umkm.name}\nKategori: ${umkm.Category?.name || 'Tidak ada kategori'}\nAlamat: ${umkm.address}\nJam Buka: ${umkm.openingHours || 'Tidak disebutkan'}\nDeskripsi: ${umkm.description}\nProduk: ${umkm.ProductCategory?.map((pcat: any) => pcat.Product?.map((p: any) => p.name).join(', ')).join('; ') || 'Tidak ada produk'}\n---`
+      )
+      .join('\n') : 'Data UMKM tidak tersedia saat ini.';
+
+    // 6. Prepare variables for both Gemini and OpenAI (move outside try blocks)
+    const currentMessage = messages[messages.length - 1]?.content || '';
+    
+    // Build conversation history for both AI systems
+    const conversationHistory = messages.slice(0, -1).map((msg: any) => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }]
+    }));
+
+    // Build system prompt that works for both AI systems
+    const systemPrompt = `
+      Anda adalah "LokalKeren AI", asisten virtual untuk website direktori UMKM.
+      
+      ATURAN PENTING: 
+      - Jawab pertanyaan pengguna dengan akurat berdasarkan konteks yang diberikan
+      - Jika pertanyaan tentang cara daftar/buat akun UMKM, jelaskan langkah-langkahnya
+      - Jika pertanyaan di luar topik UMKM sapa, arahkan ke fitur-fitur website
+      - Jawab dalam Bahasa Indonesia yang ramah dan profesional
+      - JANGAN gunakan format markdown (**, ***, __) dalam jawaban
+      - Gunakan emoji secukupnya, jangan berlebihan
+      - Berikan informasi yang spesifik dan membantu
+
+      ATURAN FILTERING KHUSUS:
+      - Jika user tanya MAKANAN/MINUMAN: HANYA tampilkan UMKM dengan kategori "Makanan" atau "Minuman"
+      - JANGAN PERNAH tampilkan kategori "Jasa" (seperti laundry) saat user tanya makanan/minuman
+      - Jika user tanya JASA: HANYA tampilkan kategori "Jasa"
+      - Jika user tanya FASHION: HANYA tampilkan kategori "Fashion"
+      - Jika user tanya KERAJINAN: HANYA tampilkan kategori "Kerajinan"
+      - Jika user tanya BELANJA: HANYA tampilkan kategori "Belanja"
+      - Selalu filter berdasarkan kategori yang relevan dengan pertanyaan user
+
+      KONTEKS STATIS (Cara Kerja Website):
+      ${STATIC_KNOWLEDGE}
+
+      INFORMASI CARA DAFTAR UMKM:
+      - Pengguna perlu login terlebih dahulu di website LokalKeren
+      - Setelah login, klik menu hamburger (3 garis) di pojok kanan atas
+      - Pilih "Profil" dari menu dropdown
+      - Di halaman profil, klik "UMKM Saya"
+      - Kemudian klik "Daftarkan UMKM Saya"
+      - Isi form pendaftaran dengan lengkap: nama UMKM, kategori, alamat, foto, dll
+      - Setelah berhasil, akun berubah menjadi pemilik UMKM dan bisa kelola toko
+
+      KONTEKS DINAMIS (Daftar UMKM dari Database):
+      ${dynamicContext}
+    `;
+
+    // 7. Jika ada Gemini API key, coba panggil AI
+    if (process.env.GEMINI_API_KEY && genAI) {
+      try {
+        
+        // Initialize Gemini model
+        const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash' });
+        
+        // Start chat with history
+        const chat = model.startChat({
+          history: conversationHistory,
+          generationConfig: {
+            maxOutputTokens: 500,
+            temperature: 0.7,
+          },
+        });
+
+        // Send the full context as system message + current question with retry logic
+        const fullPrompt = `${systemPrompt}\n\nPertanyaan pengguna: ${currentMessage}`;
+        
+        let result;
+        let retries = 3;
+        
+        while (retries > 0) {
+          try {
+            result = await chat.sendMessage(fullPrompt);
+            break; // Success, exit retry loop
+          } catch (retryError: any) {
+            retries--;
+            console.log(`Gemini API retry attempt, ${retries} left. Error:`, retryError?.message);
+            
+            if (retries === 0) {
+              throw retryError; // Re-throw after all retries exhausted
+            }
+            
+            // Wait before retry (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, (4 - retries) * 1000));
+          }
+        }
+        
+        const response = result.response;
+        const responseMessage = response.text() || 'Maaf, saya tidak bisa merespon saat ini.';
+
+        // Kembalikan jawaban AI
+        return new Response(JSON.stringify({ response: responseMessage }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (geminiError: any) {
+        console.error('Gemini API Error:', geminiError);
+        console.log('Falling back to OpenAI GPT...');
+        
+        // Fallback to OpenAI GPT when Gemini fails
+        try {
+          // Convert conversation history to OpenAI format
+          const openaiMessages = [
+            {
+              role: 'system' as const,
+              content: systemPrompt
+            },
+            // Convert Gemini history to OpenAI format
+            ...conversationHistory.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }]
+    }));
+
+    // Build system prompt that works for both AI systems
+    const systemPrompt = `
+      Anda adalah "LokalKeren AI", asisten virtual untuk website direktori UMKM.
+      
+      ATURAN PENTING: 
+      - Jawab pertanyaan pengguna dengan akurat berdasarkan konteks yang diberikan
+      - Jika pertanyaan tentang cara daftar/buat akun UMKM, jelaskan langkah-langkahnya
+      - Jika pertanyaan di luar topik UMKM sapa, arahkan ke fitur-fitur website
+      - Jawab dalam Bahasa Indonesia yang ramah dan profesional
+      - JANGAN gunakan format markdown (**, ***, __) dalam jawaban
+      - Gunakan emoji secukupnya, jangan berlebihan
+      - Berikan informasi yang spesifik dan membantu
+
+      ATURAN FILTERING KHUSUS:
+      - Jika user tanya MAKANAN/MINUMAN: HANYA tampilkan UMKM dengan kategori "Makanan" atau "Minuman"
+      - JANGAN PERNAH tampilkan kategori "Jasa" (seperti laundry) saat user tanya makanan/minuman
+      - Jika user tanya JASA: HANYA tampilkan kategori "Jasa"
+      - Jika user tanya FASHION: HANYA tampilkan kategori "Fashion"
+      - Jika user tanya KERAJINAN: HANYA tampilkan kategori "Kerajinan"
+      - Jika user tanya BELANJA: HANYA tampilkan kategori "Belanja"
+      - Selalu filter berdasarkan kategori yang relevan dengan pertanyaan user
+
+      KONTEKS STATIS (Cara Kerja Website):
+      ${STATIC_KNOWLEDGE}
+
+      INFORMASI CARA DAFTAR UMKM:
+      - Pengguna perlu login terlebih dahulu di website LokalKeren
+      - Setelah login, klik menu hamburger (3 garis) di pojok kanan atas
+      - Pilih "Profil" dari menu dropdown
+      - Di halaman profil, klik "UMKM Saya"
+      - Kemudian klik "Daftarkan UMKM Saya"
+      - Isi form pendaftaran dengan lengkap: nama UMKM, kategori, alamat, foto, dll
+      - Setelah berhasil, akun berubah menjadi pemilik UMKM dan bisa kelola toko
+
+      KONTEKS DINAMIS (Daftar UMKM dari Database):
+      ${dynamicContext}
+    `;
+
+    // 7. Jika ada Gemini API key, coba panggil AI
+    if (process.env.GEMINI_API_KEY && genAI) {
+      try {
+        
+        // Initialize Gemini model
+        const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash' });
+        
+        // Start chat with history
+        const chat = model.startChat({
+          history: conversationHistory,
+          generationConfig: {
+            maxOutputTokens: 500,
+            temperature: 0.7,
+          },
+        });
+
+        // Send the full context as system message + current question with retry logic
+        const fullPrompt = `${systemPrompt}\n\nPertanyaan pengguna: ${currentMessage}`;
+        
+        let result;
+        let retries = 3;
+        
+        while (retries > 0) {
+          try {
+            result = await chat.sendMessage(fullPrompt);
+            break; // Success, exit retry loop
+          } catch (retryError: any) {
+            retries--;
+            console.log(`Gemini API retry attempt, ${retries} left. Error:`, retryError?.message);
+            
+            if (retries === 0) {
+              throw retryError; // Re-throw after all retries exhausted
+            }
+            
+            // Wait before retry (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, (4 - retries) * 1000));
+          }
+        }
+        
+        const response = result.response;
+        const responseMessage = response.text() || 'Maaf, saya tidak bisa merespon saat ini.';
+
+        // Kembalikan jawaban AI
+        return new Response(JSON.stringify({ response: responseMessage }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (geminiError: any) {
+        console.error('Gemini API Error:', geminiError);
+        console.log('Falling back to OpenAI GPT...');
+        
+        // Fallback to OpenAI GPT when Gemini fails
+        try {
+          // Convert conversation history to OpenAI format
+          const openaiMessages = [
+            {
+              role: 'system' as const,
+              content: systemPrompt
+            },
+            // Convert Gemini history to OpenAI format
+            ...conversationHistory.map(msg => ({
+              role: msg.role === 'user' ? 'user' as const : 'assistant' as const,
+              content: Array.isArray(msg.parts) ? msg.parts.map(p => p.text).join('') : msg.parts?.text || ''
+            })),
+            {
+              role: 'user' as const,
+              content: currentMessage
+            }
+          ];
+
+          const gptResponse = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: openaiMessages,
+            max_tokens: 500,
+            temperature: 0.7,
+          });
+
+          const responseMessage = gptResponse.choices[0]?.message?.content || 'Maaf, saya tidak bisa merespon saat ini.';
+
+          return new Response(JSON.stringify({ 
+            response: `${responseMessage}\n\n*✨ Powered by GPT (Gemini sedang sibuk)*` 
+          }), {
+            headers: { 'Content-Type': 'application/json' },
+          });
+
+        } catch (openaiError: any) {
+          console.error('OpenAI GPT Fallback Error:', openaiError);
+          
+          // Final fallback to static response
+          return new Response(JSON.stringify({ 
+            response: "🤖 Sistem AI sedang maintenance. Coba:\n• Gunakan fitur **Peta** untuk cari UMKM terdekat\n• Lihat **Rekomendasi Terpopuler** di halaman utama\n• Gunakan **Filter Kategori** untuk pencarian spesifik\n• Cek **Favorit** untuk UMKM tersimpan\n\nCoba lagi nanti! 😊" 
+          }), {
+            headers: { 'Content-Type': 'application/json' },
+            status: 200
+          });
+        }
+        
+        // Fallback ke smart response untuk error lainnya
+      }
+    }
+
+    // 7. Jika sampai sini berarti AI tidak available, beri smart fallback
+    return new Response(JSON.stringify({ 
+      response: "Sistem AI sedang maintenance, tapi saya tetap bisa membantu!\n\nCoba:\n• Jelajahi UMKM di halaman utama\n• Gunakan fitur pencarian\n• Lihat rekomendasi populer\n• Cek kategori yang tersedia\n\nAda yang spesifik ingin ditanyakan?" 
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('Error di API AI Assistant:', error);
+    return new Response(JSON.stringify({ error: 'Gagal mendapatkan respon AI' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}

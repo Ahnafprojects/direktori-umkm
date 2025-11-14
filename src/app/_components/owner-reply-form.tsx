@@ -10,11 +10,12 @@ import { Loader2, Reply } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type Props = {
-  reviewId: number;
+  reviewId: string;
   onReplySuccess?: () => void;
+  onReplyAdded?: (ownerReply: string) => void;
 };
 
-export default function OwnerReplyForm({ reviewId, onReplySuccess }: Props) {
+export default function OwnerReplyForm({ reviewId, onReplySuccess, onReplyAdded }: Props) {
   const router = useRouter();
   const [replyMessage, setReplyMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -45,11 +46,14 @@ export default function OwnerReplyForm({ reviewId, onReplySuccess }: Props) {
       }
 
       toast.success('Balasan berhasil dikirim!');
+      const replyText = replyMessage.trim();
       setReplyMessage('');
       setShowForm(false);
       
-      // Callback untuk refresh atau update state
-      if (onReplySuccess) {
+      // Callback untuk update state
+      if (onReplyAdded) {
+        onReplyAdded(replyText);
+      } else if (onReplySuccess) {
         onReplySuccess();
       } else {
         router.refresh(); // Refresh halaman untuk update data

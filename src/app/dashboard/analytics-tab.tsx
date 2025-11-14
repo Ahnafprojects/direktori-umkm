@@ -12,7 +12,11 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'; // <-- Import Recharts
-import { DollarSign, Package, Star, Loader2, TrendingUp, PiggyBank } from 'lucide-react';
+import { DollarSign, Package, Star, Loader2, TrendingUp, PiggyBank, Calendar, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 // Tipe data yang kita harapkan dari API
 type SalesData = {
@@ -56,6 +60,11 @@ export default function AnalyticsTab() {
   const [umkmList, setUmkmList] = useState<{ id: number; name: string; slug: string }[]>([]);
   const [selectedUmkmId, setSelectedUmkmId] = useState<number | null>(null);
   const [canAddMore, setCanAddMore] = useState(false);
+  
+  // Filter periode state
+  const [period, setPeriod] = useState('30days');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // Ambil data UMKM user dan analytics
   useEffect(() => {
@@ -79,18 +88,27 @@ export default function AnalyticsTab() {
     fetchUmkmList();
   }, []);
 
-  // Fetch analytics ketika UMKM dipilih
-  useEffect(() => {
+  // Function untuk fetch analytics dengan filter
+  const fetchAnalytics = async () => {
     if (!selectedUmkmId) return;
 
-    async function fetchAnalytics() {
-      try {
-        setIsLoading(true);
-        const analyticsResponse = await fetch(`/api/umkm/${selectedUmkmId}/analytics`);
-        if (!analyticsResponse.ok) {
-          throw new Error('Gagal mengambil data analytics');
-        }
-        const analyticsData = await analyticsResponse.json();
+    try {
+      setIsLoading(true);
+      
+      // Build query params
+      const params = new URLSearchParams();
+      params.append('period', period);
+      
+      if (period === 'custom' && startDate && endDate) {
+        params.append('startDate', startDate);
+        params.append('endDate', endDate);
+      }
+      
+      const analyticsResponse = await fetch(`/api/dashboard/analytics?${params.toString()}`);
+      if (!analyticsResponse.ok) {
+        throw new Error('Gagal mengambil data analytics');
+      }
+      const analyticsData = await analyticsResponse.json();
         
         // Data real dari database berdasarkan debug script
         const realSalesData = [
@@ -119,10 +137,59 @@ export default function AnalyticsTab() {
       } finally {
         setIsLoading(false);
       }
-    }
-    
+    };
+  
+  // useEffect untuk fetch analytics ketika UMKM atau period berubah
+  useEffect(() => {
     fetchAnalytics();
-  }, [selectedUmkmId]);
+  }, [selectedUmkmId, period, startDate, endDate]);
+
+  // Function untuk download order history
+  const downloadOrderHistory = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Build query params
+      const params = new URLSearchParams();
+      params.append('period', period);
+      params.append('format', 'csv');
+      
+      if (period === 'custom' && startDate && endDate) {
+        params.append('startDate', startDate);
+        params.append('endDate', endDate);
+      }
+      
+      const response = await fetch(`/api/dashboard/orders/download?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Gagal mendownload history pesanan');
+      }
+      
+      // Get filename from response headers
+      const contentDisposition = response.headers.get('content-disposition');
+      const filename = contentDisposition 
+        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+        : `history-pesanan-${new Date().toISOString().split('T')[0]}.csv`;
+      
+      // Download file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+    } catch (error) {
+      console.error('Download error:', error);
+      setError(error instanceof Error ? error.message : 'Gagal mendownload history');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Helper untuk generate sales data
   const generateSalesData = (totalRevenue: number): SalesData[] => {
@@ -147,28 +214,26 @@ export default function AnalyticsTab() {
   }
 
   return (
-    <div className="space-y-6">
+        <div className="space-y-4">
       {/* Header dengan UMKM selector */}
       {umkmList.length > 0 && (
-        <div className="p-4 bg-card rounded-lg border border-border">
+        <div className="p-3 bg-card rounded-lg border border-border">
           {/* Mobile-first responsive layout */}
-          <div className="space-y-4">
-            {/* Header Text */}
+          <div className="space-y-3">
+            {/* Header Text - Compact */}
             <div className="text-center sm:text-left">
-              <h2 className="text-lg sm:text-xl font-bold text-card-foreground">Analytics Dashboard</h2>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              <h2 className="text-base sm:text-lg font-bold text-card-foreground">Analytics Dashboard</h2>
+              <p className="text-xs text-muted-foreground">
                 Dashboard bisnis untuk menganalisis performa UMKM Anda
               </p>
-            </div>
-            
-            {/* UMKM Selector - Full width on mobile */}
+            </div>            {/* UMKM Selector - Full width on mobile */}
             {umkmList.length > 1 && (
               <div className="space-y-2">
                 <label className="text-sm font-medium block">Pilih UMKM:</label>
                 <select 
                   value={selectedUmkmId || ''} 
                   onChange={(e) => setSelectedUmkmId(Number(e.target.value))}
-                  className="w-full px-3 py-3 border border-input rounded-md bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full p-2 border border-border rounded-md bg-background text-foreground"
                 >
                   {umkmList.map((umkm) => (
                     <option key={umkm.id} value={umkm.id}>
@@ -178,19 +243,65 @@ export default function AnalyticsTab() {
                 </select>
               </div>
             )}
+
+            {/* Filter Periode - Compact */}
+            <div className="flex flex-wrap items-end gap-3 p-3 bg-muted/50 rounded-lg">
+              <div className="flex-1 min-w-[120px]">
+                <Label htmlFor="period" className="text-xs">Periode</Label>
+                <Select value={period} onValueChange={setPeriod}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Pilih periode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="today">Hari ini</SelectItem>
+                    <SelectItem value="7days">7 hari</SelectItem>
+                    <SelectItem value="30days">30 hari</SelectItem>
+                    <SelectItem value="thisMonth">Bulan ini</SelectItem>
+                    <SelectItem value="thisYear">Tahun ini</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {period === 'custom' && (
+                <>
+                  <div className="min-w-[100px]">
+                    <Label htmlFor="startDate" className="text-xs">Dari</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      className="h-8"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="min-w-[100px]">
+                    <Label htmlFor="endDate" className="text-xs">Sampai</Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      className="h-8"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+
+              <Button 
+                onClick={downloadOrderHistory} 
+                disabled={isLoading}
+                variant="outline"
+                size="sm"
+                className="h-8"
+              >
+                {isLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Download className="h-3 w-3 mr-1" />}
+                Download
+              </Button>
+            </div>
           </div>
 
-          {/* Info UMKM count dan limit */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mt-3 pt-3 border-t border-border">
-            <span className="text-sm text-muted-foreground">
-              UMKM Aktif: {umkmList.length}/3
-            </span>
-            {canAddMore && (
-              <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-full">
-                Anda bisa menambah {3 - umkmList.length} UMKM lagi
-              </span>
-            )}
-          </div>
+
         </div>
       )}
 
@@ -200,7 +311,7 @@ export default function AnalyticsTab() {
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-muted-foreground mb-1 truncate">
-                Pendapatan (30 Hari)
+                Pendapatan
               </p>
               <div className="text-sm lg:text-lg font-bold truncate">
                 {formatRupiah(data.kpi.totalRevenue)}
@@ -217,7 +328,7 @@ export default function AnalyticsTab() {
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-muted-foreground mb-1 truncate">
-                Modal/HPP (30 Hari)
+                Modal/HPP
               </p>
               <div className="text-sm lg:text-lg font-bold truncate">
                 {formatRupiah(data.kpi.totalCost || 0)}
@@ -234,7 +345,7 @@ export default function AnalyticsTab() {
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-muted-foreground mb-1 truncate">
-                Profit Bersih (30 Hari)
+                Profit Bersih
               </p>
               <div className="text-sm lg:text-lg font-bold text-green-600 truncate">
                 {formatRupiah(data.kpi.totalProfit)}
@@ -282,16 +393,26 @@ export default function AnalyticsTab() {
         {/* --- 2. Grafik Penjualan --- */}
         <Card className="lg:col-span-3">
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base sm:text-lg">Pendapatan per Hari (30 Hari Terakhir)</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Pendapatan per Hari</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 h-64 sm:h-80">
             {data.salesData && data.salesData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.salesData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" fontSize={10} />
+                  <CartesianGrid 
+                    strokeDasharray="3 3" 
+                    stroke="hsl(var(--border))" 
+                  />
+                  <XAxis 
+                    dataKey="name" 
+                    fontSize={10} 
+                    stroke="hsl(var(--muted-foreground))"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
                   <YAxis
                     fontSize={10}
+                    stroke="hsl(var(--muted-foreground))"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
                     tickFormatter={(value) =>
                       `Rp${new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(value)}`
                     }
@@ -301,13 +422,32 @@ export default function AnalyticsTab() {
                       formatRupiah(value),
                       'Pendapatan',
                     ]}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      color: 'hsl(var(--foreground))',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
                   />
                   <Line
                     type="monotone"
                     dataKey="Pendapatan"
                     stroke="hsl(var(--primary))"
                     strokeWidth={2}
-                    dot={{ r: 4 }}
+                    dot={{ 
+                      r: 4, 
+                      fill: 'hsl(var(--primary))',
+                      stroke: 'hsl(var(--background))',
+                      strokeWidth: 2
+                    }}
+                    activeDot={{ 
+                      r: 6, 
+                      fill: 'hsl(var(--primary))',
+                      stroke: 'hsl(var(--background))',
+                      strokeWidth: 2
+                    }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -315,7 +455,7 @@ export default function AnalyticsTab() {
               <div className="flex items-center justify-center h-full text-muted-foreground">
                 <div className="text-center">
                   <p className="text-sm">Tidak ada data penjualan</p>
-                  <p className="text-xs mt-1">Belum ada pesanan selesai dalam 30 hari terakhir</p>
+                  <p className="text-xs mt-1">Belum ada pesanan selesai dalam periode ini</p>
                 </div>
               </div>
             )}
@@ -325,7 +465,7 @@ export default function AnalyticsTab() {
         {/* --- 3. Menu Terlaris --- */}
         <Card className="lg:col-span-2">
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base sm:text-lg">Menu Terlaris (30 Hari)</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Menu Terlaris</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
             <div className="space-y-3">
