@@ -21,8 +21,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Cek role dari database untuk memastikan data terbaru
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    });
+    
     // Hanya pengusaha yang bisa akses analytics
-    if (session.user.role !== 'PENGUSAHA') {
+    if (!user || (user.role !== 'PENGUSAHA' && session.user.role !== 'PENGUSAHA')) {
       return NextResponse.json({ error: 'Forbidden - Only PENGUSAHA allowed' }, { status: 403 });
     }
 

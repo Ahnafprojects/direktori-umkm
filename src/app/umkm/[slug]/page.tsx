@@ -238,11 +238,12 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Loop untuk Produk */}
                   {category.Product.map((product: any) => (
-                    <ProductCard 
-                      key={product.id} 
-                      product={product} 
-                      umkm={serializedUmkm}
-                    />
+                    <ClientHydrator key={product.id}>
+                      <ProductCard 
+                        product={product} 
+                        umkm={serializedUmkm}
+                      />
+                    </ClientHydrator>
                   ))}
                 </div>
               </section>

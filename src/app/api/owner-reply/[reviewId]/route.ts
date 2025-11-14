@@ -45,7 +45,7 @@ export async function PUT(
       where: { id: parseInt(reviewId) },
       data: {
         ownerReply: ownerReply.trim(),
-        replierId: session.user.id,
+        ownerReplyBy: session.user.id,
         ownerReplyAt: new Date()
       }
     });
@@ -99,7 +99,7 @@ export async function DELETE(
       where: { id: parseInt(reviewId) },
       data: {
         ownerReply: null,
-        replierId: null,
+        ownerReplyBy: null,
         ownerReplyAt: null
       }
     });

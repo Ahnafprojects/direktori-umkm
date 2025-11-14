@@ -44,7 +44,10 @@ export async function getUmkms(params: {
         whereCondition.Category = { slug: category };
       }
       const umkms = await db.umkm.findMany({
-        where: whereCondition,
+        where: {
+          ...whereCondition,
+          isActive: true, // Hanya tampilkan UMKM yang aktif
+        },
         include: {
           Category: true,
           ProductCategory: {
@@ -82,7 +85,10 @@ export async function getUmkms(params: {
       const sortedIds = sortedResults.map((u) => u.id);
       if (sortedIds.length === 0) return [];
       const umkmsData = await db.umkm.findMany({
-        where: { id: { in: sortedIds } },
+        where: { 
+          id: { in: sortedIds },
+          isActive: true 
+        },
         include: {
           Category: true,
           ProductCategory: {
@@ -118,12 +124,16 @@ export async function getUmkmBySlug(slug: string) {
     
     // Cari semua UMKM untuk debug
     const allUmkms = await db.umkm.findMany({
+      where: { isActive: true },
       select: { id: true, name: true, slug: true }
     });
     console.log('All UMKM in database:', allUmkms.map((u: any) => ({ id: u.id, name: u.name, slug: u.slug })));
     
-    const umkm = await db.umkm.findUnique({
-      where: { slug: slug },
+    const umkm = await db.umkm.findFirst({
+      where: { 
+        slug: slug,
+        isActive: true 
+      },
       include: {
         Category: true,
         Review: {
@@ -167,7 +177,10 @@ export async function getUmkmSuggestions(query: string) {
   if (!query) return [];
   try {
     return await db.umkm.findMany({
-      where: { name: { contains: query, mode: "insensitive" } },
+      where: { 
+        name: { contains: query, mode: "insensitive" },
+        isActive: true 
+      },
       select: { id: true, name: true, slug: true },
       take: 5,
     });
@@ -180,7 +193,11 @@ export async function getUmkmSuggestions(query: string) {
 export async function getUmkmForMap() {
   try {
     const umkms = await db.umkm.findMany({
-      where: { latitude: { not: null }, longitude: { not: null } },
+      where: { 
+        latitude: { not: null }, 
+        longitude: { not: null },
+        isActive: true 
+      },
       select: {
         id: true,
         name: true,
@@ -215,7 +232,10 @@ export async function getUmkmsByIds(ids: number[]) {
   if (ids.length === 0) return [];
   try {
     const umkms = await db.umkm.findMany({
-      where: { id: { in: ids } },
+      where: { 
+        id: { in: ids },
+        isActive: true 
+      },
       include: { Category: true },
     });
     const umkmsMap = new Map(umkms.map((u: any) => [u.id, u]));
@@ -233,6 +253,7 @@ export async function getUmkmsByIds(ids: number[]) {
 export async function getAllUmkmsForAI() {
   try {
     return await db.umkm.findMany({
+      where: { isActive: true },
       select: { slug: true, name: true },
     });
   } catch {
@@ -244,7 +265,10 @@ export async function getFavoriteUmkmsDetails(ids: number[]) {
   if (ids.length === 0) return [];
   try {
     return await db.umkm.findMany({
-      where: { id: { in: ids } },
+      where: { 
+        id: { in: ids },
+        isActive: true 
+      },
       select: { slug: true, name: true },
     });
   } catch {
@@ -327,8 +351,18 @@ function createSlug(name: string): string {
 // Tidak ada perubahan di 'createUmkm' dan 'updateUmkm', namun kodenya tetap disertakan
 export async function createUmkm(data: any) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== "PENGUSAHA") {
-    return { success: false, message: "Anda tidak memiliki akses." };
+  if (!session) {
+    return { success: false, message: "Anda harus login terlebih dahulu." };
+  }
+
+  // Cek role dari database untuk memastikan data terbaru
+  const user = await db.user.findUnique({
+    where: { id: (session.user as any).id },
+    select: { role: true }
+  });
+
+  if (!user || user.role !== "PENGUSAHA") {
+    return { success: false, message: "Anda tidak memiliki akses. Hanya pengusaha yang dapat mendaftarkan UMKM." };
   }
 
   const validationResult = validateUmkmData(data);
@@ -372,6 +406,8 @@ export async function createUmkm(data: any) {
       }
     });
     revalidatePath("/dashboard/umkm/saya");
+    revalidatePath("/dashboard");
+    revalidatePath("/");
     return { success: true, message: "UMKM baru berhasil didaftarkan!" };
   } catch (error) {
     console.error("Create UMKM error:", error);
@@ -384,8 +420,18 @@ export async function createUmkm(data: any) {
 
 export async function updateUmkm(umkmId: number, data: any) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== "PENGUSAHA") {
-    return { success: false, message: "Anda tidak memiliki akses." };
+  if (!session) {
+    return { success: false, message: "Anda harus login terlebih dahulu." };
+  }
+
+  // Cek role dari database untuk memastikan data terbaru
+  const user = await db.user.findUnique({
+    where: { id: (session.user as any).id },
+    select: { role: true }
+  });
+
+  if (!user || user.role !== "PENGUSAHA") {
+    return { success: false, message: "Anda tidak memiliki akses. Hanya pengusaha yang dapat mengedit UMKM." };
   }
 
   const umkm = await db.umkm.findUnique({
@@ -491,22 +537,72 @@ export async function updateUmkm(umkmId: number, data: any) {
   }
 }
 
-export async function deleteUmkm(umkmId: number) {
+export async function deactivateUmkm(umkmId: number) {
   const session = await getServerSession(authOptions);
   try {
-    if (!session || (session.user as any)?.role !== "PENGUSAHA") {
+    if (!session) {
+      throw new Error("Anda harus login terlebih dahulu.");
+    }
+    
+    // Cek role dari database untuk memastikan data terbaru
+    const user = await db.user.findUnique({
+      where: { id: (session.user as any).id },
+      select: { role: true }
+    });
+    
+    if (!user || user.role !== "PENGUSAHA") {
       throw new Error("Akses tidak diizinkan.");
     }
-    const umkmToDelete = await db.umkm.findUnique({
+    const umkmToDeactivate = await db.umkm.findUnique({
       where: { id: umkmId },
       select: { ownerId: true },
     });
-    if (!umkmToDelete || umkmToDelete.ownerId !== (session.user as any).id) {
-      throw new Error("Anda tidak memiliki izin untuk menghapus UMKM ini.");
+    if (!umkmToDeactivate || umkmToDeactivate.ownerId !== (session.user as any).id) {
+      throw new Error("Anda tidak memiliki izin untuk menonaktifkan UMKM ini.");
     }
-    await db.umkm.delete({ where: { id: umkmId } });
+    await db.umkm.update({ 
+      where: { id: umkmId },
+      data: { isActive: false }
+    });
     revalidatePath("/dashboard/umkm/saya");
-    return { success: true, message: "UMKM berhasil dihapus." };
+    return { success: true, message: "UMKM berhasil dinonaktifkan." };
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, message: error.message };
+    }
+    return { success: false, message: "Terjadi kesalahan server." };
+  }
+}
+
+export async function activateUmkm(umkmId: number) {
+  const session = await getServerSession(authOptions);
+  try {
+    if (!session) {
+      throw new Error("Anda harus login terlebih dahulu.");
+    }
+    
+    // Cek role dari database untuk memastikan data terbaru
+    const user = await db.user.findUnique({
+      where: { id: (session.user as any).id },
+      select: { role: true }
+    });
+    
+    if (!user || user.role !== "PENGUSAHA") {
+      throw new Error("Akses tidak diizinkan.");
+    }
+    const umkmToActivate = await db.umkm.findUnique({
+      where: { id: umkmId },
+      select: { ownerId: true },
+    });
+    if (!umkmToActivate || umkmToActivate.ownerId !== (session.user as any).id) {
+      throw new Error("Anda tidak memiliki izin untuk mengaktifkan UMKM ini.");
+    }
+    await db.umkm.update({ 
+      where: { id: umkmId },
+      data: { isActive: true }
+    });
+    revalidatePath("/dashboard/umkm/saya");
+    return { success: true, message: "UMKM berhasil diaktifkan." };
   } catch (error) {
     if (error instanceof Error) {
       return { success: false, message: error.message };
