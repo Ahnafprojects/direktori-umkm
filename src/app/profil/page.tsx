@@ -8,16 +8,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useRouter } from 'next/navigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { ArrowLeft, Save, User } from 'lucide-react';
+import { ArrowLeft, Save, User, Building2, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
+import UmkmUpgradeSection from '../_components/umkm-upgrade-section';
 
 export default function ProfilPage() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get default tab from URL params (for deep linking from welcome modal)
+  const defaultTab = searchParams.get('section') || 'profile';
 
   // Sync name state with session when it loads
   useEffect(() => {
@@ -25,6 +31,17 @@ export default function ProfilPage() {
       setName(session.user.name);
     }
   }, [session]);
+
+  // Check for role update in URL params and refresh if needed
+  useEffect(() => {
+    const roleUpdated = searchParams.get('roleUpdated');
+    if (roleUpdated === 'true') {
+      // Remove the parameter from URL
+      router.replace('/profil');
+      // Force session refresh
+      window.location.reload();
+    }
+  }, [searchParams, router]);
 
   if (status === 'loading') {
     return (
@@ -104,96 +121,123 @@ export default function ProfilPage() {
           </Button>
         </Link>
 
-        {/* Profile Card */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={user?.image ?? ''} alt={user?.name ?? ''} />
-                <AvatarFallback className="text-2xl">{userInitial}</AvatarFallback>
-              </Avatar>
-              <div>
-                <CardTitle>Profil Saya</CardTitle>
+        {/* Profile Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Avatar className="h-20 w-20">
+            <AvatarImage src={user?.image ?? ''} alt={user?.name ?? ''} />
+            <AvatarFallback className="text-2xl">{userInitial}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-2xl font-bold">Profil Saya</h1>
+            <p className="text-muted-foreground">
+              Kelola informasi profil dan pengaturan UMKM Anda
+            </p>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue={defaultTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="profile" className="gap-2">
+              <User className="h-4 w-4" />
+              Profil
+            </TabsTrigger>
+            <TabsTrigger value="umkm" className="gap-2">
+              <Building2 className="h-4 w-4" />
+              UMKM Saya
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Profile Tab */}
+          <TabsContent value="profile">
+            <Card>
+              <CardHeader>
+                <CardTitle>Informasi Profil</CardTitle>
                 <CardDescription>
-                  Kelola informasi profil Anda
+                  Kelola informasi dasar akun Anda
                 </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUpdateName} className="space-y-6">
-              {/* Email (Read-only) */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={user?.email || ''}
-                  disabled
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Email tidak dapat diubah
-                </p>
-              </div>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleUpdateName} className="space-y-6">
+                  {/* Email (Read-only) */}
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={user?.email || ''}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Email tidak dapat diubah
+                    </p>
+                  </div>
 
-              {/* Name (Editable) */}
-              <div className="space-y-2">
-                <Label htmlFor="name">Nama</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Masukkan nama Anda"
-                  required
-                />
-              </div>
+                  {/* Name (Editable) */}
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nama</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Masukkan nama Anda"
+                      required
+                    />
+                  </div>
 
-              {/* Role (Read-only) */}
-              <div className="space-y-2">
-                <Label htmlFor="role">Peran</Label>
-                <Input
-                  id="role"
-                  type="text"
-                  // @ts-ignore
-                  value={user?.role === 'PENGUSAHA' ? 'Pengusaha UMKM' : 'Pelanggan'}
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
+                  {/* Role (Read-only) */}
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Peran</Label>
+                    <Input
+                      id="role"
+                      type="text"
+                      // @ts-ignore
+                      value={user?.role === 'PENGUSAHA' ? 'Pengusaha UMKM' : 'Pelanggan'}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
 
-              {/* Submit Button */}
-              <div className="flex justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setName(session?.user?.name || '')}
-                  disabled={isLoading}
-                >
-                  Reset
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isLoading || name === session?.user?.name}
-                  className="gap-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Menyimpan...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Simpan Perubahan
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                  {/* Submit Button */}
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setName(session?.user?.name || '')}
+                      disabled={isLoading}
+                    >
+                      Reset
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={isLoading || name === session?.user?.name}
+                      className="gap-2"
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          Menyimpan...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          Simpan Perubahan
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* UMKM Tab */}
+          <TabsContent value="umkm">
+            <UmkmUpgradeSection />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

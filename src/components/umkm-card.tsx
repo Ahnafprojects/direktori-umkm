@@ -148,7 +148,9 @@ export default function UmkmCard({ umkm }: UmkmCardProps) {
                 {/* Separator hanya tampil di desktop */}
                 <Separator className="my-2 hidden lg:block" />
                 <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1 mt-1 lg:mt-0 leading-tight">
-                  <span className="font-medium">Menu:</span> {featuredProducts}
+                  <span className="font-medium">
+                    {umkm.Category.name.toLowerCase().includes('makanan') || umkm.Category.name.toLowerCase().includes('minuman') ? 'Menu:' : 'Produk:'}
+                  </span> {featuredProducts}
                   {hasMoreFeatured && (
                     <span className="text-muted-foreground ml-1">
                       …selengkapnya

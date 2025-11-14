@@ -15,6 +15,8 @@ const getIconUrl = (categoryName: string) => {
   if (category.includes("minuman")) return "/images/icon/minuman-icon.svg";
   if (category.includes("jasa")) return "/images/icon/jasa-icon.svg";
   if (category.includes("belanja")) return "/images/icon/belanja-icon.svg";
+  if (category.includes("fashion")) return "/images/icon/fashion-icon.svg";
+  if (category.includes("kerajinan")) return "/images/icon/kerajinan-icon.svg";
   return "/images/icon/makanan-icon.svg"; // Default
 };
 

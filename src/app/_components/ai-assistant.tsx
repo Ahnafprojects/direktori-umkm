@@ -31,10 +31,12 @@ export default function AiAssistant() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const quickQuestions = [
-    { icon: "❓", text: "Gimana cara kerja website ini?" },
-    { icon: "🍜", text: "Rekomendasi makanan enak?" },
-    { icon: "💳", text: "Cara pesan dan bayar?" },
-    { icon: "📍", text: "UMKM terdekat dari lokasi saya?" }
+    { icon: "🗺️", text: "Bagaimana cara mencari UMKM di peta?" },
+    { icon: "🍽️", text: "Rekomendasi makanan dan minuman enak?" },
+    { icon: "❤️", text: "Cara menambahkan UMKM ke favorit?" },
+    { icon: "📍", text: "Fitur live tracking dan navigasi?" },
+    { icon: "🏪", text: "Cara daftar sebagai pemilik UMKM?" },
+    { icon: "⭐", text: "Sistem rating dan review UMKM?" }
   ];
 
   useEffect(() => {
@@ -120,35 +122,136 @@ export default function AiAssistant() {
   const getSmartFallback = async (question: string): Promise<string> => {
     const lowerQuestion = question.toLowerCase();
     
+    // Cek pertanyaan tentang cara daftar UMKM
+    if (lowerQuestion.includes('daftar') && (lowerQuestion.includes('umkm') || lowerQuestion.includes('pemilik'))) {
+      return `🏪 **Cara Daftar Sebagai Pemilik UMKM:**
+
+1. **Login** ke akun Anda terlebih dahulu
+2. **Klik menu hamburger** (☰ - 3 garis) di pojok kanan atas
+3. Pilih **"Profil"** dari menu dropdown
+4. Di halaman profil, klik **"UMKM Saya"**
+5. Kemudian klik **"Daftarkan UMKM Saya"**
+6. Isi semua data UMKM dengan lengkap (nama, kategori, alamat, foto, dll)
+7. Setelah berhasil, akun Anda otomatis upgrade jadi Pemilik UMKM! 
+
+✨ *Tips: Pastikan data yang diisi akurat agar UMKM mudah ditemukan pelanggan.*`;
+    }
+    
+    // Cek pertanyaan tentang peta
+    if (lowerQuestion.includes('peta') || lowerQuestion.includes('map') || lowerQuestion.includes('mencari')) {
+      return `🗺️ **Cara Mencari UMKM di Peta:**
+
+✨ **Di halaman utama, ada 3 fitur unggulan:**
+1. **"Buka Sekarang"** - Lihat UMKM yang sedang buka
+2. **"Lokasi Terdekat"** - Temukan UMKM di sekitar Anda  
+3. **"Lihat Peta UMKM"** - Buka peta interaktif lengkap
+
+🗺️ **Cara menggunakan peta:**
+- Klik **"Lihat Peta UMKM"** di halaman utama
+- Pilih **filter kategori** (Makanan, Minuman, Jasa, Fashion, dll)
+- Klik **marker UMKM** di peta untuk detail & navigasi
+- Gunakan **"Dapatkan Arah"** untuk GPS navigation
+
+📍 **Tips**: Aktifkan lokasi browser untuk hasil yang lebih akurat!`;
+    }
+    
+    // Cek pertanyaan tentang favorit
+    if (lowerQuestion.includes('favorit') || lowerQuestion.includes('bookmark')) {
+      return `❤️ **Cara Menambahkan UMKM ke Favorit:**
+- Klik ikon hati (♡) di card UMKM atau halaman detail UMKM
+- UMKM favorit bisa diakses di menu "Favorit" setelah login
+- Anda akan dapat notifikasi jika ada update dari UMKM favorit`;
+    }
+    
+    // Cek pertanyaan tentang live tracking
+    if (lowerQuestion.includes('tracking') || lowerQuestion.includes('navigasi') || lowerQuestion.includes('arah')) {
+      return `📍 **Fitur Live Tracking & Navigasi:**
+- Setelah klik UMKM di peta, pilih "Dapatkan Arah"
+- Website akan membuka aplikasi peta default untuk navigasi
+- Anda bisa track real-time perjalanan menuju UMKM
+- Estimasi waktu dan jarak akan ditampilkan`;
+    }
+    
     try {
       const response = await fetch('/api/umkm?limit=10');
       if (response.ok) {
         const umkms = await response.json();
         
+        // Filter makanan dan minuman saja
+        if (lowerQuestion.includes('makanan') || lowerQuestion.includes('makan') || lowerQuestion.includes('minuman') || lowerQuestion.includes('minum') || lowerQuestion.includes('rekomendasi')) {
+          const foodDrinkUmkms = umkms.filter((u: any) => {
+            const category = u.category?.name?.toLowerCase() || '';
+            const name = u.name?.toLowerCase() || '';
+            return (
+              category.includes('makanan') || 
+              category.includes('minuman') ||
+              name.includes('nasi') ||
+              name.includes('sate') ||
+              name.includes('ayam') ||
+              name.includes('bebek') ||
+              name.includes('soto') ||
+              name.includes('bakso') ||
+              name.includes('mie') ||
+              name.includes('kopi') ||
+              name.includes('teh') ||
+              name.includes('juice') ||
+              name.includes('ice') ||
+              name.includes('drink')
+            ) && !category.includes('jasa') && !category.includes('laundry');
+          });
+          
+          if (foodDrinkUmkms.length > 0) {
+            const topRecommendations = foodDrinkUmkms
+              .sort((a: any, b: any) => (b.averageRating || 0) - (a.averageRating || 0))
+              .slice(0, 3);
+            
+            let response = `🍽️ **Rekomendasi Makanan & Minuman Terbaik:**\n\n`; 
+            topRecommendations.forEach((umkm: any, index: number) => {
+              response += `${index + 1}. **${umkm.name}** ⭐ ${umkm.averageRating || 'Belum ada rating'}\n`;
+              response += `   📍 ${umkm.address}\n`;
+              response += `   🏷️ ${umkm.category?.name || 'Kategori tidak diketahui'}\n\n`;
+            });
+            response += `💡 *Klik UMKM untuk lihat menu lengkap dan review!*`;
+            return response;
+          }
+        }
+        
         if (lowerQuestion.includes('kebab') || lowerQuestion.includes('pizza') || lowerQuestion.includes('burger')) {
-          const foodUmkms = umkms.filter((u: any) => 
+          const specificFoodUmkms = umkms.filter((u: any) => 
             u.name.toLowerCase().includes('kebab') || 
             u.name.toLowerCase().includes('pizza') ||
             u.name.toLowerCase().includes('burger')
           );
-          if (foodUmkms.length > 0) {
-            return `🍔 Saya menemukan ${foodUmkms.length} UMKM yang menjual makanan tersebut! Coba cek: ${foodUmkms.slice(0,2).map((u: any) => u.name).join(', ')}. Klik pada UMKM untuk melihat rating dan review!`;
+          if (specificFoodUmkms.length > 0) {
+            return `🍔 Saya menemukan ${specificFoodUmkms.length} UMKM yang menjual makanan tersebut! Coba cek: ${specificFoodUmkms.slice(0,2).map((u: any) => u.name).join(', ')}. Klik pada UMKM untuk melihat rating dan review!`;
           }
         }
         
         if (lowerQuestion.includes('rating') || lowerQuestion.includes('terbaik') || lowerQuestion.includes('bagus')) {
-          return `⭐ Untuk melihat UMKM dengan rating tertinggi, cek bagian 'Rekomendasi Terpopuler' di halaman utama. UMKM disortir berdasarkan jumlah favorit dan review positif!`;
+          return `⭐ **Sistem Rating & Review:**
+- Setiap UMKM memiliki sistem rating bintang 1-5
+- Pelanggan bisa memberikan review setelah berkunjung
+- UMKM dengan rating tinggi akan muncul di "Rekomendasi Terpopuler"
+- Filter berdasarkan rating tersedia di halaman pencarian`;
         }
         
         if (lowerQuestion.includes('buka') || lowerQuestion.includes('jam')) {
-          return `🕐 Informasi jam buka tersedia di detail setiap UMKM. Sebagian besar buka jam 10:00-21:00, tapi ada juga yang 24 jam!`;
+          return `🕐 Informasi jam operasional tersedia di detail setiap UMKM. Sebagian besar UMKM buka jam 10:00-21:00, tapi ada juga yang 24 jam!`;
         }
       }
     } catch (error) {
       // Fallback
     }
     
-    return "💡 Maaf AI sedang maintenance. Coba explore halaman utama atau gunakan fitur pencarian untuk menemukan UMKM yang Anda cari!";
+    return `🤖 Maaf, saya sedang belajar tentang pertanyaan ini. 
+
+Sementara itu, coba:
+- Gunakan fitur **Peta** untuk cari UMKM terdekat
+- Cek **Favorit** untuk UMKM yang sudah Anda simpan
+- Buka **Profil** untuk daftar UMKM atau lihat riwayat
+- Gunakan **Filter Kategori** untuk cari UMKM spesifik
+
+Ada pertanyaan lain yang bisa saya bantu? 😊`;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -170,54 +273,54 @@ export default function AiAssistant() {
 
       {/* Minimalist Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-lg w-[95vw] h-[85vh] max-h-[700px] flex flex-col p-0 gap-0 rounded-2xl border shadow-xl">
+        <DialogContent className="w-[95vw] sm:max-w-2xl lg:max-w-3xl h-[90vh] sm:h-[85vh] max-h-[600px] sm:max-h-[700px] lg:max-h-[800px] flex flex-col p-0 gap-0 rounded-lg sm:rounded-2xl border shadow-xl">
           
           {/* Theme-Consistent Header */}
-          <DialogHeader className="px-6 py-4 border-b bg-muted/30">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-md ring-2 ring-primary/20">
-                <Bot className="h-5 w-5 text-primary-foreground" />
+          <DialogHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b bg-muted/30">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl sm:rounded-2xl flex items-center justify-center shadow-md ring-2 ring-primary/20">
+                <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
               </div>
               <div>
-                <DialogTitle className="text-lg font-bold text-foreground">
-                  🎯 Keren Assistant
+                <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
+                  LokalKeren Assistant
                 </DialogTitle>
-                <p className="text-sm text-muted-foreground">✨ Your Smart UMKM Companion</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Smart UMKM Information Helper</p>
               </div>
             </div>
           </DialogHeader>
 
           {/* Proper Chat Area dengan Scroll */}
           <div className="flex-1 flex flex-col min-h-0">
-            <ScrollArea className="flex-1 px-6 py-4 min-h-0" ref={scrollAreaRef}>
+            <ScrollArea className="flex-1 px-3 sm:px-6 py-3 sm:py-4 min-h-0" ref={scrollAreaRef}>
               <div className="space-y-4 pb-4">
                 
                 {/* Welcome Message */}
                 {messages.length === 0 && (
                   <div className="space-y-4">
-                    <div className="text-center space-y-2 py-8">
-                      <h3 className="text-lg font-semibold">🎯 Halo! Saya Keren Assistant</h3>
-                      <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-                        Tanya saya tentang UMKM, tempat nongkrong, atau rekomendasi apa saja! Saya siap membantu Anda. 
+                    <div className="text-center space-y-2 sm:space-y-3 py-4 sm:py-6 lg:py-8">
+                      <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold">Halo! Saya LokalKeren Assistant</h3>
+                      <p className="text-xs sm:text-sm lg:text-base text-muted-foreground max-w-xs sm:max-w-lg mx-auto leading-relaxed px-2 sm:px-0">
+                        Tanya saya tentang fitur peta UMKM, cara favorit, live tracking, registrasi pemilik UMKM, atau panduan lengkap website ini. Saya siap membantu!
                       </p>
                     </div>
                     
                     {/* Quick Questions - Responsive */}
-                    <div className="space-y-3">
-                      <p className="text-xs font-medium text-muted-foreground text-center">
-                        � Pertanyaan yang sering ditanyakan:
+                    <div className="space-y-3 sm:space-y-4">
+                      <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-muted-foreground text-center">
+                        Pertanyaan yang sering ditanyakan:
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="flex flex-col gap-1.5 sm:gap-2 lg:gap-3">
                         {quickQuestions.map((q, index) => (
                           <Button
                             key={index}
                             variant="outline"
                             onClick={() => sendMessage(q.text)}
                             disabled={isLoading}
-                            className="h-auto p-3 justify-start text-left hover:bg-muted/80 hover:border-primary/50 transition-all duration-200 group"
+                            className="h-auto p-2.5 sm:p-3 lg:p-4 justify-start text-left hover:bg-muted/80 hover:border-primary/50 transition-all duration-200 group hover:shadow-sm w-full"
                           >
-                            <span className="text-sm mr-2 group-hover:scale-110 transition-transform">{q.icon}</span>
-                            <span className="text-xs leading-tight font-medium">{q.text}</span>
+                            <span className="text-sm sm:text-base lg:text-lg mr-1.5 sm:mr-2 lg:mr-3 group-hover:scale-110 transition-transform shrink-0">{q.icon}</span>
+                            <span className="text-[10px] sm:text-xs lg:text-sm leading-tight font-medium text-left flex-1">{q.text}</span>
                           </Button>
                         ))}
                       </div>
@@ -236,14 +339,14 @@ export default function AiAssistant() {
                 >
                   {msg.role === 'assistant' && (
                     <>
-                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                        <Bot className="h-4 w-4 text-primary-foreground" />
+                      <div className="w-8 h-8 lg:w-10 lg:h-10 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                        <Bot className="h-4 w-4 lg:h-5 lg:w-5 text-primary-foreground" />
                       </div>
-                      <div className="flex-1 max-w-[80%]">
-                        <div className="bg-muted/50 border border-border rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
-                          <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">{msg.content}</p>
+                      <div className="flex-1 max-w-[80%] lg:max-w-[85%]">
+                        <div className="bg-muted/50 border border-border rounded-2xl rounded-tl-sm px-4 py-3 lg:px-5 lg:py-4 shadow-sm">
+                          <p className="text-sm lg:text-base leading-relaxed text-foreground whitespace-pre-wrap">{msg.content}</p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1 px-1">
+                        <p className="text-xs lg:text-sm text-muted-foreground mt-1 px-1">
                           AI • {new Date(msg.timestamp || Date.now()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
@@ -251,18 +354,18 @@ export default function AiAssistant() {
                   )}
 
                   {msg.role === 'user' && (
-                    <div className="max-w-[80%] flex justify-end">
-                      <div className="flex items-end gap-2">
+                    <div className="max-w-[80%] lg:max-w-[85%] flex justify-end">
+                      <div className="flex items-end gap-2 lg:gap-3">
                         <div>
-                          <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm">
-                            <p className="text-sm leading-relaxed">{msg.content}</p>
+                          <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-3 lg:px-5 lg:py-4 shadow-sm">
+                            <p className="text-sm lg:text-base leading-relaxed">{msg.content}</p>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1 px-1 text-right">
+                          <p className="text-xs lg:text-sm text-muted-foreground mt-1 px-1 text-right">
                             Anda • {new Date(msg.timestamp || Date.now()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
-                        <div className="w-7 h-7 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                          <div className="w-4 h-4 bg-primary rounded-full"></div>
+                        <div className="w-7 h-7 lg:w-9 lg:h-9 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                          <div className="w-4 h-4 lg:w-5 lg:h-5 bg-primary rounded-full"></div>
                         </div>
                       </div>
                     </div>
@@ -273,16 +376,16 @@ export default function AiAssistant() {
               {/* Loading - Theme Consistent */}
               {(isLoading || isTyping) && (
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm animate-pulse">
-                    <Bot className="h-4 w-4 text-primary-foreground" />
+                  <div className="w-8 h-8 lg:w-10 lg:h-10 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm animate-pulse">
+                    <Bot className="h-4 w-4 lg:h-5 lg:w-5 text-primary-foreground" />
                   </div>
-                  <div className="bg-muted/50 border border-border rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-primary/70 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="bg-muted/50 border border-border rounded-2xl rounded-tl-sm px-4 py-3 lg:px-5 lg:py-4 shadow-sm">
+                    <div className="flex gap-1 lg:gap-1.5">
+                      <div className="w-2 h-2 lg:w-2.5 lg:h-2.5 bg-primary rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 lg:w-2.5 lg:h-2.5 bg-primary/70 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 lg:w-2.5 lg:h-2.5 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">AI sedang berpikir...</p>
+                    <p className="text-xs lg:text-sm text-muted-foreground mt-2">AI sedang menganalisis...</p>
                   </div>
                 </div>
               )}
@@ -291,10 +394,10 @@ export default function AiAssistant() {
           </div>
 
           {/* Theme-Consistent Input Area */}
-          <div className="p-4 border-t bg-muted/30">
+          <div className="p-3 sm:p-4 border-t bg-muted/30">
             <div className="relative">
               <Input
-                placeholder="💭 Tanya sesuatu tentang UMKM..."
+                placeholder="Tanya tentang fitur peta, favorit, live tracking, atau panduan website..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={isLoading}
@@ -304,19 +407,19 @@ export default function AiAssistant() {
                     handleSubmit(e as any);
                   }
                 }}
-                className="h-12 pr-14 rounded-xl border-2 border-border focus:border-primary/50 focus:ring-primary/20 bg-background shadow-sm transition-all"
+                className="h-10 sm:h-12 lg:h-14 pr-12 sm:pr-14 lg:pr-16 rounded-lg sm:rounded-xl border-2 border-border focus:border-primary/50 focus:ring-primary/20 bg-background shadow-sm transition-all text-xs sm:text-sm lg:text-base"
               />
               
               <Button 
                 onClick={(e) => handleSubmit(e as any)}
                 size="icon"
                 disabled={isLoading || input.trim() === ''}
-                className="absolute right-1 top-1 h-9 w-9 rounded-full bg-primary hover:bg-primary/90 transition-colors shadow-sm"
+                className="absolute right-1 top-1 h-8 w-8 sm:h-9 sm:w-9 lg:h-11 lg:w-11 rounded-full bg-primary hover:bg-primary/90 transition-colors shadow-sm"
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-primary-foreground" />
+                  <Loader2 className="h-4 w-4 lg:h-5 lg:w-5 animate-spin text-primary-foreground" />
                 ) : (
-                  <Send className="h-4 w-4 text-primary-foreground" />
+                  <Send className="h-4 w-4 lg:h-5 lg:w-5 text-primary-foreground" />
                 )}
               </Button>
             </div>

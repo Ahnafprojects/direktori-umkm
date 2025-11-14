@@ -1,0 +1,19 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fashion/Clothing Icon - T-shirt on hanger -->
+  <!-- Hanger -->
+  <path d="M25 25 Q25 20 30 20 L45 20 Q50 15 50 10 Q50 7 53 7 Q56 7 56 10 Q56 15 61 20 L76 20 Q81 20 81 25 Q81 30 76 30 L74 30 L74 35 Q74 37 72 37 L70 37 Q68 37 68 35 L68 30 L32 30 L32 35 Q32 37 30 37 L28 37 Q26 37 26 35 L26 30 L24 30 Q19 30 19 25 Q19 20 24 20" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
+  
+  <!-- T-shirt -->
+  <path d="M35 40 Q33 40 33 42 L33 45 L28 45 Q25 45 25 48 L25 55 Q25 57 27 57 L73 57 Q75 57 75 55 L75 48 Q75 45 72 45 L67 45 L67 42 Q67 40 65 40 L60 40 L60 45 Q60 47 58 47 L42 47 Q40 47 40 45 L40 40 L35 40 Z" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
+  
+  <!-- T-shirt body -->
+  <path d="M27 57 L27 80 Q27 85 32 85 L68 85 Q73 85 73 80 L73 57" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
+  
+  <!-- Design lines on shirt -->
+  <path d="M45 65 Q47 63 47 67 Q47 69 45 67" stroke="#D1D5DB" stroke-width="1.5" fill="none"/>
+  <path d="M50 65 Q52 63 52 67 Q52 69 50 67" stroke="#D1D5DB" stroke-width="1.5" fill="none"/>
+  <path d="M55 65 Q57 63 57 67 Q57 69 55 67" stroke="#D1D5DB" stroke-width="1.5" fill="none"/>
+  
+  <!-- Base line -->
+  <rect x="20" y="90" width="60" height="3" rx="1" fill="#E5E5E5"/>
+</svg>

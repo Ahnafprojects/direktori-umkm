@@ -102,7 +102,7 @@ export default function AiRecommendationCarousel() {
                 <UmkmCard umkm={umkm} />
                 {/* Tampilkan badge popularitas */}
                 <p className="text-xs text-muted-foreground mt-2 text-center italic">
-                  ⭐ {umkm._count?.favorites || 0} orang menyukai ini
+                  {umkm._count?.favorites || 0} orang menyukai ini
                 </p>
               </div>
             </CarouselItem>

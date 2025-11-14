@@ -112,9 +112,9 @@ export default function HistoryPage() {
       return;
     }
 
-    // Hanya untuk pengusaha UMKM
-    if (session?.user?.role !== 'PENGUSAHA') {
-      router.push('/');
+    // Semua user yang login bisa akses history
+    if (!session?.user) {
+      router.push('/login?redirect=' + encodeURIComponent('/history'));
       return;
     }
 
@@ -197,7 +197,7 @@ export default function HistoryPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">🛒 Transaksi Pembelian</h1>
         <Badge variant="outline" className="text-sm">
-          Pembelian Anda dari UMKM Lain
+          Pembelian Anda 
         </Badge>
       </div>
       

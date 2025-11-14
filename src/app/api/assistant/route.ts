@@ -1,9 +1,16 @@
 // src/app/api/assistant/route.ts
-import { Groq } from 'groq-sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { db } from '@/lib/prisma';
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || '',
+// Initialize Gemini AI (primary)
+const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+
+// Initialize AgentRouter (fallback)
+console.log('Initializing AgentRouter with key:', process.env.AGENTROUTER_API_KEY?.substring(0, 10) + '...');
+const agentRouter = new OpenAI({
+  apiKey: process.env.AGENTROUTER_API_KEY || '',
+  baseURL: 'https://api.agentrouter.org/v1',
 });
 
 export const runtime = 'nodejs';
@@ -397,52 +404,184 @@ Semua UMKM diurutkan berdasarkan jumlah favorit dan review pengguna LokalKeren!
       )
       .join('\n') : 'Data UMKM tidak tersedia saat ini.';
 
-    // 6. Jika ada GROQ API key, coba panggil AI
-    if (process.env.GROQ_API_KEY && groq) {
+    // 6. Prepare variables for both Gemini and OpenAI (move outside try blocks)
+    const currentMessage = messages[messages.length - 1]?.content || '';
+    
+    // Build conversation history for both AI systems
+    const conversationHistory = messages.slice(0, -1).map((msg: any) => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }]
+    }));
+
+    // Build system prompt that works for both AI systems
+    const systemPrompt = `
+      Anda adalah "LokalKeren AI", asisten virtual untuk website direktori UMKM.
+      
+      ATURAN PENTING: 
+      - Jawab pertanyaan pengguna dengan akurat berdasarkan konteks yang diberikan
+      - Jika pertanyaan tentang cara daftar/buat akun UMKM, jelaskan langkah-langkahnya
+      - Jika pertanyaan di luar topik UMKM sapa, arahkan ke fitur-fitur website
+      - Jawab dalam Bahasa Indonesia yang ramah dan profesional
+      - JANGAN gunakan format markdown (**, ***, __) dalam jawaban
+      - Gunakan emoji secukupnya, jangan berlebihan
+      - Berikan informasi yang spesifik dan membantu
+
+      ATURAN FILTERING KHUSUS:
+      - Jika user tanya MAKANAN/MINUMAN: HANYA tampilkan UMKM dengan kategori "Makanan" atau "Minuman"
+      - JANGAN PERNAH tampilkan kategori "Jasa" (seperti laundry) saat user tanya makanan/minuman
+      - Jika user tanya JASA: HANYA tampilkan kategori "Jasa"
+      - Jika user tanya FASHION: HANYA tampilkan kategori "Fashion"
+      - Jika user tanya KERAJINAN: HANYA tampilkan kategori "Kerajinan"
+      - Jika user tanya BELANJA: HANYA tampilkan kategori "Belanja"
+      - Selalu filter berdasarkan kategori yang relevan dengan pertanyaan user
+
+      KONTEKS STATIS (Cara Kerja Website):
+      ${STATIC_KNOWLEDGE}
+
+      INFORMASI CARA DAFTAR UMKM:
+      - Pengguna perlu login terlebih dahulu di website LokalKeren
+      - Setelah login, klik menu hamburger (3 garis) di pojok kanan atas
+      - Pilih "Profil" dari menu dropdown
+      - Di halaman profil, klik "UMKM Saya"
+      - Kemudian klik "Daftarkan UMKM Saya"
+      - Isi form pendaftaran dengan lengkap: nama UMKM, kategori, alamat, foto, dll
+      - Setelah berhasil, akun berubah menjadi pemilik UMKM dan bisa kelola toko
+
+      KONTEKS DINAMIS (Daftar UMKM dari Database):
+      ${dynamicContext}
+    `;
+
+    // 7. Jika ada Gemini API key, coba panggil AI
+    if (process.env.GEMINI_API_KEY && genAI) {
       try {
-        // Bangun "Mega-Prompt"
-        const systemPrompt = `
-          Anda adalah "LokalKeren AI", asisten virtual yang sangat membantu.
-          Tugas Anda adalah menjawab pertanyaan pengguna HANYA BERDASARKAN konteks yang saya berikan.
-          JANGAN PERNAH menjawab pertanyaan di luar konteks. Jika ditanya (misal: "Siapa presiden?", "berita hari ini"), jawab dengan "Maaf, saya hanya bisa membantu dengan pertanyaan seputar UMKM di LokalKeren."
-          Selalu jawab dalam Bahasa Indonesia yang ramah dan gunakan emoji untuk menarik.
-
-          KONTEKS STATIS (Cara Kerja Website):
-          ${STATIC_KNOWLEDGE}
-
-          KONTEKS DINAMIS (Daftar UMKM dari Database):
-          ${dynamicContext}
-        `;
-
-        // Panggil API GROQ
-        const chatCompletion = await groq.chat.completions.create({
-          messages: [
-            // Kirim instruksi sistem
-            { role: 'system', content: systemPrompt },
-            // Kirim histori chat sebelumnya (jika ada)
-            ...messages,
-          ],
-          model: 'llama3-8b-8192',
-          max_tokens: 500,
-          temperature: 0.7,
+        
+        // Initialize Gemini model
+        const model = genAI.getGenerativeModel({ model: 'models/gemini-2.0-flash-exp' });
+        
+        // Start chat with history
+        const chat = model.startChat({
+          history: conversationHistory,
+          generationConfig: {
+            maxOutputTokens: 500,
+            temperature: 0.7,
+          },
         });
 
-        const responseMessage =
-          chatCompletion.choices[0].message.content || 'Maaf, saya tidak bisa merespon saat ini.';
+        // Send the full context as system message + current question with retry logic
+        const fullPrompt = `${systemPrompt}\n\nPertanyaan pengguna: ${currentMessage}`;
+        
+        let result;
+        let retries = 3;
+        
+        while (retries > 0) {
+          try {
+            result = await chat.sendMessage(fullPrompt);
+            break; // Success, exit retry loop
+          } catch (retryError: any) {
+            retries--;
+            console.log(`Gemini API retry attempt, ${retries} left. Error:`, retryError?.message);
+            
+            if (retries === 0) {
+              throw retryError; // Re-throw after all retries exhausted
+            }
+            
+            // Wait before retry (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, (4 - retries) * 1000));
+          }
+        }
+        
+        const response = result!.response;
+        const responseMessage = response.text() || 'Maaf, saya tidak bisa merespon saat ini.';
 
         // Kembalikan jawaban AI
         return new Response(JSON.stringify({ response: responseMessage }), {
           headers: { 'Content-Type': 'application/json' },
         });
-      } catch (groqError) {
-        console.error('GROQ API Error:', groqError);
-        // Fallback ke smart response
+      } catch (geminiError: any) {
+        console.error('Gemini API Error:', geminiError);
+        console.log('Falling back to AgentRouter...');
+        
+        // Fallback to AgentRouter when Gemini fails
+        try {
+          // Convert conversation history to OpenAI format for AgentRouter
+          const agentRouterMessages = [
+            {
+              role: 'system' as const,
+              content: systemPrompt
+            },
+            // Convert Gemini history to OpenAI format
+            ...conversationHistory.map((msg: any) => ({
+              role: msg.role === 'user' ? 'user' as const : 'assistant' as const,
+              content: Array.isArray(msg.parts) ? msg.parts.map((p: any) => p.text).join('') : msg.parts?.text || ''
+            })),
+            {
+              role: 'user' as const,
+              content: currentMessage
+            }
+          ];
+
+          console.log('Using AgentRouter API Key:', process.env.AGENTROUTER_API_KEY?.substring(0, 10) + '...');
+          
+          // Use Claude through AgentRouter
+          const agentResponse = await agentRouter.chat.completions.create({
+            model: 'claude-3-haiku-20240307',
+            messages: agentRouterMessages,
+            max_tokens: 500,
+            temperature: 0.7,
+          });
+          
+          const responseMessage = agentResponse.choices[0]?.message?.content || 'Maaf, saya tidak bisa merespon saat ini.';
+
+          return new Response(JSON.stringify({ 
+            response: `${responseMessage}\n\n*✨ Powered by AgentRouter/Claude (Gemini sedang sibuk)*` 
+          }), {
+            headers: { 'Content-Type': 'application/json' },
+          });
+
+        } catch (agentRouterError: any) {
+          console.error('AgentRouter Fallback Error:', agentRouterError);
+          
+          // Final fallback to static response
+          return new Response(JSON.stringify({ 
+            response: "🚨 **Kedua sistem AI sedang bermasalah:**\n• Gemini: Quota habis (terlalu banyak request)\n• Claude: API key invalid\n\n🛠️ **Solusi sementara:**\n• 🏪 Browse UMKM di halaman utama\n• 📍 Gunakan 'Find Nearest' untuk lokasi\n• 🔍 Filter berdasarkan kategori makanan\n• ⭐ Cek rekomendasi populer\n• 📱 Semua fitur website tetap berfungsi normal\n\n💡 **Manual recommendations:**\n• **Makanan:** Pecel Bu Sri, Bakso Malang\n• **Minuman:** Kedai Kopi Santai\n• **Fast Food:** Pizza Corner, Burger King\n\n⚡ *Admin sedang perbaiki sistem AI!*" 
+          }), {
+            headers: { 'Content-Type': 'application/json' },
+            status: 200
+          });
+        }
       }
     }
 
-    // 7. Jika sampai sini berarti AI tidak available, beri smart fallback
+    // 8. Jika sampai sini berarti AI tidak available, beri smart fallback berdasarkan pertanyaan
+    const userQuestion = messages[messages.length - 1]?.content?.toLowerCase() || '';
+    
+    // Smart fallback berdasarkan kata kunci
+    if (userQuestion.includes('rekomendasi') || userQuestion.includes('enak') || userQuestion.includes('bagus')) {
+      return new Response(JSON.stringify({ 
+        response: "🤖 **AI sedang offline, tapi ini rekomendasi manual:**\n\n⭐ **UMKM Terpopuler berdasarkan favorit:**\n• Pecel Bu Sri - Makanan tradisional\n• Kedai Kopi Santai - Tempat nongkrong\n• Warung Nasi Gudeg - Makanan khas\n• Pizza Corner - Fast food\n• Bakso Malang Asli - Comfort food\n\n📍 **Cara cari lebih banyak:**\n• Filter berdasarkan kategori di halaman utama\n• Gunakan fitur 'Find Nearest' untuk UMKM terdekat\n• Cek bagian 'Rekomendasi' di beranda\n\n💡 *AI akan kembali normal setelah maintenance selesai!*" 
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    
+    if (userQuestion.includes('terdekat') || userQuestion.includes('lokasi') || userQuestion.includes('dekat')) {
+      return new Response(JSON.stringify({ 
+        response: "📍 **Mencari UMKM Terdekat:**\n\n🎯 **Langkah mudah:**\n1. Klik tombol **'Find Nearest'** di halaman utama\n2. Izinkan akses lokasi di browser\n3. UMKM akan diurutkan berdasarkan jarak\n\n🗺️ **Alternatif:**\n• Buka tab **'Map'** untuk lihat peta interaktif\n• Zoom ke area yang diinginkan\n• Klik marker UMKM untuk detail lengkap\n\n⚡ **Tips:**\n• Pastikan GPS aktif untuk hasil akurat\n• Kombinasikan dengan filter kategori\n• Cek jam buka sebelum berkunjung" 
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    
+    if (userQuestion.includes('cara') && (userQuestion.includes('pesan') || userQuestion.includes('beli'))) {
+      return new Response(JSON.stringify({ 
+        response: "🛒 **Cara Pesan di LokalKeren:**\n\n**Step by step:**\n1️⃣ Pilih UMKM dari daftar\n2️⃣ Klik produk yang diinginkan\n3️⃣ Tambah ke keranjang (ikon keranjang)\n4️⃣ Isi alamat pengiriman\n5️⃣ Pilih metode pembayaran\n6️⃣ Klik 'Checkout'\n\n💰 **Info Penting:**\n• Pembayasan 100% simulasi (demo)\n• Pesanan langsung 'berhasil'\n• Tracking driver di halaman /status\n• Histori tersimpan di /history\n\n❤️ Jangan lupa save UMKM favorit!" 
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    
     return new Response(JSON.stringify({ 
-      response: "🤖 Sistem AI sedang maintenance, tapi saya tetap bisa membantu!\n\n💡 Coba:\n• Jelajahi UMKM di halaman utama\n• Gunakan fitur pencarian\n• Lihat rekomendasi populer\n• Cek kategori yang tersedia\n\nAda yang spesifik ingin ditanyakan?" 
+      response: "🤖 **AI Assistant sedang maintenance!**\n\n📱 **Yang bisa dilakukan sekarang:**\n• 🏪 Jelajahi daftar UMKM di beranda\n• 🔍 Gunakan fitur pencarian\n• 📂 Filter berdasarkan kategori\n• 📍 Cari UMKM terdekat dengan GPS\n• ⭐ Lihat rekomendasi populer\n• ❤️ Simpan UMKM favorit\n\n💬 **Coba tanya:**\n• 'Rekomendasi makanan enak'\n• 'UMKM terdekat'\n• 'Cara pesan'\n\n⚡ *AI akan aktif kembali setelah server maintenance selesai!*" 
     }), {
       headers: { 'Content-Type': 'application/json' },
     });
