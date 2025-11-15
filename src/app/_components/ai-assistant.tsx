@@ -1,22 +1,24 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Send, Sparkles, Loader2, Bot, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Send, Sparkles, Loader2, Bot, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type Message = {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   id?: number;
   timestamp?: number;
@@ -25,7 +27,7 @@ type Message = {
 export default function AiAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -36,17 +38,19 @@ export default function AiAssistant() {
     { icon: "❤️", text: "Cara menambahkan UMKM ke favorit?" },
     { icon: "📍", text: "Fitur live tracking dan navigasi?" },
     { icon: "🏪", text: "Cara daftar sebagai pemilik UMKM?" },
-    { icon: "⭐", text: "Sistem rating dan review UMKM?" }
+    { icon: "⭐", text: "Sistem rating dan review UMKM?" },
   ];
 
   useEffect(() => {
     if (scrollAreaRef.current) {
       // Kita pakai viewport-nya ScrollArea
-      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      const viewport = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
       if (viewport) {
         viewport.scrollTo({
           top: viewport.scrollHeight,
-          behavior: 'smooth',
+          behavior: "smooth",
         });
       }
     }
@@ -54,65 +58,75 @@ export default function AiAssistant() {
 
   const sendMessage = async (questionText?: string) => {
     const question = questionText || input.trim();
-    if (question === '' || isLoading) return;
+    if (question === "" || isLoading) return;
 
-    const userMessage: Message = { 
-      role: 'user', 
+    const userMessage: Message = {
+      role: "user",
       content: question,
-      id: Date.now() // Add unique ID to prevent duplicates
+      id: Date.now(), // Add unique ID to prevent duplicates
     };
-    
+
     setMessages((prev) => {
       // Check if message already exists to prevent duplicates
-      const exists = prev.some(msg => msg.content === question && msg.role === 'user');
+      const exists = prev.some(
+        (msg) => msg.content === question && msg.role === "user"
+      );
       if (exists) return prev;
       return [...prev, userMessage];
     });
-    
-    setInput('');
+
+    setInput("");
     setIsLoading(true);
     setIsTyping(true);
 
     try {
-      const response = await fetch('/api/assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: [...messages, userMessage] }),
       });
 
       if (!response.ok) {
         const fallbackResponse = await getSmartFallback(question);
-        const assistantMessage: Message = { role: 'assistant', content: fallbackResponse };
+        const assistantMessage: Message = {
+          role: "assistant",
+          content: fallbackResponse,
+        };
         setMessages((prev) => [...prev, assistantMessage]);
         return;
       }
 
       const data = await response.json();
-      
+
       setTimeout(() => {
         setIsTyping(false);
-        const assistantMessage: Message = { 
-          role: 'assistant', 
+        const assistantMessage: Message = {
+          role: "assistant",
           content: data.response,
           id: Date.now(),
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
         setMessages((prev) => {
           // Prevent duplicate responses
           const lastMessage = prev[prev.length - 1];
-          if (lastMessage?.content === data.response && lastMessage?.role === 'assistant') {
+          if (
+            lastMessage?.content === data.response &&
+            lastMessage?.role === "assistant"
+          ) {
             return prev;
           }
           return [...prev, assistantMessage];
         });
       }, 800);
-
     } catch (error) {
       console.error(error);
       setIsTyping(false);
-      
+
       const fallbackResponse = await getSmartFallback(question);
-      const assistantMessage: Message = { role: 'assistant', content: fallbackResponse };
+      const assistantMessage: Message = {
+        role: "assistant",
+        content: fallbackResponse,
+      };
       setMessages((prev) => [...prev, assistantMessage]);
     } finally {
       setIsLoading(false);
@@ -121,9 +135,12 @@ export default function AiAssistant() {
 
   const getSmartFallback = async (question: string): Promise<string> => {
     const lowerQuestion = question.toLowerCase();
-    
+
     // Cek pertanyaan tentang cara daftar UMKM
-    if (lowerQuestion.includes('daftar') && (lowerQuestion.includes('umkm') || lowerQuestion.includes('pemilik'))) {
+    if (
+      lowerQuestion.includes("daftar") &&
+      (lowerQuestion.includes("umkm") || lowerQuestion.includes("pemilik"))
+    ) {
       return `🏪 **Cara Daftar Sebagai Pemilik UMKM:**
 
 1. **Login** ke akun Anda terlebih dahulu
@@ -136,9 +153,13 @@ export default function AiAssistant() {
 
 ✨ *Tips: Pastikan data yang diisi akurat agar UMKM mudah ditemukan pelanggan.*`;
     }
-    
+
     // Cek pertanyaan tentang peta
-    if (lowerQuestion.includes('peta') || lowerQuestion.includes('map') || lowerQuestion.includes('mencari')) {
+    if (
+      lowerQuestion.includes("peta") ||
+      lowerQuestion.includes("map") ||
+      lowerQuestion.includes("mencari")
+    ) {
       return `🗺️ **Cara Mencari UMKM di Peta:**
 
 ✨ **Di halaman utama, ada 3 fitur unggulan:**
@@ -154,95 +175,199 @@ export default function AiAssistant() {
 
 📍 **Tips**: Aktifkan lokasi browser untuk hasil yang lebih akurat!`;
     }
-    
+
     // Cek pertanyaan tentang favorit
-    if (lowerQuestion.includes('favorit') || lowerQuestion.includes('bookmark')) {
+    if (
+      lowerQuestion.includes("favorit") ||
+      lowerQuestion.includes("favourite") ||
+      lowerQuestion.includes("menambahkan umkm")
+    ) {
       return `❤️ **Cara Menambahkan UMKM ke Favorit:**
-- Klik ikon hati (♡) di card UMKM atau halaman detail UMKM
-- UMKM favorit bisa diakses di menu "Favorit" setelah login
-- Anda akan dapat notifikasi jika ada update dari UMKM favorit`;
+
+📱 **Langkah Mudah:**
+1. Buka **halaman detail UMKM** atau lihat di **kartu UMKM**
+2. Klik **ikon hati (♡)** yang ada di card atau halaman detail
+3. Ikon akan berubah menjadi **merah (♥)** jika sudah difavoritkan
+4. Klik lagi untuk menghapus dari favorit
+
+💾 **Penyimpanan:**
+• **Sudah login?** Favorit tersimpan di akun Anda
+• **Belum login?** Favorit tersimpan di browser (localStorage)
+• Login nanti untuk sync favorit ke akun
+
+📂 **Akses Favorit:**
+• Klik menu **"Favorit"** di navigasi atas
+• Atau buka dari menu hamburger (☰)
+• Semua UMKM favorit akan muncul di satu halaman
+
+🔔 **Manfaat:**
+• Akses cepat ke UMKM favorit
+• Dapat notifikasi update (jika login)
+• Mudah bandingkan UMKM favorit`;
     }
-    
+
     // Cek pertanyaan tentang live tracking
-    if (lowerQuestion.includes('tracking') || lowerQuestion.includes('navigasi') || lowerQuestion.includes('arah')) {
+    if (
+      lowerQuestion.includes("tracking") ||
+      lowerQuestion.includes("navigasi") ||
+      lowerQuestion.includes("arah") ||
+      lowerQuestion.includes("fitur live")
+    ) {
       return `📍 **Fitur Live Tracking & Navigasi:**
-- Setelah klik UMKM di peta, pilih "Dapatkan Arah"
-- Website akan membuka aplikasi peta default untuk navigasi
-- Anda bisa track real-time perjalanan menuju UMKM
-- Estimasi waktu dan jarak akan ditampilkan`;
+
+🚚 **Live Tracking Pesanan:**
+• Setelah checkout, buka halaman **/status**
+• Lihat simulasi driver yang sedang mengantar
+• Tracking real-time dengan peta interaktif
+• Estimasi waktu kedatangan ditampilkan
+
+🗺️ **Navigasi ke UMKM:**
+• Klik UMKM di peta atau halaman detail
+• Pilih **"Dapatkan Arah"** atau **"Navigasi"**
+• Website akan buka Google Maps untuk navigasi
+• Bisa pakai GPS untuk rute tercepat
+
+📱 **Tips:**
+• Aktifkan GPS untuk tracking akurat
+• Gunakan mode fullscreen untuk peta yang lebih besar
+• Refresh halaman jika tracking tidak update`;
     }
-    
+
+    // Cek pertanyaan tentang rating & review
+    if (
+      lowerQuestion.includes("rating") ||
+      lowerQuestion.includes("review") ||
+      lowerQuestion.includes("ulasan") ||
+      lowerQuestion.includes("sistem rating")
+    ) {
+      return `⭐ **Sistem Rating & Review UMKM:**
+
+📝 **Cara Memberikan Review:**
+1. **Login** ke akun Anda
+2. Buka **halaman detail UMKM**
+3. Scroll ke bagian **"Review & Rating"**
+4. Klik **"Tulis Review"**
+5. Pilih **rating bintang** (1-5)
+6. Tulis **komentar** tentang pengalaman Anda
+7. Klik **"Kirim Review"**
+
+⭐ **Sistem Rating:**
+• Rating: **1-5 bintang**
+• Rata-rata rating dihitung otomatis
+• UMKM dengan rating tinggi muncul di **"Rekomendasi Terpopuler"**
+• Review terbaru ditampilkan di atas
+
+🤖 **Fitur AI:**
+• **Ringkasan AI**: Klik tombol AI untuk meringkas semua review
+• AI akan analisis sentimen positif & negatif
+• Dapat insight cepat tanpa baca semua review
+
+💡 **Tips Review Berkualitas:**
+• Jelaskan pengalaman spesifik Anda
+• Sebutkan menu/produk yang dipesan
+• Berikan saran konstruktif untuk pemilik`;
+    }
+
     try {
-      const response = await fetch('/api/umkm?limit=10');
+      const response = await fetch("/api/umkm?limit=10");
       if (response.ok) {
         const umkms = await response.json();
-        
+
         // Filter makanan dan minuman saja
-        if (lowerQuestion.includes('makanan') || lowerQuestion.includes('makan') || lowerQuestion.includes('minuman') || lowerQuestion.includes('minum') || lowerQuestion.includes('rekomendasi')) {
+        if (
+          lowerQuestion.includes("makanan") ||
+          lowerQuestion.includes("makan") ||
+          lowerQuestion.includes("minuman") ||
+          lowerQuestion.includes("minum") ||
+          lowerQuestion.includes("rekomendasi")
+        ) {
           const foodDrinkUmkms = umkms.filter((u: any) => {
-            const category = u.category?.name?.toLowerCase() || '';
-            const name = u.name?.toLowerCase() || '';
+            const category = u.category?.name?.toLowerCase() || "";
+            const name = u.name?.toLowerCase() || "";
             return (
-              category.includes('makanan') || 
-              category.includes('minuman') ||
-              name.includes('nasi') ||
-              name.includes('sate') ||
-              name.includes('ayam') ||
-              name.includes('bebek') ||
-              name.includes('soto') ||
-              name.includes('bakso') ||
-              name.includes('mie') ||
-              name.includes('kopi') ||
-              name.includes('teh') ||
-              name.includes('juice') ||
-              name.includes('ice') ||
-              name.includes('drink')
-            ) && !category.includes('jasa') && !category.includes('laundry');
+              (category.includes("makanan") ||
+                category.includes("minuman") ||
+                name.includes("nasi") ||
+                name.includes("sate") ||
+                name.includes("ayam") ||
+                name.includes("bebek") ||
+                name.includes("soto") ||
+                name.includes("bakso") ||
+                name.includes("mie") ||
+                name.includes("kopi") ||
+                name.includes("teh") ||
+                name.includes("juice") ||
+                name.includes("ice") ||
+                name.includes("drink")) &&
+              !category.includes("jasa") &&
+              !category.includes("laundry")
+            );
           });
-          
+
           if (foodDrinkUmkms.length > 0) {
             const topRecommendations = foodDrinkUmkms
-              .sort((a: any, b: any) => (b.averageRating || 0) - (a.averageRating || 0))
+              .sort(
+                (a: any, b: any) =>
+                  (b.averageRating || 0) - (a.averageRating || 0)
+              )
               .slice(0, 3);
-            
-            let response = `🍽️ **Rekomendasi Makanan & Minuman Terbaik:**\n\n`; 
+
+            let response = `🍽️ **Rekomendasi Makanan & Minuman Terbaik:**\n\n`;
             topRecommendations.forEach((umkm: any, index: number) => {
-              response += `${index + 1}. **${umkm.name}** ⭐ ${umkm.averageRating || 'Belum ada rating'}\n`;
+              response += `${index + 1}. **${umkm.name}** ⭐ ${
+                umkm.averageRating || "Belum ada rating"
+              }\n`;
               response += `   📍 ${umkm.address}\n`;
-              response += `   🏷️ ${umkm.category?.name || 'Kategori tidak diketahui'}\n\n`;
+              response += `   🏷️ ${
+                umkm.category?.name || "Kategori tidak diketahui"
+              }\n\n`;
             });
             response += `💡 *Klik UMKM untuk lihat menu lengkap dan review!*`;
             return response;
           }
         }
-        
-        if (lowerQuestion.includes('kebab') || lowerQuestion.includes('pizza') || lowerQuestion.includes('burger')) {
-          const specificFoodUmkms = umkms.filter((u: any) => 
-            u.name.toLowerCase().includes('kebab') || 
-            u.name.toLowerCase().includes('pizza') ||
-            u.name.toLowerCase().includes('burger')
+
+        if (
+          lowerQuestion.includes("kebab") ||
+          lowerQuestion.includes("pizza") ||
+          lowerQuestion.includes("burger")
+        ) {
+          const specificFoodUmkms = umkms.filter(
+            (u: any) =>
+              u.name.toLowerCase().includes("kebab") ||
+              u.name.toLowerCase().includes("pizza") ||
+              u.name.toLowerCase().includes("burger")
           );
           if (specificFoodUmkms.length > 0) {
-            return `🍔 Saya menemukan ${specificFoodUmkms.length} UMKM yang menjual makanan tersebut! Coba cek: ${specificFoodUmkms.slice(0,2).map((u: any) => u.name).join(', ')}. Klik pada UMKM untuk melihat rating dan review!`;
+            return `🍔 Saya menemukan ${
+              specificFoodUmkms.length
+            } UMKM yang menjual makanan tersebut! Coba cek: ${specificFoodUmkms
+              .slice(0, 2)
+              .map((u: any) => u.name)
+              .join(", ")}. Klik pada UMKM untuk melihat rating dan review!`;
           }
         }
-        
-        if (lowerQuestion.includes('rating') || lowerQuestion.includes('terbaik') || lowerQuestion.includes('bagus')) {
+
+        if (
+          lowerQuestion.includes("rating") ||
+          lowerQuestion.includes("terbaik") ||
+          lowerQuestion.includes("bagus")
+        ) {
           return `⭐ **Sistem Rating & Review:**
 - Setiap UMKM memiliki sistem rating bintang 1-5
 - Pelanggan bisa memberikan review setelah berkunjung
 - UMKM dengan rating tinggi akan muncul di "Rekomendasi Terpopuler"
 - Filter berdasarkan rating tersedia di halaman pencarian`;
         }
-        
-        if (lowerQuestion.includes('buka') || lowerQuestion.includes('jam')) {
+
+        if (lowerQuestion.includes("buka") || lowerQuestion.includes("jam")) {
           return `🕐 Informasi jam operasional tersedia di detail setiap UMKM. Sebagian besar UMKM buka jam 10:00-21:00, tapi ada juga yang 24 jam!`;
         }
       }
     } catch (error) {
       // Fallback
     }
-    
+
     return `🤖 Maaf, saya sedang belajar tentang pertanyaan ini. 
 
 Sementara itu, coba:
@@ -294,8 +419,7 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
           <div className="flex-1 flex flex-col min-h-0">
             <ScrollArea className="flex-1 px-2 sm:px-3 md:px-4 lg:px-5 xl:px-6 py-2 sm:py-3 md:py-4 min-h-0" ref={scrollAreaRef}>
               <div className="space-y-4 pb-4">
-                
-                {/* Welcome Message */}
+                {/* Welcome Message - Show full layout when no messages */}
                 {messages.length === 0 && (
                   <div className="space-y-4">
                     <div className="text-center space-y-2 sm:space-y-3 md:space-y-4 py-3 sm:py-4 md:py-5 lg:py-6 xl:py-8">
@@ -324,6 +448,7 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
                           </Button>
                         ))}
                       </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -387,8 +512,7 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
                     </div>
                     <p className="text-[10px] sm:text-xs md:text-xs lg:text-sm xl:text-sm text-muted-foreground mt-1.5 sm:mt-2">AI sedang menganalisis...</p>
                   </div>
-                </div>
-              )}
+                )}
               </div>
             </ScrollArea>
           </div>
