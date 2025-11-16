@@ -1,73 +1,115 @@
-🏪 LokalKeren: Platform Direktori & E-commerce UMKM
+# 🏪 LokalKeren: Platform Direktori & E-commerce UMKM
 
 Lebih dari sekadar direktori. Ini adalah ekosistem full-stack untuk menemukan, memesan, dan mengelola UMKM lokal, ditenagai oleh AI.
 
 Proyek ini dibangun untuk kompetisi "Web In Action 2025" dengan visi melampaui brief: dari "direktori statis" menjadi "platform e-commerce dinamis dua sisi" yang lengkap.
 
-📖 Latar Belakang & Konsep
+---
+
+## 📖 Latar Belakang & Konsep
 
 Proyek ini lahir dari sebuah masalah sederhana namun krusial yang ada di brief kompetisi:
 
-Masalah 1: Visibilitas Rendah: UMKM (kedai bakso, warung kopi) sulit ditemukan secara online. Informasi mereka tersebar, tidak lengkap, dan seringkali kedaluwarsa.
+- **Masalah 1: Visibilitas Rendah** - UMKM (kedai bakso, warung kopi) sulit ditemukan secara online. Informasi mereka tersebar, tidak lengkap, dan seringkali kedaluwarsa.
 
-Masalah 2: Direktori "Mati": Direktori yang ada saat ini bersifat statis, seperti buku telepon digital. Tidak ada interaksi, tidak ada update real-time, dan tidak membantu pengguna mengambil keputusan.
+- **Masalah 2: Direktori "Mati"** - Direktori yang ada saat ini bersifat statis, seperti buku telepon digital. Tidak ada interaksi, tidak ada update real-time, dan tidak membantu pengguna mengambil keputusan.
 
-Masalah 3: Kesenjangan Pengalaman (User Gap): Pengguna modern tidak hanya butuh "daftar", mereka butuh "rekomendasi cerdas", filter lokasi real-time, dan alur yang jelas untuk bertransaksi.
+- **Masalah 3: Kesenjangan Pengalaman (User Gap)** - Pengguna modern tidak hanya butuh "daftar", mereka butuh "rekomendasi cerdas", filter lokasi real-time, dan alur yang jelas untuk bertransaksi.
 
-Visi Kami: Dari Direktori Statis Menjadi Platform Dinamis
+### Visi Kami: Dari Direktori Statis Menjadi Platform Dinamis
 
 Kami tidak hanya membuat daftar. Kami membangun sebuah ekosistem penuh dengan dua visi utama:
 
-Discovery Cerdas: Membantu pengguna menemukan UMKM yang tepat melalui AI, filter lokasi real-time, dan filter jam buka.
+1. **Discovery Cerdas** - Membantu pengguna menemukan UMKM yang tepat melalui AI, filter lokasi real-time, dan filter jam buka.
 
-Alur E-commerce Penuh: Memberikan pengalaman end-to-end (terima beres) dari melihat menu, memesan, hingga melacak pengiriman.
+2. **Alur E-commerce Penuh** - Memberikan pengalaman end-to-end (terima beres) dari melihat menu, memesan, hingga melacak pengiriman.
 
+---
 
-✨ Fitur Unggulan
+## ✨ Fitur Unggulan
 
-Proyek ini dibagi menjadi dua pengalaman utama: untuk Pelanggan dan untuk Pengusaha UMKM.
+Proyek ini dibagi menjadi dua pengalaman utama: untuk **Pelanggan** dan untuk **Pengusaha UMKM**.
 
-Untuk Pelanggan (User-Facing)
+### Untuk Pelanggan (User-Facing)
 
-🚀 Discovery Cerdas (3x Filter):
+#### 🚀 Discovery Cerdas (3x Filter):
 
-Filter "Cari Terdekat": Menggunakan Geolocation API & query Haversine (PostgreSQL) untuk mengurutkan UMKM dari lokasi real-time pengguna.
+- **Filter "Cari Terdekat"** - Menggunakan Geolocation API & query Haversine (PostgreSQL) untuk mengurutkan UMKM dari lokasi real-time pengguna.
 
-Filter "Buka Sekarang": Filter timezone-aware (WIB) yang secara akurat memfilter UMKM berdasarkan jam operasional.
+- **Filter "Buka Sekarang"** - Filter timezone-aware (WIB) yang secara akurat memfilter UMKM berdasarkan jam operasional.
 
-Pencarian Cerdas (Autocomplete): Search bar cmdk yang memberi saran real-time saat mengetik.
+- **Pencarian Cerdas (Autocomplete)** - Search bar cmdk yang memberi saran real-time saat mengetik.
 
-🤖 Integrasi AI:
+#### 🤖 Integrasi AI:
 
-Rekomendasi AI: Carousel personal di Halaman Utama. AI menganalisis data Favorit pengguna untuk merekomendasikan UMKM lain.
+- **Rekomendasi AI** - Carousel personal di Halaman Utama. AI menganalisis data Favorit pengguna untuk merekomendasikan UMKM lain.
 
-Ringkasan Ulasan AI: Tombol on-demand di Halaman Detail untuk meringkas puluhan ulasan menjadi 2 kalimat sentimen (pro & kontra).
+- **Ringkasan Ulasan AI** - Tombol on-demand di Halaman Detail untuk meringkas puluhan ulasan menjadi 2 kalimat sentimen (pro & kontra).
 
-Asisten AI Kontekstual: Chatbot floating yang "sudah membaca" seluruh data UMKM dan "tahu" cara kerja website (RAG).
+- **Asisten AI Kontekstual** - Chatbot floating yang "sudah membaca" seluruh data UMKM dan "tahu" cara kerja website (RAG).
 
-🛒 Alur E-commerce Penuh (Full-Stack):
+#### 🛒 Alur E-commerce Penuh (Full-Stack):
 
-Keranjang (Zustand): Keranjang belanja client-side yang persisten.
+- **Keranjang (Zustand)** - Keranjang belanja client-side yang persisten.
 
-Checkout Cerdas: Alur checkout dengan opsi "Ambil Sendiri" atau "Dianterin" (dengan auto-deteksi lokasi via Geolocation & simulasi peta).
+- **Checkout Cerdas** - Alur checkout dengan opsi "Ambil Sendiri" atau "Dianterin" (dengan auto-deteksi lokasi via Geolocation & simulasi peta).
 
-Transaksi Database (Real): Pesanan disimpan di tabel Order & OrderItem di PostgreSQL, bukan localStorage.
+- **Transaksi Database (Real)** - Pesanan disimpan di tabel Order & OrderItem di PostgreSQL, bukan localStorage.
 
-📍 Peta & Pelacakan Lanjutan:
+#### 📍 Peta & Pelacakan Lanjutan:
 
-Mode "Map View": Halaman /map yang menampilkan semua pin UMKM di peta Leaflet untuk eksplorasi visual.
+- **Mode "Map View"** - Halaman /map yang menampilkan semua pin UMKM di peta Leaflet untuk eksplorasi visual.
 
-Rute Google Maps: Integrasi tombol "Dapatkan Rute" ke Google Maps.
+- **Rute Google Maps** - Integrasi tombol "Dapatkan Rute" ke Google Maps.
 
-Simulasi Live Tracking: Halaman /status yang menampilkan simulasi pergerakan driver di peta setelah checkout.
+- **Simulasi Live Tracking** - Halaman /status yang menampilkan simulasi pergerakan driver di peta setelah checkout.
 
-👥 Fitur Pengguna (Full-Stack):
+#### 👥 Fitur Pengguna (Full-Stack):
 
-Sistem Favorit (Hybrid): Sistem canggih yang menyimpan favorit di localStorage (untuk guest) dan otomatis sinkronisasi ke Database (UserFavoriteUmkm) saat login.
+- **Sistem Favorit (Hybrid)** - Sistem canggih yang menyimpan favorit di localStorage (untuk guest) dan otomatis sinkronisasi ke Database (UserFavoriteUmkm) saat login.
 
-Ulasan Nyata (Full-Stack): Pengguna login bisa menulis ulasan. Rating rata-rata UMKM akan otomatis ter-update di database.
+- **Ulasan Nyata (Full-Stack)** - Pengguna login bisa menulis ulasan. Rating rata-rata UMKM akan otomatis ter-update di database.
 
-Histori Transaksi (Database): Halaman /history yang mengambil riwayat pesanan nyata dari database (bukan localStorage).
+- **Histori Transaksi (Database)** - Halaman /history yang mengambil riwayat pesanan nyata dari database (bukan localStorage).
+
+#### 🎨 UX Premium:
+
+- **Pusat Notifikasi Real-Time** - Ikon lonceng di header dengan notifikasi real-time dari database untuk balasan ulasan dan update status pesanan (misal: "Pesanan Tiba!").
+
+- **Notifikasi Toast** - Umpan balik instan (via react-hot-toast) untuk aksi pengguna seperti "Tambah ke Keranjang" atau "Error".
+
+- **Multi-Tema** - Kustomisasi tema (Light, Rose, Ocean).
+
+- **Animasi (Framer Motion)** - Transisi halaman dan animasi grid stagger yang smooth.
+
+- **Desain Responsif** - Kartu horizontal di HP, kartu vertikal di Desktop.
+
+- **Onboarding** - Pop-up sambutan & CTA "Buka Toko" (hanya muncul sekali).
+
+### Untuk Pengusaha (UMKM-Facing)
+
+#### 🔐 Autentikasi Terpadu:
+
+- Satu alur registrasi (role: PELANGGAN).
+
+- Pengguna bisa "Upgrade Akun" melalui halaman /buka-toko untuk menjadi PENGUSAHA.
+
+- Backend db.$transaction menjamin pembuatan UMKM dan update role user terjadi bersamaan.
+
+#### 📊 Dashboard UMKM (/dashboard):
+
+- **Pusat Notifikasi Real-Time** - Notifikasi instan di header saat ada Pesanan Baru Masuk atau Ulasan Baru dari pelanggan.
+
+- **Manajemen Pesanan (Real-Time)** - Melihat daftar pesanan yang masuk (PAID, PREPARING, SHIPPING) dan mengubah statusnya.
+
+- **Manajemen Produk (CRUD)** - Mengelola Kategori Produk dan Produk (tambah, edit, hapus, ubah harga, tandai habis).
+
+- **Dashboard Analytics (Business Intelligence)**:
+  - **KPI**: Kartu Total Pendapatan, Modal/HPP, Profit Bersih, Pesanan Selesai, dan Rating Rata-rata.
+  - **Grafik Penjualan**: Grafik garis (Recharts) pendapatan per hari (via query GROUP BY DATE).
+  - **Produk Terlaris**: Daftar 5 produk terlaris (via query GROUP BY & SUM(quantity)).
+
+---
 
 🎨 UX Premium:
 
@@ -109,65 +151,63 @@ Grafik Penjualan: Grafik garis (Recharts) pendapatan per hari (via query GROUP B
 
 Produk Terlaris: Daftar 5 produk terlaris (via query GROUP BY & SUM(quantity)).
 
-🛠️ Tech Stack
+## 🛠️ Tech Stack
 
-Framework: Next.js 14 (App Router)
+- **Framework**: Next.js 14 (App Router)
+- **Frontend**: React, TypeScript, Tailwind CSS
+- **UI Components**: shadcn/ui, Recharts, Framer Motion
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Database**: PostgreSQL
+- **AI**: Gemini
+- **State**: Zustand (Hybrid: Keranjang, Favorit Tamu)
+- **Peta**: Leaflet.js
 
-Frontend: React, TypeScript, Tailwind CSS
+---
 
-UI Components: shadcn/ui, Recharts, Framer Motion
+## 📊 Database Schema (Prisma)
 
-Backend: Next.js API Routes, Prisma ORM
+- **User**: Menyimpan data pelanggan & pengusaha (PELANGGAN/PENGUSAHA). Memiliki relasi ke Umkm, Review (dan ReviewReplies), Order, dan Favorite.
 
-Database: PostgreSQL
+- **Category**: Kategori utama UMKM (Makanan, Jasa, Fashion, Kerajinan, dll).
 
-AI: Gemini
+- **Umkm**: Data inti toko, terhubung ke User (sebagai owner).
 
-State: Zustand (Hybrid: Keranjang, Favorit Tamu)
+- **ProductCategory**: Kategori menu di dalam satu UMKM (misal: "Menu Sate", "Minuman").
 
-Peta: Leaflet.js
+- **Product**: Detail produk/menu, terhubung ke ProductCategory. Memiliki price (jual) dan costPrice (modal).
 
-📊 Database Schema (Prisma)
+- **Review**: Ulasan, terhubung ke User dan Umkm. Memiliki field ownerReply untuk balasan.
 
-User: Menyimpan data pelanggan & pengusaha (PELANGGAN/PENGUSAHA). Memiliki relasi ke Umkm, Review (dan ReviewReplies), Order, dan Favorite.
+- **Order**: "Kuitansi" pesanan, terhubung ke User dan Umkm. Memiliki paymentMethod.
 
-Category: Kategori utama UMKM (Makanan, Jasa, Fashion, Kerajinan, dll).
+- **OrderItem**: Detail barang di dalam Order, terhubung ke Product.
 
-Umkm: Data inti toko, terhubung ke User (sebagai owner).
+- **Favorite**: Tabel penghubung untuk User yang memfavoritkan Umkm (menggantikan UserFavoriteUmkm).
 
-ProductCategory: Kategori menu di dalam satu UMKM (misal: "Menu Sate", "Minuman").
+- **Notification**: (Tambahan Sesuai Fitur) Menyimpan notifikasi (pesan, status dibaca, link) untuk User dan UMKM.
 
-Product: Detail produk/menu, terhubung ke ProductCategory. Memiliki price (jual) dan costPrice (modal).
+---
 
-Review: Ulasan, terhubung ke User dan Umkm. Memiliki field ownerReply untuk balasan.
+## ⚙️ Instalasi & Setup
 
-Order: "Kuitansi" pesanan, terhubung ke User dan Umkm. Memiliki paymentMethod.
+### 1. Clone Repository
 
-OrderItem: Detail barang di dalam Order, terhubung ke Product.
-
-Favorite: Tabel penghubung untuk User yang memfavoritkan Umkm (menggantikan UserFavoriteUmkm).
-
-Notification: (Tambahan Sesuai Fitur) Menyimpan notifikasi (pesan, status dibaca, link) untuk User dan UMKM.
-
-⚙️ Instalasi & Setup
-
-1. Clone Repository
-
-git clone [https://github.com/](https://github.com/)[username-kamu]/[repo-kamu].git
+```bash
+git clone https://github.com/[username-kamu]/[repo-kamu].git
 cd [repo-kamu]
+```
 
+### 2. Install Dependencies
 
-
-2. Install Dependencies
-
+```bash
 npm install
+```
 
+### 3. Konfigurasi Environment Variables
 
+Buat file `.env.local` di root proyek:
 
-3. Konfigurasi Environment Variables
-
-Buat file .env.local di root proyek:
-
+```env
 # Database PostgreSQL
 DATABASE_URL="postgresql://[user]:[password]@[host]:[port]/[database]"
 
@@ -178,11 +218,11 @@ NEXTAUTH_URL="http://localhost:3000"
 
 # Gemini API Key untuk fitur AI
 Gemini_API_KEY="gsk_...[kunci_api_gemini_kamu]"
+```
 
+### 4. Setup Database
 
-
-4. Setup Database
-
+```bash
 # Generate Prisma Client
 npx prisma generate
 
@@ -191,36 +231,38 @@ npx prisma migrate dev
 
 # Seed database dengan data contoh (termasuk user & UMKM dummy)
 npx prisma db seed
+```
 
+### 5. Jalankan Aplikasi
 
-
-5. Jalankan Aplikasi
-
+```bash
 npm run dev
-
-
+```
 
 Aplikasi akan berjalan di http://localhost:3000
 
-🔑 Akun Testing
+---
+
+## 🔑 Akun Testing
 
 Setelah menjalankan seed, Anda dapat login dengan:
 
-Akun Pelanggan:
+**Akun Pelanggan:**
 
-Email: mock-user@example.com
+- Email: `mock-user@example.com`
+- Password: `mockpassword123`
 
-Password: mockpassword123
+**Akun Pengusaha:**
 
-Akun Pengusaha:
+- Email: `elmyra-ice-tea_owner@example.com`
+- Password: `elmyra-ice-tea`
+- _(Akun ini sudah memiliki UMKM yang terhubung, siap untuk tes Dashboard)_
 
-Email: elmyra-ice-tea_owner@example.com
+---
 
-Password: elmyra-ice-tea
-(Akun ini sudah memiliki UMKM yang terhubung, siap untuk tes Dashboard)
+## 🚀 Scripts
 
-🚀 Scripts
-
+```bash
 # Development
 npm run dev
 
@@ -236,4 +278,4 @@ npm run lint
 # Database commands
 npx prisma studio       # GUI database di browser
 npx prisma migrate reset # Reset database jika bermasalah
-
+```
