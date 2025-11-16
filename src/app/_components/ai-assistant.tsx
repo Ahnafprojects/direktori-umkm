@@ -396,9 +396,9 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
         <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-background animate-pulse"></div>
       </Button>
 
-      {/* Minimalist Dialog - Responsive */}
+      {/* Minimalist Dialog - Responsive dengan Margin/Padding */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="w-[98vw] sm:w-[95vw] sm:max-w-2xl lg:max-w-3xl h-[95vh] sm:h-[90vh] lg:h-[85vh] max-h-[700px] sm:max-h-[750px] lg:max-h-[800px] flex flex-col p-0 gap-0 rounded-lg sm:rounded-xl lg:rounded-2xl border shadow-xl">
+        <DialogContent className="w-[92vw] sm:w-[90vw] sm:max-w-2xl lg:max-w-3xl h-[88vh] sm:h-[85vh] lg:h-[82vh] max-h-[700px] sm:max-h-[750px] lg:max-h-[800px] flex flex-col p-0 gap-0 rounded-2xl sm:rounded-xl lg:rounded-2xl border shadow-2xl">
           {/* Theme-Consistent Header - Responsive */}
           <DialogHeader className="px-3 sm:px-4 lg:px-6 py-2.5 sm:py-3 lg:py-4 border-b bg-muted/30">
             <div className="flex items-center justify-between gap-2">
@@ -421,14 +421,14 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
           {/* Proper Chat Area dengan Scroll - Responsive */}
           <div className="flex-1 flex flex-col min-h-0">
             <ScrollArea
-              className="flex-1 px-2 sm:px-3 lg:px-6 py-2 sm:py-3 lg:py-4 min-h-0"
+              className="flex-1 px-3 sm:px-3 lg:px-6 py-3 sm:py-3 lg:py-4 min-h-0"
               ref={scrollAreaRef}
             >
-              <div className="space-y-3 sm:space-y-4 pb-3 sm:pb-4">
+              <div className="space-y-4 sm:space-y-4 pb-4 sm:pb-4">
                 {/* Welcome Message - Show full layout when no messages - Responsive */}
                 {messages.length === 0 && (
-                  <div className="text-center space-y-4 sm:space-y-6 py-4 sm:py-6 lg:py-8 px-2">
-                    <div className="space-y-1.5 sm:space-y-2">
+                  <div className="text-center space-y-5 sm:space-y-6 py-6 sm:py-6 lg:py-8 px-3">
+                    <div className="space-y-2 sm:space-y-2">
                       <h3 className="text-base sm:text-lg lg:text-xl font-semibold">
                         Halo! Saya LokalKeren Assistant
                       </h3>
@@ -440,18 +440,18 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
                     </div>
 
                     {/* Quick Questions in Welcome - Vertical List - Responsive */}
-                    <div className="space-y-2 sm:space-y-3">
+                    <div className="space-y-3 sm:space-y-3">
                       <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                         Pertanyaan yang sering ditanyakan:
                       </p>
-                      <div className="space-y-1.5 sm:space-y-2 max-w-xl mx-auto">
+                      <div className="space-y-2 sm:space-y-2 max-w-xl mx-auto">
                         {quickQuestions.map((q, index) => (
                           <Button
                             key={index}
                             variant="outline"
                             onClick={() => sendMessage(q.text)}
                             disabled={isLoading}
-                            className="w-full h-auto px-3 sm:px-4 py-2 sm:py-3 text-left justify-start hover:bg-primary/10 hover:border-primary/50 transition-all group border-border/60"
+                            className="w-full h-auto px-3 sm:px-4 py-2.5 sm:py-3 text-left justify-start hover:bg-primary/10 hover:border-primary/50 transition-all group border-border/60"
                           >
                             <span className="mr-2 sm:mr-3 text-base sm:text-xl group-hover:scale-110 transition-transform flex-shrink-0">
                               {q.icon}
@@ -471,17 +471,17 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
                   <div
                     key={index}
                     className={cn(
-                      "flex gap-2 sm:gap-3",
+                      "flex gap-2.5 sm:gap-3",
                       msg.role === "user" ? "justify-end" : "justify-start"
                     )}
                   >
                     {msg.role === "assistant" && (
                       <>
-                        <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                          <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary-foreground" />
+                        <div className="w-8 h-8 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                          <Bot className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary-foreground" />
                         </div>
                         <div className="flex-1 max-w-[75%] sm:max-w-[80%] lg:max-w-[85%]">
-                          <div className="bg-muted/50 border border-border rounded-2xl rounded-tl-sm px-3 py-2 sm:px-4 sm:py-3 lg:px-5 lg:py-4 shadow-sm">
+                          <div className="bg-muted/50 border border-border rounded-2xl rounded-tl-sm px-3.5 py-2.5 sm:px-4 sm:py-3 lg:px-5 lg:py-4 shadow-sm">
                             <div className="chat-markdown leading-relaxed text-[11px] sm:text-xs lg:text-sm">
                               <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
@@ -489,7 +489,7 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
                                   // Custom renderer untuk paragraph agar \n jadi line break
                                   p: ({ children }) => {
                                     return (
-                                      <p className="my-1 sm:my-2 whitespace-pre-line">
+                                      <p className="my-1.5 sm:my-2 whitespace-pre-line">
                                         {children}
                                       </p>
                                     );
@@ -508,7 +508,7 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
                               </ReactMarkdown>
                             </div>
                           </div>
-                          <p className="text-[9px] sm:text-xs lg:text-sm text-muted-foreground mt-0.5 sm:mt-1 px-1">
+                          <p className="text-[9px] sm:text-xs lg:text-sm text-muted-foreground mt-1 sm:mt-1 px-1">
                             AI •{" "}
                             {new Date(
                               msg.timestamp || Date.now()
@@ -523,14 +523,14 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
 
                     {msg.role === "user" && (
                       <div className="max-w-[75%] sm:max-w-[80%] lg:max-w-[85%] flex justify-end">
-                        <div className="flex items-end gap-1.5 sm:gap-2 lg:gap-3">
+                        <div className="flex items-end gap-2 sm:gap-2 lg:gap-3">
                           <div>
-                            <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3 py-2 sm:px-4 sm:py-3 lg:px-5 lg:py-4 shadow-sm">
+                            <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3.5 py-2.5 sm:px-4 sm:py-3 lg:px-5 lg:py-4 shadow-sm">
                               <p className="text-[11px] sm:text-sm lg:text-base leading-relaxed">
                                 {msg.content}
                               </p>
                             </div>
-                            <p className="text-[9px] sm:text-xs lg:text-sm text-muted-foreground mt-0.5 sm:mt-1 px-1 text-right">
+                            <p className="text-[9px] sm:text-xs lg:text-sm text-muted-foreground mt-1 sm:mt-1 px-1 text-right">
                               Anda •{" "}
                               {new Date(
                                 msg.timestamp || Date.now()
@@ -540,8 +540,8 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
                               })}
                             </p>
                           </div>
-                          <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-9 lg:h-9 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                            <div className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 bg-primary rounded-full"></div>
+                          <div className="w-7 h-7 sm:w-7 sm:h-7 lg:w-9 lg:h-9 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                            <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 bg-primary rounded-full"></div>
                           </div>
                         </div>
                       </div>
@@ -551,23 +551,23 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
 
                 {/* Loading - Theme Consistent - Responsive */}
                 {(isLoading || isTyping) && (
-                  <div className="flex gap-2 sm:gap-3">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm animate-pulse">
-                      <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary-foreground" />
+                  <div className="flex gap-2.5 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm animate-pulse">
+                      <Bot className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary-foreground" />
                     </div>
-                    <div className="bg-muted/50 border border-border rounded-2xl rounded-tl-sm px-3 py-2 sm:px-4 sm:py-3 lg:px-5 lg:py-4 shadow-sm">
+                    <div className="bg-muted/50 border border-border rounded-2xl rounded-tl-sm px-3.5 py-2.5 sm:px-4 sm:py-3 lg:px-5 lg:py-4 shadow-sm">
                       <div className="flex gap-1 lg:gap-1.5">
-                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 lg:w-2.5 lg:h-2.5 bg-primary rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 sm:w-2 sm:h-2 lg:w-2.5 lg:h-2.5 bg-primary rounded-full animate-bounce"></div>
                         <div
-                          className="w-1.5 h-1.5 sm:w-2 sm:h-2 lg:w-2.5 lg:h-2.5 bg-primary/70 rounded-full animate-bounce"
+                          className="w-2 h-2 sm:w-2 sm:h-2 lg:w-2.5 lg:h-2.5 bg-primary/70 rounded-full animate-bounce"
                           style={{ animationDelay: "0.1s" }}
                         ></div>
                         <div
-                          className="w-1.5 h-1.5 sm:w-2 sm:h-2 lg:w-2.5 lg:h-2.5 bg-primary/50 rounded-full animate-bounce"
+                          className="w-2 h-2 sm:w-2 sm:h-2 lg:w-2.5 lg:h-2.5 bg-primary/50 rounded-full animate-bounce"
                           style={{ animationDelay: "0.2s" }}
                         ></div>
                       </div>
-                      <p className="text-[10px] sm:text-xs lg:text-sm text-muted-foreground mt-1.5 sm:mt-2">
+                      <p className="text-[10px] sm:text-xs lg:text-sm text-muted-foreground mt-2 sm:mt-2">
                         AI sedang menganalisis...
                       </p>
                     </div>
@@ -581,12 +581,12 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
           <div className="border-t bg-muted/30">
             {/* Quick Questions - Horizontal Scroll (Only when chat started) - Responsive */}
             {messages.length > 0 && (
-              <div className="px-2 sm:px-3 lg:px-4 pt-2 sm:pt-3 pb-1.5 sm:pb-2">
-                <p className="text-[10px] sm:text-xs text-muted-foreground mb-1.5 sm:mb-2">
+              <div className="px-3 sm:px-3 lg:px-4 pt-2.5 sm:pt-3 pb-2 sm:pb-2">
+                <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-2">
                   Mulai mengetik...
                 </p>
-                <div className="overflow-x-auto scrollbar-hide -mx-2 sm:-mx-3 lg:-mx-4 px-2 sm:px-3 lg:px-4">
-                  <div className="flex gap-1.5 sm:gap-2 pb-1.5 sm:pb-2 min-w-max">
+                <div className="overflow-x-auto scrollbar-hide -mx-3 sm:-mx-3 lg:-mx-4 px-3 sm:px-3 lg:px-4">
+                  <div className="flex gap-2 sm:gap-2 pb-2 sm:pb-2 min-w-max">
                     {quickQuestions.map((q, index) => (
                       <Button
                         key={index}
@@ -594,9 +594,9 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
                         onClick={() => sendMessage(q.text)}
                         disabled={isLoading}
                         size="sm"
-                        className="h-auto px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs whitespace-nowrap hover:bg-primary/10 hover:border-primary/50 transition-all group shrink-0"
+                        className="h-auto px-2.5 sm:px-3 py-2 sm:py-2 text-[10px] sm:text-xs whitespace-nowrap hover:bg-primary/10 hover:border-primary/50 transition-all group shrink-0"
                       >
-                        <span className="mr-1 sm:mr-1.5 group-hover:scale-110 transition-transform text-sm sm:text-base">
+                        <span className="mr-1.5 sm:mr-1.5 group-hover:scale-110 transition-transform text-sm sm:text-base">
                           {q.icon}
                         </span>
                         <span className="max-w-[120px] sm:max-w-none truncate sm:whitespace-nowrap">
@@ -609,7 +609,7 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
               </div>
             )}
 
-            <div className="p-2 sm:p-3 lg:p-4">
+            <div className="p-3 sm:p-3 lg:p-4">
               <div className="relative">
                 <Input
                   placeholder="Tanya tentang fitur peta, favorit, live tracking, atau panduan website..."
@@ -622,19 +622,19 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
                       handleSubmit(e as any);
                     }
                   }}
-                  className="h-10 sm:h-11 lg:h-14 pr-11 sm:pr-12 lg:pr-16 rounded-lg sm:rounded-xl border-2 border-border focus:border-primary/50 focus:ring-primary/20 bg-background shadow-sm transition-all text-xs sm:text-sm lg:text-base placeholder:text-[10px] sm:placeholder:text-xs lg:placeholder:text-sm"
+                  className="h-11 sm:h-11 lg:h-14 pr-12 sm:pr-12 lg:pr-16 rounded-lg sm:rounded-xl border-2 border-border focus:border-primary/50 focus:ring-primary/20 bg-background shadow-sm transition-all text-xs sm:text-sm lg:text-base placeholder:text-[10px] sm:placeholder:text-xs lg:placeholder:text-sm"
                 />
 
                 <Button
                   onClick={(e) => handleSubmit(e as any)}
                   size="icon"
                   disabled={isLoading || input.trim() === ""}
-                  className="absolute right-1 top-1 h-8 w-8 sm:h-9 sm:w-9 lg:h-11 lg:w-11 rounded-full bg-primary hover:bg-primary/90 transition-colors shadow-sm"
+                  className="absolute right-1 top-1 h-9 w-9 sm:h-9 sm:w-9 lg:h-11 lg:w-11 rounded-full bg-primary hover:bg-primary/90 transition-colors shadow-sm"
                 >
                   {isLoading ? (
-                    <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 animate-spin text-primary-foreground" />
+                    <Loader2 className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 animate-spin text-primary-foreground" />
                   ) : (
-                    <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary-foreground" />
+                    <Send className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-primary-foreground" />
                   )}
                 </Button>
               </div>
