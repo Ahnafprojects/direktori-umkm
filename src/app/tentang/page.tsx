@@ -16,6 +16,9 @@ import {
   Github,
   Linkedin,
   Mail,
+  MessageCircle,
+  BookOpen,
+  LayoutDashboard,
 } from "lucide-react";
 import CountUpStats from "./_components/count-up-stats";
 import Testimonials from "./_components/testimonials";
@@ -63,6 +66,24 @@ export default function TentangPage() {
       description:
         "Chatbot cerdas yang membantu Anda menemukan UMKM sesuai kebutuhan",
     },
+    {
+      icon: MessageCircle,
+      title: "Chat dengan UMKM",
+      description:
+        "Komunikasi langsung dengan pemilik UMKM untuk tanya produk dan layanan",
+    },
+    {
+      icon: BookOpen,
+      title: "Blog UMKM",
+      description:
+        "Artikel, tips, dan panduan bisnis eksklusif untuk pengusaha UMKM berkembang",
+    },
+    {
+      icon: LayoutDashboard,
+      title: "Dashboard UMKM",
+      description:
+        "Panel kontrol lengkap untuk kelola toko, produk, pesanan, dan analitik penjualan",
+    },
   ];
 
   const team = [
@@ -98,7 +119,7 @@ export default function TentangPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-b">
+      <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-b -mt-20 pt-24 sm:pt-28">
         <div className="container mx-auto px-4 py-16 sm:py-20">
           <div className="max-w-3xl mx-auto text-center">
             <Badge className="mb-4" variant="secondary">
