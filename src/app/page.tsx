@@ -16,6 +16,7 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import GuestWelcomeModal from "./_components/guest-welcome-modal";
+import HeroCarousel from "./_components/hero-carousel";
 
 // Ini adalah tipe untuk searchParams
 type HomePageProps = {
@@ -68,6 +69,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         </div>
       )}
+
+      {/* Hero Carousel */}
+      <ClientHydrator>
+        <HeroCarousel />
+      </ClientHydrator>
 
       <h1 className="text-3xl font-bold mb-4">Direktori UMKM Lokal</h1>
       <p className="text-muted-foreground mb-6">

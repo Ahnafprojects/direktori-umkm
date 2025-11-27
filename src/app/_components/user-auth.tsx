@@ -24,6 +24,8 @@ import {
   Menu,
   Heart,
   ScrollText,
+  BookOpen,
+  Info,
 } from "lucide-react";
 import Link from "next/link";
 import ThemeSelector from "./theme-selector";
@@ -31,10 +33,10 @@ import FavoriteNavButton from "./favorite-nav-button";
 
 export default function UserAuth() {
   const { data: session, status, update } = useSession();
-  
+
   // State untuk tracking role yang sudah terupdate
   const [hasUpgraded, setHasUpgraded] = useState(false);
-  
+
   // Pastikan semua hooks dipanggil di awal, bahkan sebelum conditional returns
   const user = session?.user;
   // @ts-ignore
@@ -42,36 +44,36 @@ export default function UserAuth() {
   // Gunakan hasUpgraded OR sessionRole untuk isPengusaha
   const isPengusaha = hasUpgraded || sessionRole;
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "?";
-  
+
   // Debug log untuk melihat status
   React.useEffect(() => {
     if (session?.user) {
-      console.log('UserAuth Debug:', {
+      console.log("UserAuth Debug:", {
         sessionRole,
         hasUpgraded,
         isPengusaha,
-        userId: session.user.id
+        userId: session.user.id,
       });
     }
   }, [sessionRole, hasUpgraded, isPengusaha, session]);
-  
+
   // Hook useEffect harus selalu dipanggil di setiap render
   React.useEffect(() => {
     // Hanya jalankan jika user sudah login dan ada session
-    if (session && typeof window !== 'undefined') {
+    if (session && typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('upgraded') === 'true') {
+      if (urlParams.get("upgraded") === "true") {
         // Set state bahwa user sudah upgrade
         setHasUpgraded(true);
         // Refresh session untuk mendapatkan role terbaru
         update().then(() => {
           // Hapus parameter upgraded dari URL setelah refresh
           const newUrl = new URL(window.location.href);
-          newUrl.searchParams.delete('upgraded');
-          window.history.replaceState({}, '', newUrl.toString());
+          newUrl.searchParams.delete("upgraded");
+          window.history.replaceState({}, "", newUrl.toString());
         });
       }
-      
+
       // Jika session sudah terupdate dengan role PENGUSAHA, sync state
       if (sessionRole && !hasUpgraded) {
         setHasUpgraded(true);
@@ -103,6 +105,13 @@ export default function UserAuth() {
             <Link href="/register">
               <PlusCircle className="mr-2 h-4 w-4" />
               <span>Daftar</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/tentang">
+              <Info className="mr-2 h-4 w-4" />
+              <span>Tentang Kami</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -159,18 +168,34 @@ export default function UserAuth() {
         </DropdownMenuItem>
 
         {isPengusaha && (
-          <DropdownMenuItem asChild>
-            <Link href="/dashboard">
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              <span>Dashboard UMKM</span>
-            </Link>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                <span>Dashboard UMKM</span>
+              </Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem asChild>
+              <Link href="/blog">
+                <BookOpen className="mr-2 h-4 w-4" />
+                <span>Blog UMKM</span>
+              </Link>
+            </DropdownMenuItem>
+          </>
         )}
 
         <DropdownMenuItem asChild>
           <Link href="/profil">
             <User className="mr-2 h-4 w-4" />
             <span>Profil</span>
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link href="/tentang">
+            <Info className="mr-2 h-4 w-4" />
+            <span>Tentang Kami</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

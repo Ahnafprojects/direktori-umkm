@@ -16,10 +16,31 @@ import { Send, Sparkles, Loader2, Bot, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import Link from "next/link";
+import UmkmCard from "@/components/umkm-card";
+
+type UmkmData = {
+  id: number;
+  name: string;
+  slug: string;
+  address: string;
+  rating: number;
+  photos: string[];
+  Category: {
+    id: number;
+    name: string;
+  };
+  productCategories?: any[];
+  _count?: {
+    reviews: number;
+    favorites: number;
+  };
+};
 
 type Message = {
   role: "user" | "assistant";
   content: string;
+  umkmData?: UmkmData[]; // Data UMKM untuk di-render sebagai card
   id?: number;
   timestamp?: number;
 };
@@ -103,6 +124,7 @@ export default function AiAssistant() {
         const assistantMessage: Message = {
           role: "assistant",
           content: data.response,
+          umkmData: data.umkmData || undefined, // Tambahkan data UMKM jika ada
           id: Date.now(),
           timestamp: Date.now(),
         };
@@ -282,7 +304,10 @@ export default function AiAssistant() {
           lowerQuestion.includes("rekomendasi")
         ) {
           const foodDrinkUmkms = umkms.filter((u: any) => {
-            const category = u.category?.name?.toLowerCase() || "";
+            const category =
+              u.category?.name?.toLowerCase() ||
+              u.Category?.name?.toLowerCase() ||
+              "";
             const name = u.name?.toLowerCase() || "";
             return (
               (category.includes("makanan") ||
@@ -314,15 +339,17 @@ export default function AiAssistant() {
 
             let response = `🍽️ **Rekomendasi Makanan & Minuman Terbaik:**\n\n`;
             topRecommendations.forEach((umkm: any, index: number) => {
-              response += `${index + 1}. **${umkm.name}** ⭐ ${
-                umkm.averageRating || "Belum ada rating"
-              }\n`;
+              response += `${index + 1}. [**${umkm.name}**](/umkm/${
+                umkm.slug
+              }) ⭐ ${umkm.averageRating || "Belum ada rating"}\n`;
               response += `   📍 ${umkm.address}\n`;
               response += `   🏷️ ${
-                umkm.category?.name || "Kategori tidak diketahui"
+                umkm.category?.name ||
+                umkm.Category?.name ||
+                "Kategori tidak diketahui"
               }\n\n`;
             });
-            response += `💡 *Klik UMKM untuk lihat menu lengkap dan review!*`;
+            response += `💡 *Klik nama UMKM untuk lihat menu lengkap dan review!*`;
             return response;
           }
         }
@@ -482,31 +509,218 @@ Ada pertanyaan lain yang bisa saya bantu? 😊`;
                         </div>
                         <div className="flex-1 max-w-[75%] sm:max-w-[80%] lg:max-w-[85%]">
                           <div className="bg-muted/50 border border-border rounded-2xl rounded-tl-sm px-3.5 py-2.5 sm:px-4 sm:py-3 lg:px-5 lg:py-4 shadow-sm">
-                            <div className="chat-markdown leading-relaxed text-[11px] sm:text-xs lg:text-sm">
-                              <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                components={{
-                                  // Custom renderer untuk paragraph agar \n jadi line break
-                                  p: ({ children }) => {
-                                    return (
-                                      <p className="my-1.5 sm:my-2 whitespace-pre-line">
-                                        {children}
-                                      </p>
-                                    );
-                                  },
-                                  // Strong (bold) dengan styling yang jelas
-                                  strong: ({ children }) => {
-                                    return (
-                                      <strong className="font-bold text-foreground">
-                                        {children}
-                                      </strong>
-                                    );
-                                  },
-                                }}
-                              >
-                                {msg.content}
-                              </ReactMarkdown>
-                            </div>
+                            {/* Jika ada umkmData, render interleaved (selang-seling) */}
+                            {msg.umkmData && msg.umkmData.length > 0 ? (
+                              <div className="space-y-4">
+                                {/* Split content by numbered items */}
+                                {(() => {
+                                  const lines = msg.content.split("\n");
+                                  const headerLines: string[] = [];
+                                  const itemSections: {
+                                    text: string;
+                                    index: number;
+                                  }[] = [];
+                                  let footerLines: string[] = [];
+
+                                  let currentItemIndex = -1;
+                                  let currentItemText = "";
+                                  let inFooter = false;
+
+                                  lines.forEach((line) => {
+                                    // Deteksi baris header (sebelum item pertama)
+                                    if (
+                                      currentItemIndex === -1 &&
+                                      !line.match(/^\*?\*?[0-9]+\./)
+                                    ) {
+                                      headerLines.push(line);
+                                    }
+                                    // Deteksi footer (setelah semua item, biasanya dimulai dengan 💡)
+                                    else if (
+                                      line.includes("💡") ||
+                                      line.includes("Tips")
+                                    ) {
+                                      inFooter = true;
+                                      footerLines.push(line);
+                                    }
+                                    // Jika sudah masuk footer
+                                    else if (inFooter) {
+                                      footerLines.push(line);
+                                    }
+                                    // Deteksi item baru (dimulai dengan angka.)
+                                    else if (line.match(/^\*?\*?([0-9]+)\./)) {
+                                      // Save item sebelumnya
+                                      if (currentItemIndex >= 0) {
+                                        itemSections.push({
+                                          text: currentItemText,
+                                          index: currentItemIndex,
+                                        });
+                                      }
+
+                                      // Mulai item baru
+                                      const match =
+                                        line.match(/^\*?\*?([0-9]+)\./);
+                                      currentItemIndex = match
+                                        ? parseInt(match[1]) - 1
+                                        : currentItemIndex + 1;
+                                      currentItemText = line + "\n";
+                                    }
+                                    // Lanjutan item yang sama
+                                    else {
+                                      currentItemText += line + "\n";
+                                    }
+                                  });
+
+                                  // Save item terakhir
+                                  if (currentItemIndex >= 0) {
+                                    itemSections.push({
+                                      text: currentItemText,
+                                      index: currentItemIndex,
+                                    });
+                                  }
+
+                                  return (
+                                    <>
+                                      {/* Render Header */}
+                                      {headerLines.length > 0 && (
+                                        <div className="chat-markdown leading-relaxed text-[11px] sm:text-xs lg:text-sm">
+                                          <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                          >
+                                            {headerLines.join("\n")}
+                                          </ReactMarkdown>
+                                        </div>
+                                      )}
+
+                                      {/* Render Items Interleaved */}
+                                      {itemSections.map((section, idx) => (
+                                        <div key={idx} className="space-y-3">
+                                          {/* Text Info */}
+                                          <div className="chat-markdown leading-relaxed text-[11px] sm:text-xs lg:text-sm">
+                                            <ReactMarkdown
+                                              remarkPlugins={[remarkGfm]}
+                                              components={{
+                                                p: ({ children }) => (
+                                                  <p className="my-1.5 sm:my-2 whitespace-pre-line">
+                                                    {children}
+                                                  </p>
+                                                ),
+                                                strong: ({ children }) => (
+                                                  <strong className="font-bold text-foreground">
+                                                    {children}
+                                                  </strong>
+                                                ),
+                                                a: ({ href, children }) => {
+                                                  if (href?.startsWith("/")) {
+                                                    return (
+                                                      <Link
+                                                        href={href}
+                                                        className="text-primary hover:text-primary/80 underline font-medium transition-colors"
+                                                        onClick={() =>
+                                                          setIsOpen(false)
+                                                        }
+                                                      >
+                                                        {children}
+                                                      </Link>
+                                                    );
+                                                  }
+                                                  return (
+                                                    <a
+                                                      href={href}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="text-primary hover:text-primary/80 underline"
+                                                    >
+                                                      {children}
+                                                    </a>
+                                                  );
+                                                },
+                                              }}
+                                            >
+                                              {section.text}
+                                            </ReactMarkdown>
+                                          </div>
+
+                                          {/* Card */}
+                                          {msg.umkmData &&
+                                            msg.umkmData[section.index] && (
+                                              <div
+                                                onClick={() => setIsOpen(false)}
+                                              >
+                                                <UmkmCard
+                                                  umkm={
+                                                    msg.umkmData[
+                                                      section.index
+                                                    ] as any
+                                                  }
+                                                />
+                                              </div>
+                                            )}
+                                        </div>
+                                      ))}
+
+                                      {/* Render Footer */}
+                                      {footerLines.length > 0 && (
+                                        <div className="chat-markdown leading-relaxed text-[11px] sm:text-xs lg:text-sm mt-2">
+                                          <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                          >
+                                            {footerLines.join("\n")}
+                                          </ReactMarkdown>
+                                        </div>
+                                      )}
+                                    </>
+                                  );
+                                })()}
+                              </div>
+                            ) : (
+                              /* Render normal markdown jika tidak ada umkmData */
+                              <div className="chat-markdown leading-relaxed text-[11px] sm:text-xs lg:text-sm">
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm]}
+                                  components={{
+                                    p: ({ children }) => {
+                                      return (
+                                        <p className="my-1.5 sm:my-2 whitespace-pre-line">
+                                          {children}
+                                        </p>
+                                      );
+                                    },
+                                    strong: ({ children }) => {
+                                      return (
+                                        <strong className="font-bold text-foreground">
+                                          {children}
+                                        </strong>
+                                      );
+                                    },
+                                    a: ({ href, children }) => {
+                                      if (href?.startsWith("/")) {
+                                        return (
+                                          <Link
+                                            href={href}
+                                            className="text-primary hover:text-primary/80 underline font-medium transition-colors"
+                                            onClick={() => setIsOpen(false)}
+                                          >
+                                            {children}
+                                          </Link>
+                                        );
+                                      }
+                                      return (
+                                        <a
+                                          href={href}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-primary hover:text-primary/80 underline"
+                                        >
+                                          {children}
+                                        </a>
+                                      );
+                                    },
+                                  }}
+                                >
+                                  {msg.content}
+                                </ReactMarkdown>
+                              </div>
+                            )}
                           </div>
                           <p className="text-[9px] sm:text-xs lg:text-sm text-muted-foreground mt-1 sm:mt-1 px-1">
                             AI •{" "}
