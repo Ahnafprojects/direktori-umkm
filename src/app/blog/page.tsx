@@ -41,7 +41,7 @@ export default async function BlogPage({
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-background border-b">
+      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-background border-b -mt-20 pt-24 sm:pt-28">
         <div className="container mx-auto px-4 py-12 sm:py-16">
           <div className="max-w-3xl">
             <Badge className="mb-4" variant="secondary">
