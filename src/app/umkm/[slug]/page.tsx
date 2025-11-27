@@ -25,6 +25,7 @@ import AddReviewForm from "@/app/_components/add-review-form";
 import ReviewSection from "@/app/_components/review-section";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import ChatButton from "@/components/chat-button";
 
 // Tipe data baru yang MENCERMINKAN DATABASE BARU KITA
 type UmkmWithDetails = Prisma.UmkmGetPayload<{
@@ -33,13 +34,13 @@ type UmkmWithDetails = Prisma.UmkmGetPayload<{
     Review: {
       include: {
         user: {
-          select: { 
+          select: {
             id: true;
             name: true;
           };
         };
         replier: {
-          select: { 
+          select: {
             id: true;
             name: true;
           };
@@ -62,14 +63,14 @@ type DetailPageProps = {
 
 export default async function UmkmDetailPage({ params }: DetailPageProps) {
   const { slug } = await params;
-  
-  console.log('Looking for UMKM with slug:', slug);
+
+  console.log("Looking for UMKM with slug:", slug);
   const umkm: UmkmWithDetails | null = await getUmkmBySlug(slug);
-  
-  console.log('UMKM found:', umkm ? 'Yes' : 'No');
-  
+
+  console.log("UMKM found:", umkm ? "Yes" : "No");
+
   if (!umkm) {
-    console.log('UMKM not found, returning 404 for slug:', slug);
+    console.log("UMKM not found, returning 404 for slug:", slug);
     notFound();
   }
 
@@ -176,6 +177,17 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
               <Phone className="h-5 w-5 text-muted-foreground" />
               <span>{umkm.phone || "Telepon tidak tersedia"}</span>
             </div>
+
+            {/* Tombol Chat */}
+            <div className="pt-2">
+              <ClientHydrator>
+                <ChatButton
+                  umkmId={umkm.id}
+                  umkmName={umkm.name}
+                  isLoggedIn={!!userId}
+                />
+              </ClientHydrator>
+            </div>
           </div>
           <div className="space-y-4 rounded-lg border p-4 h-fit">
             <h3 className="text-xl font-semibold">Lokasi</h3>
@@ -218,7 +230,10 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
       {hasProducts && (
         <div className="space-y-8">
           <h2 className="text-3xl font-bold text-center">
-            {umkm.Category.name.toLowerCase().includes('makanan') || umkm.Category.name.toLowerCase().includes('minuman') ? 'Menu' : 'Produk'}
+            {umkm.Category.name.toLowerCase().includes("makanan") ||
+            umkm.Category.name.toLowerCase().includes("minuman")
+              ? "Menu"
+              : "Produk"}
           </h2>
           {/* Loop untuk Kategori Produk */}
           {umkm.ProductCategory.map((category: any) => {
@@ -229,9 +244,9 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
               slug: umkm.slug,
               ownerId: umkm.ownerId,
               rating: umkm.rating ? parseFloat(umkm.rating.toString()) : null,
-              Category: umkm.Category
+              Category: umkm.Category,
             };
-            
+
             return (
               <section key={category.id}>
                 <h3 className="text-2xl font-semibold mb-4">{category.name}</h3>
@@ -239,10 +254,7 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
                   {/* Loop untuk Produk */}
                   {category.Product.map((product: any) => (
                     <ClientHydrator key={product.id}>
-                      <ProductCard 
-                        product={product} 
-                        umkm={serializedUmkm}
-                      />
+                      <ProductCard product={product} umkm={serializedUmkm} />
                     </ClientHydrator>
                   ))}
                 </div>
@@ -260,12 +272,12 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
           Ulasan Pengguna ({umkm.Review.length})
         </h3>
         <ReviewSection
-          initialReviews={umkm.Review.map(review => ({
+          initialReviews={umkm.Review.map((review) => ({
             ...review,
             id: review.id.toString(),
             createdAt: review.createdAt.toISOString(),
             ownerReplyAt: review.ownerReplyAt?.toISOString() || null,
-            user: review.user || { id: '', name: 'Anonymous' }
+            user: review.user || { id: "", name: "Anonymous" },
           }))}
           currentUserId={userId}
           umkmOwnerId={umkm.ownerId}
@@ -278,14 +290,14 @@ export default async function UmkmDetailPage({ params }: DetailPageProps) {
             userId === umkm.ownerId ? (
               // PEMILIK UMKM: Redirect ke Dashboard
               <div className="p-6 border rounded-lg bg-blue-50 border-blue-200 text-center">
-                <h4 className="text-lg font-bold text-blue-800 mb-2">Selamat Datang, Pemilik UMKM!</h4>
+                <h4 className="text-lg font-bold text-blue-800 mb-2">
+                  Selamat Datang, Pemilik UMKM!
+                </h4>
                 <p className="text-sm text-blue-600 mb-4">
                   Kelola bisnis Anda di dashboard khusus owner
                 </p>
                 <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                  <Link href="/dashboard">
-                    � Buka Dashboard Analytics
-                  </Link>
+                  <Link href="/dashboard">� Buka Dashboard Analytics</Link>
                 </Button>
               </div>
             ) : (

@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, ScrollText, BarChart3 } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import UserAuth from "./user-auth";
 import { ThemeToggle } from "./theme-toggle";
@@ -23,10 +23,8 @@ export default function Header() {
 
         <nav className="flex items-center gap-1 sm:gap-2 md:gap-4 ml-auto">
           {/* Notifikasi bell untuk semua user yang login */}
-          {session && (
-            <HeaderNotifications />
-          )}
-          
+          {session && <HeaderNotifications />}
+
           {/* Show theme toggle in header only when user is NOT logged in.  When logged in, theme toggle will be inside profile popup */}
           {!session && <ThemeToggle />}
           <UserAuth />
