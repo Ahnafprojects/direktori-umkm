@@ -139,8 +139,8 @@ Sisihkan dana cadangan minimal 20% untuk kondisi darurat.
 1. Buat nama usaha yang unik dan mudah diingat
 2. Desain logo profesional
 3. Aktif di media sosial (Instagram, TikTok, Facebook)
-4. Daftar di platform seperti **direktori-umkm.com** 😉
-5. Manfaatkan Google My Business
+4. Daftar di platform direktori UMKM seperti **LokalKeren** 😉
+5. Buat website atau landing page sederhana
 
 ## 8. Kelola Keuangan dengan Baik
 
@@ -205,18 +205,17 @@ Masih efektif untuk target market 30+ tahun.
 - Join grup komunitas lokal
 - Manfaatkan Facebook Marketplace
 
-## 2. Marketplace dan E-Commerce
+## 2. Platform Online
 
-Daftar di berbagai platform:
-- Tokopedia
-- Shopee
-- Bukalapak
-- TikTok Shop
+Manfaatkan platform digital untuk jangkauan lebih luas:
+- **LokalKeren** - Direktori UMKM lokal terpercaya
+- Media sosial untuk promosi
+- Website atau toko online sendiri
 
 **Keuntungan:**
 ✅ Jangkauan luas
-✅ Sistem pembayaran aman
-✅ Gratis ongkir dan promo built-in
+✅ Sistem terorganisir
+✅ Mudah ditemukan pelanggan
 
 ## 3. WhatsApp Business
 
@@ -226,12 +225,13 @@ Fitur yang harus digunakan:
 - 🏷️ Label pelanggan (prospek, pelanggan tetap, dll)
 - ✅ Centang hijau (verifikasi bisnis)
 
-## 4. Google My Business
+## 4. Direktori UMKM Online
 
 **Manfaat:**
-- Muncul di Google Maps saat orang cari UMKM terdekat
+- Ditemukan pelanggan yang mencari UMKM terdekat
 - Gratis!
 - Bisa upload foto, jam buka, dan nomor kontak
+- Jangkauan luas di area lokal
 
 **Cara Optimasi:**
 1. Isi data lengkap
@@ -247,9 +247,9 @@ Buat konten edukatif:
 - Sharing pengalaman bisnis
 
 **Platform:**
-- YouTube (video tutorial)
-- Blog website
-- LinkedIn (untuk B2B)
+- Video tutorial di media sosial
+- Blog di website sendiri
+- Konten edukatif untuk pelanggan
 
 ---
 
@@ -268,9 +268,9 @@ Cari micro-influencer lokal dengan:
 
 1. **Canva** - Desain grafis
 2. **CapCut** - Edit video
-3. **Google Analytics** - Analisis website
-4. **Meta Business Suite** - Kelola Instagram & Facebook
-5. **Google Trends** - Riset keyword
+3. **Aplikasi pembukuan** - Kelola keuangan
+4. **Platform media sosial** - Promosi gratis
+5. **LokalKeren** - Direktori UMKM lokal
 
 ---
 
@@ -315,7 +315,7 @@ Pengelolaan keuangan yang baik adalah kunci kesuksesan UMKM. Berikut panduannya:
 - 🧾 Hutang dan piutang
 
 **Tools yang Bisa Digunakan:**
-- Aplikasi: BukuWarung, BukuKas, Jurnal
+- Aplikasi pembukuan digital
 - Excel/Google Sheets (gratis!)
 - Buku tulis (manual tapi tetap valid)
 
@@ -399,8 +399,9 @@ Lakukan:
 ## 10. Gunakan Teknologi
 
 Manfaatkan aplikasi pembukuan:
-- **Gratis:** BukuKas, BukuWarung, Google Sheets
-- **Berbayar:** Accurate, Jurnal, Zahir
+- **Aplikasi pembukuan digital**
+- **Spreadsheet** (gratis!)
+- **Software akuntansi UMKM**
 
 ---
 
@@ -543,11 +544,11 @@ Gunakan data untuk ambil keputusan bisnis!
 
 ## 🚀 Bonus Tips: Gunakan Platform Digital
 
-Daftar di:
-- **Direktori UMKM** (seperti website ini! 😉)
-- Google My Business
-- Marketplace (Shopee, Tokopedia)
-- Aplikasi food delivery (GoFood, GrabFood)
+Daftar di platform direktori UMKM seperti **LokalKeren** untuk:
+- ✅ Menjangkau lebih banyak pelanggan
+- ✅ Meningkatkan visibilitas bisnis
+- ✅ Memudahkan pelanggan menemukan Anda
+- ✅ Gratis dan mudah digunakan
 
 Semakin banyak channel, semakin besar peluang penjualan!
 
@@ -562,7 +563,7 @@ Semakin banyak channel, semakin besar peluang penjualan!
 
 **Minggu 2:**
 - [ ] Buat 1 promo menarik
-- [ ] Daftar di Google My Business
+- [ ] Daftar di direktori UMKM lokal
 - [ ] Kolaborasi dengan 1 UMKM lain
 
 **Minggu 3:**
