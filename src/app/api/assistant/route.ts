@@ -410,8 +410,7 @@ export async function POST(req: Request) {
 
         let response = responseIntro;
 
-        // Siapkan data UMKM untuk di-render sebagai card
-        const umkmData = topResults.map((umkm: any, index: number) => {
+        topResults.forEach((umkm: any, index: number) => {
           // Ambil produk yang relevan dengan pencarian
           const relevantProducts = umkm.allProducts
             .filter((product: any) => {
@@ -439,60 +438,40 @@ export async function POST(req: Request) {
 
           const recentReview = umkm.Review[0];
 
-          // Tambahkan info text
-          response += `**${index + 1}. ${umkm.name}** ⭐ ${umkm.avgRating}/5\n`;
-          response += `📍 ${umkm.address}\n`;
-          response += `❤️ ${umkm._count.favorites} favorit • 📝 ${umkm._count.Review} review\n`;
-          response += `🏷️ ${umkm.Category.name}\n`;
+          response += `${index + 1}. **${umkm.name}** ⭐ ${umkm.avgRating}/5\n`;
+          response += `   📍 ${umkm.address}\n`;
+          response += `   ❤️ ${umkm._count.favorites} favorit • 📝 ${umkm._count.Review} review\n`;
+          response += `   🏷️ ${umkm.Category.name}\n`;
 
           if (relevantProducts.length > 0) {
-            response += `🍽️ Menu: ${relevantProducts
+            response += `   🍽️ Menu: ${relevantProducts
               .map((p: any) => p.name)
               .join(", ")}\n`;
           }
 
           if (recentReview) {
-            response += `� "${recentReview.comment}" - ${recentReview.user.name}\n`;
+            response += `   � "${recentReview.comment}" - ${recentReview.user.name}\n`;
           }
 
           response += "\n";
-
-          // Return structured data untuk card
-          return {
-            id: umkm.id,
-            name: umkm.name,
-            slug: umkm.slug,
-            address: umkm.address,
-            rating: parseFloat(umkm.avgRating),
-            photos: umkm.photos || [],
-            Category: {
-              id: umkm.Category.id,
-              name: umkm.Category.name,
-            },
-            productCategories: umkm.ProductCategory || [],
-            _count: {
-              reviews: umkm._count.Review,
-              favorites: umkm._count.favorites,
-            },
-          };
         });
 
         // Tips kontekstual berdasarkan jenis pencarian
         if (searchFood.includes("Nongkrong")) {
           response +=
-            "\n💡 **Tips Nongkrong**: Cari tempat dengan suasana santai, harga terjangkau, dan WiFi stabil! Klik card untuk lihat detail lengkapnya.";
+            "💡 **Tips Nongkrong**: Cari tempat dengan suasana santai, harga terjangkau, dan WiFi stabil!";
         } else if (searchFood.includes("Nugas")) {
           response +=
-            "\n📚 **Tips Nugas**: Pilih tempat tenang dengan colokan listrik dan WiFi kenceng. Jangan lupa beli minuman biar betah! Klik card untuk info lebih lanjut.";
+            "📚 **Tips Nugas**: Pilih tempat tenang dengan colokan listrik dan WiFi kenceng. Jangan lupa beli minuman biar betah!";
         } else if (searchFood.includes("Kerja")) {
           response +=
-            "\n💼 **Tips Kerja**: Cari tempat dengan WiFi stabil, tidak terlalu berisik, dan nyaman untuk laptop! Klik card untuk lihat detail.";
+            "� **Tips Kerja**: Cari tempat dengan WiFi stabil, tidak terlalu berisik, dan nyaman untuk laptop!";
         } else {
           response +=
-            "\n💡 **Rekomendasi berdasarkan rating tertinggi dan review terbanyak!** Klik card untuk lihat menu lengkap, foto, dan ulasan lainnya.";
+            "�💡 Rekomendasi berdasarkan rating tertinggi dan review terbanyak!";
         }
 
-        return new Response(JSON.stringify({ response, umkmData }), {
+        return new Response(JSON.stringify({ response }), {
           headers: { "Content-Type": "application/json" },
         });
       }

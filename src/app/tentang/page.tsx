@@ -90,6 +90,7 @@ export default function TentangPage() {
     {
       name: "Muhammad Ahnaf",
       role: "Product Owner",
+      role2: "Developer",
       photo: "/img/Muhammad Ahnaf.png",
       bio: "Memimpin visi produk dan strategi pengembangan LokalKeren",
       github: "https://github.com/Ahnafprojects",
@@ -288,9 +289,12 @@ export default function TentangPage() {
 
                   {/* Info */}
                   <h3 className="text-xl font-bold mb-1">{member.name}</h3>
-                  <Badge variant="secondary" className="mb-3">
-                    {member.role}
-                  </Badge>
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <Badge variant="secondary">{member.role}</Badge>
+                    {member.role2 && (
+                      <Badge variant="secondary">{member.role2}</Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground mb-4">
                     {member.bio}
                   </p>

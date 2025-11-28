@@ -65,26 +65,26 @@ export default function GuestWelcomeModal() {
         }
       }}
     >
-      <DialogContent className="w-[95vw] max-w-[400px] sm:max-w-[420px] lg:max-w-[480px] mx-auto p-4 sm:p-6 lg:p-8 bg-background border-border sm:max-h-none lg:max-h-none">
-        <DialogHeader className="text-center space-y-3 sm:space-y-4">
+      <DialogContent className="w-[95vw] max-w-[400px] sm:max-w-[420px] lg:max-w-[480px] mx-auto p-3 sm:p-6 lg:p-8 bg-background border-border max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="text-center space-y-2 sm:space-y-4">
           {/* Logo and Title */}
           <div className="flex justify-center">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-md">
-              <Building2 className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-primary-foreground" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-md">
+              <Building2 className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-primary-foreground" />
             </div>
           </div>
 
-          <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground leading-tight px-2">
+          <DialogTitle className="text-lg sm:text-2xl font-bold text-foreground leading-tight px-2">
             Selamat Datang di LokalKeren
           </DialogTitle>
 
-          <DialogDescription className="text-muted-foreground text-sm sm:text-base leading-relaxed px-2">
+          <DialogDescription className="text-muted-foreground text-xs sm:text-base leading-relaxed px-2">
             Platform direktori UMKM terpercaya untuk menemukan dan mendukung
             bisnis lokal di sekitar Anda
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 sm:space-y-5 lg:space-y-4 mt-4 sm:mt-6">
+        <div className="space-y-3 sm:space-y-5 lg:space-y-4 mt-3 sm:mt-6">
           {/* Features Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 lg:gap-2">
             <div className="flex flex-col items-center p-2 sm:p-3 lg:p-2 rounded-lg bg-accent/30 text-center">
@@ -149,16 +149,16 @@ export default function GuestWelcomeModal() {
           </div>
 
           {/* AI Assistant Info - Highlight Feature */}
-          <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-3 rounded-lg border border-primary/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary rounded-lg">
-                <MessageCircle className="w-4 h-4 text-primary-foreground" />
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-2.5 sm:p-3 rounded-lg border border-primary/20">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-primary rounded-lg">
+                <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-foreground" />
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-sm text-foreground mb-1">
+                <h4 className="font-semibold text-xs sm:text-sm text-foreground mb-0.5 sm:mb-1">
                   AI Assistant Tersedia
                 </h4>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
                   Punya pertanyaan? Tanya langsung ke AI Assistant kami kapan
                   saja!
                 </p>
@@ -167,8 +167,8 @@ export default function GuestWelcomeModal() {
           </div>
 
           {/* What's Available */}
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm text-foreground text-center">
+          <div className="space-y-1.5 sm:space-y-2">
+            <h4 className="font-semibold text-xs sm:text-sm text-foreground text-center">
               Kategori Tersedia & Bantuan AI
             </h4>
             <div className="flex flex-wrap gap-1 justify-center">
@@ -200,21 +200,21 @@ export default function GuestWelcomeModal() {
           </div>
 
           {/* CTA Section */}
-          <div className="space-y-3 pt-1">
+          <div className="space-y-2 sm:space-y-3 pt-0.5 sm:pt-1">
             <Button
               onClick={handleStartExploring}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 text-sm rounded-lg shadow-md transition-all duration-200"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 sm:py-2.5 text-xs sm:text-sm rounded-lg shadow-md transition-all duration-200"
             >
-              <Search className="w-4 h-4 mr-2" />
+              <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
               Mulai Jelajahi UMKM
             </Button>
 
-            <div className="text-center">
+            <div className="text-center pb-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleClose}
-                className="text-xs text-muted-foreground hover:text-foreground"
+                className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground"
               >
                 Punya UMKM? Daftar di sini
               </Button>
